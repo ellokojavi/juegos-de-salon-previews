@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta name="robots" content="noindex">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#150726">
+  <!-- El laboratorio no se anuncia: no está en el menú ni en los buscadores (D-101), y sin la llave no se entra (D-281) -->
+  <script src="../assets/js/labs-puerta.js?h=ae4ae8ca"></script>
+  <meta name="robots" content="noindex, nofollow">
+  <title>Laboratorio 🧪 · Juegos de Salón</title>
+  <link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+  <script src="../assets/js/vigia.js?h=40f0a9a1"></script>
+  <link rel="preload" href="../assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/bangers-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <meta name="release" content="0.240.0-5b0434b">
+  <script type="importmap" id="importmap">{"imports": {"../assets/js/arrastre.js": "../assets/js/arrastre.js?h=b9425a6d", "../assets/js/azar.js": "../assets/js/azar.js?h=f6a0f599", "../assets/js/back-guard.js": "../assets/js/back-guard.js?h=eb3877c2", "../assets/js/buzon-form.js": "../assets/js/buzon-form.js?h=89e2e000", "../assets/js/buzon.js": "../assets/js/buzon.js?h=212b6320", "../assets/js/chat.js": "../assets/js/chat.js?h=66123346", "../assets/js/compartir-portada.js": "../assets/js/compartir-portada.js?h=b6a4b9c4", "../assets/js/compartir.js": "../assets/js/compartir.js?h=b852978c", "../assets/js/controls.js": "../assets/js/controls.js?h=2e4c2f9a", "../assets/js/cuenta-regresiva.js": "../assets/js/cuenta-regresiva.js?h=6960f6ae", "../assets/js/cup-today.js": "../assets/js/cup-today.js?h=dbbee63f", "../assets/js/dado3d.js": "../assets/js/dado3d.js?h=5e15fa29", "../assets/js/daily-points.js": "../assets/js/daily-points.js?h=8cb06b46", "../assets/js/daily-recap.js": "../assets/js/daily-recap.js?h=6579b6b0", "../assets/js/dato.js": "../assets/js/dato.js?h=92313f30", "../assets/js/favoritos.js": "../assets/js/favoritos.js?h=6c9afb09", "../assets/js/fin.js": "../assets/js/fin.js?h=65925e37", "../assets/js/firebase-config.js": "../assets/js/firebase-config.js?h=5d3c31ee", "../assets/js/flag-list.js": "../assets/js/flag-list.js?h=c663571a", "../assets/js/flags.js": "../assets/js/flags.js?h=b9cf7d6e", "../assets/js/frases.js": "../assets/js/frases.js?h=7b82bf50", "../assets/js/games.js": "../assets/js/games.js?h=01382151", "../assets/js/handoff.js": "../assets/js/handoff.js?h=f12a6232", "../assets/js/home-windows.js": "../assets/js/home-windows.js?h=cc063f50", "../assets/js/how-to-play-facts.js": "../assets/js/how-to-play-facts.js?h=34d8ea51", "../assets/js/i18n.js": "../assets/js/i18n.js?h=03ca2111", "../assets/js/instalable.js": "../assets/js/instalable.js?h=a0c20beb", "../assets/js/instalar.js": "../assets/js/instalar.js?h=2dfd05ee", "../assets/js/jugador-firebase.js": "../assets/js/jugador-firebase.js?h=2cecad64", "../assets/js/jugador-local.js": "../assets/js/jugador-local.js?h=d7495e49", "../assets/js/jugador.js": "../assets/js/jugador.js?h=bf2cf82e", "../assets/js/keyboard.js": "../assets/js/keyboard.js?h=e27a429c", "../assets/js/lab-access.js": "../assets/js/lab-access.js?h=6d60f915", "../assets/js/labs-idioma.js": "../assets/js/labs-idioma.js?h=302da30f", "../assets/js/labs-puerta.js": "../assets/js/labs-puerta.js?h=ae4ae8ca", "../assets/js/llegada.js": "../assets/js/llegada.js?h=d42edc11", "../assets/js/load-css.js": "../assets/js/load-css.js?h=4bf0403a", "../assets/js/month-end.js": "../assets/js/month-end.js?h=819f353b", "../assets/js/name-guard.js": "../assets/js/name-guard.js?h=0b2c585b", "../assets/js/notification-sheets.js": "../assets/js/notification-sheets.js?h=3190bce6", "../assets/js/on-screen.js": "../assets/js/on-screen.js?h=0504b6bf", "../assets/js/parametros.js": "../assets/js/parametros.js?h=73c2bf4a", "../assets/js/push.js": "../assets/js/push.js?h=c6703034", "../assets/js/qr.js": "../assets/js/qr.js?h=e21987b2", "../assets/js/ranking.js": "../assets/js/ranking.js?h=0f725c7c", "../assets/js/recap.js": "../assets/js/recap.js?h=5fe62ba9", "../assets/js/records.js": "../assets/js/records.js?h=11ce237e", "../assets/js/region-patterns.js": "../assets/js/region-patterns.js?h=20d295c4", "../assets/js/rng.js": "../assets/js/rng.js?h=ba7e5a86", "../assets/js/room-flow.js": "../assets/js/room-flow.js?h=3be116ea", "../assets/js/search.js": "../assets/js/search.js?h=f7d62163", "../assets/js/season.js": "../assets/js/season.js?h=3a99c2a6", "../assets/js/session.js": "../assets/js/session.js?h=9330b47f", "../assets/js/share-grid.js": "../assets/js/share-grid.js?h=f8a42662", "../assets/js/site-footer.js": "../assets/js/site-footer.js?h=9f43c964", "../assets/js/sobre.js": "../assets/js/sobre.js?h=de580b39", "../assets/js/sound.js": "../assets/js/sound.js?h=00325dd0", "../assets/js/splash.js": "../assets/js/splash.js?h=bb9bc3cc", "../assets/js/support.js": "../assets/js/support.js?h=af830516", "../assets/js/teclado.js": "../assets/js/teclado.js?h=0905b503", "../assets/js/time-format.js": "../assets/js/time-format.js?h=1921e1e4", "../assets/js/transport/best-effort.js": "../assets/js/transport/best-effort.js?h=b8f82884", "../assets/js/transport/cleanup.js": "../assets/js/transport/cleanup.js?h=8706857e", "../assets/js/transport/dispose.js": "../assets/js/transport/dispose.js?h=24e516c5", "../assets/js/transport/errors.js": "../assets/js/transport/errors.js?h=65f7809c", "../assets/js/transport/firebase.js": "../assets/js/transport/firebase.js?h=338d28ce", "../assets/js/transport/local.js": "../assets/js/transport/local.js?h=338088fa", "../assets/js/transport/ratelimit.js": "../assets/js/transport/ratelimit.js?h=026e11fc", "../assets/js/transport/seat.js": "../assets/js/transport/seat.js?h=72ee2f56", "../assets/js/transport/stats.js": "../assets/js/transport/stats.js?h=7252ff48", "../assets/js/uad-days.js": "../assets/js/uad-days.js?h=dec58d63", "../assets/js/uad-place.js": "../assets/js/uad-place.js?h=368dd032", "../assets/js/ui.js": "../assets/js/ui.js?h=f4332760", "../assets/js/uno-al-dia-avisos.js": "../assets/js/uno-al-dia-avisos.js?h=1b7b8537", "../assets/js/uno-al-dia-red.js": "../assets/js/uno-al-dia-red.js?h=c90acb7c", "../assets/js/uno-al-dia-ui.js": "../assets/js/uno-al-dia-ui.js?h=686c684f", "../assets/js/uno-al-dia.js": "../assets/js/uno-al-dia.js?h=5a4faaac", "../assets/js/vapid.js": "../assets/js/vapid.js?h=74c138b9", "../assets/js/vendor/qrcode.js": "../assets/js/vendor/qrcode.js?h=18ae399f", "../assets/js/vigia.js": "../assets/js/vigia.js?h=40f0a9a1", "../assets/season/templates.js": "../assets/season/templates.js?h=30550765", "../battleship/engine.js": "../battleship/engine.js?h=b9fdd30a", "../battleship/flota.js": "../battleship/flota.js?h=379777c5", "../battleship/game.js": "../battleship/game.js?h=51dd9360", "../battleship/rules.js": "../battleship/rules.js?h=351d6bd6", "../bulls-and-cows/engine.js": "../bulls-and-cows/engine.js?h=2a478102", "../bulls-and-cows/game.js": "../bulls-and-cows/game.js?h=bd9d61b9", "../bulls-and-cows/rules.js": "../bulls-and-cows/rules.js?h=14208f2d", "../cup/admin.js": "../cup/admin.js?h=5f905eed", "../cup/avisos.js": "../cup/avisos.js?h=c2c39ff1", "../cup/clock.js": "../cup/clock.js?h=1e53e7d2", "../cup/code.js": "../cup/code.js?h=06f0e1c6", "../cup/create.js": "../cup/create.js?h=e29a10c9", "../cup/cuenta.js": "../cup/cuenta.js?h=010d8bac", "../cup/demo.js": "../cup/demo.js?h=bbaef321", "../cup/desglose.js": "../cup/desglose.js?h=0d91dcbb", "../cup/engine.js": "../cup/engine.js?h=f98df127", "../cup/game.js": "../cup/game.js?h=c1287a39", "../cup/games/agents/clues-en.js": "../cup/games/agents/clues-en.js?h=7fbffb8c", "../cup/games/agents/clues-pt.js": "../cup/games/agents/clues-pt.js?h=e05323cc", "../cup/games/agents/clues.js": "../cup/games/agents/clues.js?h=2e8e7706", "../cup/games/agents/engine.js": "../cup/games/agents/engine.js?h=9d44fea2", "../cup/games/agents/numbers.js": "../cup/games/agents/numbers.js?h=81d095cf", "../cup/games/agents/texts.js": "../cup/games/agents/texts.js?h=ccb45212", "../cup/games/agents/ui.js": "../cup/games/agents/ui.js?h=d461185d", "../cup/games/audiencia.js": "../cup/games/audiencia.js?h=3938fe5f", "../cup/games/bridges/engine.js": "../cup/games/bridges/engine.js?h=3b44eef9", "../cup/games/bridges/neon-visitors.js": "../cup/games/bridges/neon-visitors.js?h=4110a7a9", "../cup/games/bridges/neon.js": "../cup/games/bridges/neon.js?h=20c67986", "../cup/games/bridges/physics.js": "../cup/games/bridges/physics.js?h=13ce59f3", "../cup/games/bridges/pixel.js": "../cup/games/bridges/pixel.js?h=585ab3d1", "../cup/games/bridges/scene.js": "../cup/games/bridges/scene.js?h=30d5de83", "../cup/games/bridges/texts.js": "../cup/games/bridges/texts.js?h=970971f6", "../cup/games/bridges/trains.js": "../cup/games/bridges/trains.js?h=bd7f14cb", "../cup/games/bridges/ui.js": "../cup/games/bridges/ui.js?h=d3ad61ec", "../cup/games/bridges/visitors.js": "../cup/games/bridges/visitors.js?h=b0f575fa", "../cup/games/case/engine.js": "../cup/games/case/engine.js?h=ef61f182", "../cup/games/case/ui.js": "../cup/games/case/ui.js?h=4302c637", "../cup/games/connections/engine.js": "../cup/games/connections/engine.js?h=004cabe9", "../cup/games/connections/grillas-en.js": "../cup/games/connections/grillas-en.js?h=6b4d1c8f", "../cup/games/connections/grillas-pt.js": "../cup/games/connections/grillas-pt.js?h=bcea9e47", "../cup/games/connections/grillas.js": "../cup/games/connections/grillas.js?h=25c7e0d1", "../cup/games/connections/ui.js": "../cup/games/connections/ui.js?h=638ace98", "../cup/games/deshacer.js": "../cup/games/deshacer.js?h=6d8e7e32", "../cup/games/final/engine.js": "../cup/games/final/engine.js?h=c2147166", "../cup/games/final/ui.js": "../cup/games/final/ui.js?h=384b0699", "../cup/games/index.js": "../cup/games/index.js?h=500db128", "../cup/games/mazos.js": "../cup/games/mazos.js?h=44c8fd92", "../cup/games/number/engine.js": "../cup/games/number/engine.js?h=8b9ea39b", "../cup/games/number/ui.js": "../cup/games/number/ui.js?h=65efdc9e", "../cup/games/paint-mines/dibujos.js": "../cup/games/paint-mines/dibujos.js?h=0c7752b9", "../cup/games/paint-mines/engine.js": "../cup/games/paint-mines/engine.js?h=43481356", "../cup/games/paint-mines/texts.js": "../cup/games/paint-mines/texts.js?h=00a1da35", "../cup/games/paint-mines/ui.js": "../cup/games/paint-mines/ui.js?h=78113c66", "../cup/games/plots/engine.js": "../cup/games/plots/engine.js?h=6ed65667", "../cup/games/plots/texts.js": "../cup/games/plots/texts.js?h=45c598b8", "../cup/games/plots/ui.js": "../cup/games/plots/ui.js?h=d5272707", "../cup/games/queens/engine.js": "../cup/games/queens/engine.js?h=cfe894bd", "../cup/games/queens/ui.js": "../cup/games/queens/ui.js?h=76e6efc4", "../cup/games/routes/engine.js": "../cup/games/routes/engine.js?h=8fe57b67", "../cup/games/routes/texts.js": "../cup/games/routes/texts.js?h=8f6909ec", "../cup/games/routes/ui.js": "../cup/games/routes/ui.js?h=6c381176", "../cup/games/semilla.js": "../cup/games/semilla.js?h=85160e6c", "../cup/games/solo.js": "../cup/games/solo.js?h=f218475c", "../cup/games/stack/engine.js": "../cup/games/stack/engine.js?h=4048496c", "../cup/games/stack/scene.js": "../cup/games/stack/scene.js?h=7ed6eecf", "../cup/games/stack/texts.js": "../cup/games/stack/texts.js?h=31983f16", "../cup/games/stack/ui.js": "../cup/games/stack/ui.js?h=83800834", "../cup/games/stick/engine.js": "../cup/games/stick/engine.js?h=8c4bcb39", "../cup/games/stick/scene.js": "../cup/games/stick/scene.js?h=53fc302a", "../cup/games/stick/texts.js": "../cup/games/stick/texts.js?h=f2745f6e", "../cup/games/stick/ui.js": "../cup/games/stick/ui.js?h=d52237b7", "../cup/games/tango/engine.js": "../cup/games/tango/engine.js?h=3164e192", "../cup/games/tango/ui.js": "../cup/games/tango/ui.js?h=380e6b09", "../cup/games/timeline/engine.js": "../cup/games/timeline/engine.js?h=6ef6c2d4", "../cup/games/timeline/ui.js": "../cup/games/timeline/ui.js?h=c21b24f6", "../cup/games/untangle/engine.js": "../cup/games/untangle/engine.js?h=f0485091", "../cup/games/untangle/ui.js": "../cup/games/untangle/ui.js?h=c4e412c1", "../cup/games/where/ciudades.js": "../cup/games/where/ciudades.js?h=6f2f63cd", "../cup/games/where/engine.js": "../cup/games/where/engine.js?h=bb4d3f44", "../cup/games/where/globo.js": "../cup/games/where/globo.js?h=4cfa832e", "../cup/games/where/mapa.js": "../cup/games/where/mapa.js?h=78f414aa", "../cup/games/where/nombres.js": "../cup/games/where/nombres.js?h=10b9dfdc", "../cup/games/where/ui.js": "../cup/games/where/ui.js?h=a519e764", "../cup/games/word/engine.js": "../cup/games/word/engine.js?h=598eb701", "../cup/games/word/palabras.js": "../cup/games/word/palabras.js?h=80be5ef2", "../cup/games/word/ui.js": "../cup/games/word/ui.js?h=e251cec4", "../cup/games/year/engine.js": "../cup/games/year/engine.js?h=9e052cca", "../cup/games/year/ui.js": "../cup/games/year/ui.js?h=6fd81b9a", "../cup/games/zip/engine.js": "../cup/games/zip/engine.js?h=444881b2", "../cup/games/zip/ui.js": "../cup/games/zip/ui.js?h=a0f8b648", "../cup/join.js": "../cup/join.js?h=34c05a34", "../cup/planilla.js": "../cup/planilla.js?h=bcdb129f", "../cup/recap.js": "../cup/recap.js?h=3610e666", "../cup/reportes.js": "../cup/reportes.js?h=2a6e17c0", "../cup/result.js": "../cup/result.js?h=57b246c3", "../cup/rules.js": "../cup/rules.js?h=41426307", "../cup/store-firebase.js": "../cup/store-firebase.js?h=a95382f3", "../cup/store-local.js": "../cup/store-local.js?h=9a60888f", "../cup/table-image.js": "../cup/table-image.js?h=85646475", "../generala/engine.js": "../generala/engine.js?h=4fe1f3fc", "../generala/game.js": "../generala/game.js?h=d8d6c651", "../generala/rules.js": "../generala/rules.js?h=aa38ff34", "../hangman/decks/animales.js": "../hangman/decks/animales.js?h=681eff68", "../hangman/decks/chile.js": "../hangman/decks/chile.js?h=4c565470", "../hangman/decks/cine.js": "../hangman/decks/cine.js?h=38dd21ad", "../hangman/decks/comida.js": "../hangman/decks/comida.js?h=f3139966", "../hangman/decks/deportes.js": "../hangman/decks/deportes.js?h=194ec9b7", "../hangman/decks/index.js": "../hangman/decks/index.js?h=f0c8c0b5", "../hangman/engine.js": "../hangman/engine.js?h=a2b705fb", "../hangman/game.js": "../hangman/game.js?h=7fc3e04d", "../hangman/rules.js": "../hangman/rules.js?h=3f4daf05", "../labs/bodega.js": "../labs/bodega.js?h=1f4cde03", "../labs/bridges/trains/sheet.js": "../labs/bridges/trains/sheet.js?h=e61ce596", "../labs/bridges/visitors/sheet.js": "../labs/bridges/visitors/sheet.js?h=df537ffa", "../labs/chameleon/engine.js": "../labs/chameleon/engine.js?h=d0138ecd", "../labs/chameleon/game.js": "../labs/chameleon/game.js?h=ba1df2d1", "../labs/chameleon/rules.js": "../labs/chameleon/rules.js?h=9a308669", "../labs/code/engine-palabra.js": "../labs/code/engine-palabra.js?h=4ea17011", "../labs/code/engine.js": "../labs/code/engine.js?h=9c6a100c", "../labs/code/game.js": "../labs/code/game.js?h=c0aff8a2", "../labs/dominorama/engine.js": "../labs/dominorama/engine.js?h=39cea63e", "../labs/dominorama/game.js": "../labs/dominorama/game.js?h=02f73c6d", "../labs/exploding-numbers/engine.js": "../labs/exploding-numbers/engine.js?h=680b00f7", "../labs/exploding-numbers/game.js": "../labs/exploding-numbers/game.js?h=047efa70", "../labs/fourth-king/engine.js": "../labs/fourth-king/engine.js?h=44f9f09f", "../labs/fourth-king/game.js": "../labs/fourth-king/game.js?h=678dfaac", "../labs/fourth-king/rules.js": "../labs/fourth-king/rules.js?h=a523fadd", "../labs/home/experiments.js": "../labs/home/experiments.js?h=c3089b12", "../labs/julep/engine.js": "../labs/julep/engine.js?h=8ff80af4", "../labs/julep/game.js": "../labs/julep/game.js?h=b4c88de4", "../labs/julep/rules.js": "../labs/julep/rules.js?h=777d25f4", "../labs/publish.js": "../labs/publish.js?h=7f4f41ab", "../labs/stack/engine.js": "../labs/stack/engine.js?h=47b96079", "../labs/stack/game.js": "../labs/stack/game.js?h=e6dae282", "../labs/stack/scene.js": "../labs/stack/scene.js?h=9295e673", "../labs/stick/engine.js": "../labs/stick/engine.js?h=2783ea84", "../labs/stick/game.js": "../labs/stick/game.js?h=01d1d4f8", "../labs/stick/scene.js": "../labs/stick/scene.js?h=a112f5fa", "../liars-dice/engine.js": "../liars-dice/engine.js?h=44b0eedd", "../liars-dice/game.js": "../liars-dice/game.js?h=f9fd784a", "../liars-dice/rules.js": "../liars-dice/rules.js?h=c54ecf10", "../panel/aggregate.js": "../panel/aggregate.js?h=ef3a73e3", "../panel/campaigns.js": "../panel/campaigns.js?h=a59bd34c", "../panel/copas.js": "../panel/copas.js?h=33fa58c9", "../panel/dominios.js": "../panel/dominios.js?h=423f8c9d", "../panel/feedback.js": "../panel/feedback.js?h=3d7943a9", "../panel/panel.js": "../panel/panel.js?h=06c3df31", "../panel/release-push.js": "../panel/release-push.js?h=e77f31af", "../panel/rooms-watch.js": "../panel/rooms-watch.js?h=6a525722", "../panel/rutas.js": "../panel/rutas.js?h=bb30b0c9", "../panel/timeline.js": "../panel/timeline.js?h=9aa1526a", "../privacy/texts.js": "../privacy/texts.js?h=2c1a9621", "../sw.js": "../sw.js?h=27ccfe95", "../timeline/decks/brasil.js": "../timeline/decks/brasil.js?h=231eae24", "../timeline/decks/chile.js": "../timeline/decks/chile.js?h=a8cc1127", "../timeline/decks/futbol.js": "../timeline/decks/futbol.js?h=31b8f32e", "../timeline/decks/historia.js": "../timeline/decks/historia.js?h=a239a7dc", "../timeline/decks/index.js": "../timeline/decks/index.js?h=ab999761", "../timeline/decks/musica.js": "../timeline/decks/musica.js?h=4b5db315", "../timeline/decks/pop.js": "../timeline/decks/pop.js?h=98a53476", "../timeline/engine.js": "../timeline/engine.js?h=5d408db9", "../timeline/game.js": "../timeline/game.js?h=f466ae40", "../timeline/rules.js": "../timeline/rules.js?h=1d7cc440"}}</script>
+  <link rel="stylesheet" href="../assets/css/base.css?h=b829d3c0">
+  <style>
+    .hero { text-align: center; padding: 6px 0 4px; }
+    .hero .icon { font-size: 3.6rem; display: block; }
+    .hero h1 { margin: 4px 0; }
+    .aviso-labs { border-color: rgba(255, 122, 26, 0.55); }
+    .seccion { display: grid; gap: 10px; }
+    .grupo { display: grid; gap: 12px; }
+    .grupo > h2 { font-family: var(--font-display); font-size: 2rem; letter-spacing: 0.04em; margin: 8px 0 0; }
+    .grupo > p { margin: 0; }
+    .vacio { text-align: center; }
+    .seccion h2 { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.04em; margin: 0; }
+    .btn { text-decoration: none; display: flex; align-items: center; justify-content: center; }
+    /* Los links del texto (el crédito al juego original): un celeste claro que se lea bien sobre el
+       morado y dentro de un párrafo apagado; sin negrita ni subrayado, como en las portadas de los juegos */
+    .stack p a { color: #a8fff6; text-decoration: none; }
+    .stack p a:active { color: #fff; }
+    /* La Bodega, plegada al título (pedido del dueño): no tiene la jerarquía de los proyectos activos.
+       Un toque la abre y muestra de qué se trata y su botón */
+    /* Toda la tarjeta se toca: el relleno va en el título, no en la tarjeta. Abierta, sin el apagado:
+       la opacidad de la tarjeta no la anula un hijo, por eso :has */
+    .plegada { padding: 0; opacity: 0.85; }
+    .plegada:has(details[open]) { opacity: 1; }
+    .plegada summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; min-height: 44px; padding: 12px 18px; }
+    .plegada summary::-webkit-details-marker { display: none; }
+    .plegada summary h2 { font-size: 1.25rem; }
+    .plegada .flecha { font: 900 1.9rem/1 var(--font-body); color: #fff; transition: transform 0.2s; }
+    .plegada details[open] .flecha { transform: rotate(90deg); }
+    .plegada .detalle { display: grid; gap: 10px; padding: 0 18px 18px; }
+    /* La Bodega's two subgroups (D-422): a smaller title than the group's */
+    .subgrupo { display: grid; gap: 12px; }
+    .subgrupo > h3 { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.04em; margin: 8px 0 0; }
+    .divisor { width: 100%; border: 0; height: 2px; margin: 18px 0 6px; border-radius: 2px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45) 15%, rgba(255, 255, 255, 0.45) 85%, transparent); }
+    /* 🚀 Publicar para todos (D-480): only the owner sees it, under each card being tried */
+    .publicar { display: grid; gap: 10px; }
+    .publicar-estado { display: grid; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 210, 63, 0.5); }
+    .publicar-estado--ok { border-color: rgba(120, 255, 160, 0.6); }
+    .publicar-estado--bad { border-color: rgba(255, 110, 110, 0.7); }
+    .publicar-estado p { margin: 0; line-height: 1.4; }
+    .publicar-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+    .publicar-links a { color: #a8fff6; text-decoration: none; font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; }
+    .publicar-nota { flex-shrink: 0; min-height: 88px; resize: vertical; width: 100%; box-sizing: border-box; border-radius: 12px; padding: 10px 12px; font: inherit; color: #fff; background: rgba(255, 255, 255, 0.08); border: 2px solid var(--glass-border); }
+    .publicar-nota::placeholder { color: rgba(255, 255, 255, 0.55); }
+    #publicar-dueno button { background: none; border: 0; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; min-height: 44px; }
+    /* ✨ Mejoras lanzadas: one fold per week or month, newest first and open */
+    .bodega-buscar { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #fff; font: inherit; }
+    .bodega-periodo { display: grid; gap: 10px; }
+    .bodega-periodo > summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; min-height: 44px; font-weight: 800; color: rgba(255,255,255,0.8); }
+    .bodega-periodo > summary::-webkit-details-marker { display: none; }
+    .bodega-periodo > summary .flecha { font: 900 1.5rem/1 var(--font-body); transition: transform 0.2s; }
+    .bodega-periodo[open] > summary .flecha { transform: rotate(90deg); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <a class="back" href="../">‹ Menú</a>
+      <div class="tools"><span class="chip">🧪 Laboratorio</span><span id="sound-slot"></span></div>
+    </div>
+
+    <div class="hero">
+      <span class="icon">🧪</span>
+      <h1 class="display display--lg rainbow">Laboratorio</h1>
+      <p class="lead">Acá se prueban los juegos y las mejoras de la app antes de que lleguen a todos.</p>
+    </div>
+
+    <div class="stack">
+      <div class="panel aviso-labs">
+        <p style="margin:0">Lo que hay en el laboratorio todavía puede cambiar o romperse. Si algo falla o se te ocurre una mejora, usa el botón <b>🐞 Reportar un problema o dejar un comentario</b> que aparece en cada juego.</p>
+      </div>
+
+      <!-- Three groups (D-280, D-361): the games being tried, the improvements to the rest of the app
+           being tried, and in La Bodega what is no longer worked on (D-372, D-420) -->
+      <section class="grupo" id="activos">
+        <h2>🎲 Juegos en prueba</h2>
+        <section class="panel seccion" id="seccion-camaleon">
+          <h2>🦎 El Camaleón</h2>
+          <p class="muted" style="margin:0">Inspirado en <a href="https://bigpotato.co.uk/" target="_blank" rel="noopener">The Chameleon</a>, de Big Potato Games: un celular que pasa de mano en mano, de 3 a 8 jugadores. Todos ven la palabra secreta de un tablero de 16, menos el camaleón. Cada uno da una pista, votan, y si pillan al camaleón todavía se salva adivinando la palabra.</p>
+          <p class="muted" style="margin:0;font-size:0.85rem">En los tres idiomas, con seis temas. Las palabras son nuestras.</p>
+          <a class="btn btn--yellow" id="btn-camaleon" href="chameleon/">🦎 Jugar El Camaleón</a>
+        </section>
+
+        <section class="panel seccion" id="seccion-stick">
+          <h2>🥷 Shinobi</h2>
+          <p class="muted" style="margin:0">Inspirado en <a href="https://www.ketchappgames.com/" target="_blank" rel="noopener">Stick Hero</a>, de Ketchapp. Mantén el dedo para estirar el palo y suéltalo para tender el puente. Si la punta cae en la bandera, es perfecto y suma más. Tres vidas, y el recorrido de hoy es el mismo para todos.</p>
+          <p class="muted" style="margin:0;font-size:0.85rem">Listo para lanzar (D-517): en los tres idiomas, con su página <a href="../shinobi/">/shinobi/</a>, ranking, La Copa y Uno al día (desde el mazo del 8 de noviembre). Publicar para todos lo muestra al instante en la portada, la búsqueda y las copas nuevas; Volver al laboratorio lo vuelve a esconder.</p>
+          <a class="btn btn--yellow" id="btn-stick" href="../shinobi/">🥷 Jugar Shinobi</a>
+          <a class="link-btn" id="btn-stick-lab" href="stick/">El prototipo, en inglés</a>
+        </section>
+
+        <section class="panel seccion" id="seccion-stack">
+          <h2>🗼 Babel</h2>
+          <p class="muted" style="margin:0">Inspirado en <a href="https://www.ketchappgames.com/" target="_blank" rel="noopener">Stack</a>, de Ketchapp. Un bloque se desliza sobre la torre y un toque lo suelta. Lo que sobresale se corta, y el siguiente bloque es más chico. Si cae justo encima, no se corta nada. ¿Hasta dónde llega tu torre?</p>
+          <p class="muted" style="margin:0;font-size:0.85rem">Listo para lanzar (D-517): en los tres idiomas, con su página <a href="../babel/">/babel/</a>, ranking, La Copa y Uno al día (desde el mazo del 8 de noviembre). Publicar para todos lo muestra al instante en la portada, la búsqueda y las copas nuevas; Volver al laboratorio lo vuelve a esconder.</p>
+          <a class="btn btn--yellow" id="btn-stack" href="../babel/">🗼 Jugar Babel</a>
+          <a class="link-btn" id="btn-stack-lab" href="stack/">El prototipo, en inglés</a>
+        </section>
+
+        <section class="panel seccion" id="seccion-dominorama">
+          <h2>🎲 Dominorama</h2>
+          <p class="muted" style="margin:0">Inspirado en <a href="https://www.nytimes.com/games/pips" target="_blank" rel="noopener">Pips</a>, de The New York Times Games: pon todas las fichas de dominó en el tablero para que cada zona de color cumpla su regla (suma, iguales, distintas, menos o más). Son tres tableros, de fácil a difícil, contra el reloj.</p>
+          <p class="muted" style="margin:0;font-size:0.85rem">Son los tableros del día, los mismos para todos; al terminar se pueden jugar otros.</p>
+          <a class="btn btn--yellow" id="btn-dominorama" href="dominorama/">🎲 Jugar Dominorama</a>
+        </section>
+
+        <section class="panel seccion" id="seccion-explosivos">
+          <h2>💥 Números explosivos</h2>
+          <p class="muted" style="margin:0">Inspirado en <a href="https://easybrain.com/numbermatch" target="_blank" rel="noopener">Number Match</a>: haz estallar de a pares los números iguales o que suman 10, si están juntos en línea, hasta dejar el tablero limpio. Si te quedas sin pares, ➕ copia abajo los que quedan.</p>
+          <p class="muted" style="margin:0;font-size:0.85rem">Es el tablero del día, el mismo para todos; al terminar se puede jugar otro.</p>
+          <a class="btn btn--yellow" id="btn-explosivos" href="exploding-numbers/">💥 Jugar Números explosivos</a>
+        </section>
+
+      </section>
+
+      <section class="grupo" id="mejoras">
+        <h2>✨ Mejoras en prueba</h2>
+        <p class="muted">Cambios al resto de la app, para mirarlos antes de que lleguen a todos.</p>
+        <p class="muted mejoras-vacio">Ahora no hay ninguna en prueba: las lanzadas están en La Bodega.</p>
+        <section class="panel seccion" id="seccion-uad-month-end">
+          <h2>🥇 Uno al día: tu lugar al cerrar el mes</h2>
+          <p class="muted" style="margin:0">Cuando termina el mes, la primera visita a la portada muestra tu lugar final, una sola vez. El 1.º, el 2.º y el 3.º reciben una medalla de oro, plata o bronce, con fuegos artificiales y rayos. El resto ve su lugar en grande. Todos reciben un agradecimiento y la invitación a jugar el mes siguiente, y «Ver la tabla» abre la tabla del mes como antes.</p>
+          <div class="fila-botones" style="display:flex;flex-wrap:wrap;gap:8px">
+            <a class="btn btn--yellow" id="btn-uad-month-end" href="../?recap=month-end-demo">🥇 Ver como 1.º</a>
+            <a class="btn" href="../?recap=month-end-demo&amp;place=2">🥈 2.º</a>
+            <a class="btn" href="../?recap=month-end-demo&amp;place=3">🥉 3.º</a>
+            <a class="btn" href="../?recap=month-end-demo&amp;place=14">14.º</a>
+          </div>
+        </section>
+      </section>
+
+      <!-- Una línea separa lo que se está probando de lo que quedó guardado, como la de antes del comentario en los juegos -->
+      <hr class="divisor" aria-hidden="true">
+
+      <section class="grupo" id="bodega">
+        <h2>📦 La Bodega</h2>
+        <p class="muted">Los proyectos que ya no se están trabajando, porque no prosperaron, porque salieron de la portada o porque ya pasaron a todos. Quedan guardados acá y se pueden seguir abriendo.</p>
+        <!-- Two subgroups (D-422): the games kept, each tagged with why it is here, and the improvements that reached everyone -->
+        <section class="subgrupo" id="bodega-juegos">
+          <h3>🎲 Juegos guardados</h3>
+          <section class="panel seccion plegada" id="seccion-bn-salva">
+            <details>
+              <summary><h2>⚓ Batalla Naval: modo Salva</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">💤 No prosperó. Cada turno disparabas tantas veces como barcos te quedaran a flote y veías todos los resultados juntos. A nadie le gustó: la clásica sigue siendo la de siempre.</p>
+                <p class="muted" style="margin:0;font-size:0.85rem">Sigue ahí con tu llave del laboratorio: el interruptor 🎆 Salva en ¿Cómo jugamos?</p>
+                <a class="btn btn--yellow" id="btn-bn-salva" href="../battleship/">⚓ Jugar Batalla Naval</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-caso">
+            <details>
+              <summary><h2>🔍 El caso</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">💤 No prosperó. Un misterio al estilo de <i>Clues by Sam</i>: veinte sospechosos y pistas que siempre dicen la verdad. Descubre quién es criminal sin adivinar.</p>
+                <p class="muted" style="margin:0;font-size:0.85rem">Es el caso del día, el mismo para todos; al terminar se puede jugar otro.</p>
+                <a class="btn btn--yellow" id="btn-caso" href="case/">🔍 Jugar El caso</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-clave">
+            <details>
+              <summary><h2>🔐 La clave</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">💤 No prosperó. Unas cartas transparentes esconden una clave: una palabra de 5 letras (en español) o un código de 5 cifras. Hay que ponerlas sobre la base y girar y voltear cada una hasta que los trazos formen la clave sin pisarse; en Palabra, cada carta tiene dos caras distintas.</p>
+                <a class="btn btn--yellow" id="btn-clave" href="code/">🔐 Jugar La clave</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-conexiones">
+            <details>
+              <summary><h2>🔗 Conexiones</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">👋 Salió de la portada. Arma cuatro grupos de cuatro palabras que tienen algo en común. Dejó la portada, La Copa y Uno al día cuando 🕵️ Agentes salió del laboratorio y tomó su lugar; las copas creadas antes la siguen jugando.</p>
+                <a class="btn btn--yellow" id="btn-conexiones" href="../connections/">🔗 Jugar Conexiones</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-cuarto-rey">
+            <details>
+              <summary><h2>👑 Cuarto Rey</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">👋 Salió de la portada. El juego de naipes para tomar, de 4 a 6 jugadores con un solo celular: cada uno saca una carta, la app dice quién toma y termina cuando sale el cuarto rey.</p>
+                <a class="btn btn--yellow" id="btn-cuarto-rey" href="fourth-king/">👑 Jugar Cuarto Rey</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-julepe">
+            <details>
+              <summary><h2>🍹 Julepe</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">👋 Salió de la portada. Naipes y sorbos contra el celular o con amigos, en uno o en varios celulares: cada uno dice si va o se pasa, y quien va y no hace dos bazas se toma el plato entero.</p>
+                <a class="btn btn--yellow" id="btn-julepe" href="julep/">🍹 Jugar Julepe</a>
+              </div>
+            </details>
+          </section>
+        </section>
+
+        <section class="subgrupo" id="bodega-mejoras">
+          <h3>✨ Mejoras lanzadas</h3>
+          <!-- Each card carries the day it launched; bodega.js folds them by week this month and by month before (#956) -->
+          <input type="search" class="bodega-buscar" id="bodega-buscar" placeholder="🔎 Buscar una mejora" aria-label="Buscar una mejora">
+          <p class="muted bodega-nada" id="bodega-nada" hidden>Ninguna mejora lanzada tiene esa palabra.</p>
+          <section class="panel seccion plegada" id="seccion-home-pill-bar" data-launched="2026-10-30">
+            <details>
+              <summary><h2>💊 Portada: botones de arriba parejos</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En la barra de arriba de la portada, los botones de sonido, 🏅 Rankings y compartir son píldoras de la misma altura que el selector de idioma, y se ven alineados.</p>
+                <a class="btn btn--yellow" id="btn-home-pill-bar" href="../">🏠 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-cup-back-board" data-launched="2026-10-30">
+            <details>
+              <summary><h2>🏆 La Copa: ‹ vuelve a la copa, no al menú</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Dentro de una copa, el botón ‹ de arriba sube un nivel a la vez: mientras juegas un día o miras su resultado dice «Volver a la copa» y lleva al tablero (si el día está en juego, primero pregunta «¿Salir de la partida?»; la partida de prueba vuelve a la portada del día), y en el tablero dice «‹ La Copa» y lleva a la portada de La Copa, con tus copas.</p>
+                <a class="btn btn--yellow" id="btn-cup-back-board" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-no-double-tap-zoom" data-launched="2026-10-30">
+            <details>
+              <summary><h2>👆 Juegos: sin zoom al tocar rápido</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En iPhone, dos toques rápidos en un juego agrandaban la página y cortaban la partida. Ahora los toques rápidos ya no hacen zoom; con dos dedos se sigue pudiendo agrandar. Lo pidió un jugador (#1045).</p>
+                <a class="btn btn--yellow" id="btn-no-double-tap-zoom" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-name-guard" data-launched="2026-10-29">
+            <details>
+              <summary><h2>🛡️ Nombres ofensivos fuera de los rankings</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Al crear un jugador para los rankings, un nombre con un insulto o una grosería, en cualquiera de los tres idiomas y aunque venga con espacios, números en vez de letras o pegado a otra palabra, no se acepta: pide elegir otro. Si alguno se cuela, se le cambia el nombre a mano.</p>
+                <a class="btn btn--yellow" id="btn-name-guard" href="../records/">🏅 Ir a Rankings</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-espera" data-launched="2026-10-29">
+            <details>
+              <summary><h2>🏆 La Copa: cuánto falta para tu próximo día</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Si ya jugaste tu día de La Copa, su tarjeta en la portada muestra «✅ Día 2 en 5h» y va descontando. Cuando el día abre, cambia a «▶ Jugar hoy». Si ya jugaste la final, muestra «✅ Final · cierra en 3h».</p>
+                <a class="btn btn--yellow" id="btn-copa-espera" href="../">🏠 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-uad-share-grids" data-launched="2026-10-29">
+            <details>
+              <summary><h2>🟩 Uno al día: más juegos comparten su resultado con emojis</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Al compartir el Uno al día, Agentes, Dudo, Generala y Batalla Naval ahora mandan una línea de emojis con cómo te fue, sin revelar nada del juego: los dados que te quedaron, tu planilla, tus disparos o cuántos agentes encontraste.</p>
+                <a class="btn btn--yellow" id="btn-uad-share-grids" href="../today/">📅 Ir al Uno al día</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-cover-facts" data-launched="2026-10-29">
+            <details>
+              <summary><h2>📖 Reglas con lo esencial</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En la página de cada juego de La Copa, como Reinas o Zip, las reglas empiezan con una línea: cuántos juegan, cuánto dura y que es gratis, sin instalar nada y sin cuenta. Es lo mismo que ya dicen los juegos de grupo.</p>
+                <a class="btn btn--yellow" id="btn-cover-facts" href="../queens/">👑 Ir a Reinas</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-hoy" data-launched="2026-10-29">
+            <details>
+              <summary><h2>🏆 La Copa: «Jugar hoy» en la portada</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Si tienes un día de La Copa por jugar, su tarjeta en la portada muestra «▶ Jugar hoy», como el Uno al día, y te lleva directo a ese día. Si ya jugaste, la tarjeta queda como siempre.</p>
+                <a class="btn btn--yellow" id="btn-copa-hoy" href="../">🏠 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-uad-night-totals" data-launched="2026-10-28">
+            <details>
+              <summary><h2>📅 Uno al día: los puntos los suma el servidor</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Tu celular ya no suma tus puntos del mes, tu semana ni tu mejor racha: solo sube lo que jugaste, y el servidor lo cuenta cada hora para todos por igual. En Uno al día ves tus puntos de hoy al tiro, porque tu celular los agrega mientras tanto; en 🏅 Rankings, los tuyos y los de todos aparecen dentro de la hora.</p>
+                <a class="btn btn--yellow" id="btn-uad-night-totals" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-keyboard-lift" data-launched="2026-10-28">
+            <details>
+              <summary><h2>⌨️ Enviar con el teclado abierto</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En un iPhone, el teclado tapaba el botón Enviar del formulario de 💬 Sugerencias y comentarios, y había que cerrarlo para mandar. Ahora el formulario sube y queda entero sobre el teclado.</p>
+                <a class="btn btn--yellow" id="btn-keyboard-lift" href="../">🏠 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-crear" data-launched="2026-10-28">
+            <details>
+              <summary><h2>🏆 La Copa: arma la semana con el dado</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Una pantalla más corta para crear una copa: la semana se ve de entrada, 🎲 Crear al azar sortea una semana nueva, y hay estilos de semana (Equilibrada, Puzzles, Saber y palabras, Lo nuevo). Toca un juego para cambiarlo por cualquiera de los 13, con una línea de qué es cada uno. También se puede elegir una Copa de 3 días: tres juegos, sin final. Idioma, público y link quedan en Más opciones, y el PIN se escribe una vez.</p>
+                <a class="btn btn--yellow" id="btn-copa-crear" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-archivada" data-launched="2026-10-28">
+            <details>
+              <summary><h2>🏆 La Copa: el podio de una copa archivada</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Todos ven ahora, al abrir el link de una copa que terminó hace más de dos años, su nombre, cuándo terminó y su podio 🥇🥈🥉, con dos botones: crear una copa nueva con el mismo nombre y ver el medallero.</p>
+                <a class="btn btn--yellow" id="btn-copa-archivada" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-no-contar" data-launched="2026-10-28">
+            <details>
+              <summary><h2>🙈 Panel: no contar este navegador</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En el panel, junto a Environment, está siempre la casilla «Don't count this browser»: lo que juegues y visites en el sitio publicado desde ese navegador va a «My devices» y no a Live. Se marca en cada celular y computador por separado.</p>
+                <a class="btn btn--yellow" id="btn-no-contar" href="../panel/">📊 Ir al panel</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-faq" data-launched="2026-10-28">
+            <details>
+              <summary><h2>🧭 «Cómo se juega» dice quiénes y cómo</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Todos ven ahora, como primera línea de «Cómo se juega», cuántos juegan y cuánto dura, si es en un celular, en varios o solo, y que es gratis, sin instalar nada y sin cuenta. Está en Línea de Tiempo, Toque y Fama, El Ahorcado, Dudo, Generala y Batalla Naval, y también lo leen los buscadores.</p>
+                <a class="btn btn--yellow" id="btn-faq" href="../hangman/">🪢 Ir a El Ahorcado</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-uad-grilla" data-launched="2026-10-27">
+            <details>
+              <summary><h2>📅 Uno al día: tu resultado en cuadritos</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Al compartir el resultado de Uno al día, el mensaje suma para todos una grilla de cuadritos 🟩🟨🟥 de cómo te fue, sin decir el juego ni la respuesta. Agentes no la lleva (mostraría dónde estaban los agentes), ni Dudo ni Generala, que son de dados.</p>
+                <a class="btn btn--yellow" id="btn-uad-grilla" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-tramas" data-launched="2026-10-27">
+            <details>
+              <summary><h2>👑 Reinas: una textura por zona</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Todos ven ahora una textura suave sobre el color de cada zona del tablero de Reinas (rayas, puntos, una cuadrícula), para quien no distingue bien los colores. La corona y la ✕ se siguen leyendo encima.</p>
+                <a class="btn btn--yellow" id="btn-tramas" href="../queens/">👑 Jugar Reinas</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-pie-sitio" data-launched="2026-10-27">
+            <details>
+              <summary><h2>🌅 El pie en todas las pantallas fuera del juego</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. El mismo pie de la portada, con el resplandor violeta, 💬 Sugerencias y ☕ Invítame a un café, al final de Rankings y Uno al día (con la frase graciosa) y de la tapa de cada juego y la entrada de La Copa (sin la frase). Nunca mientras se juega ni en la pantalla del resultado.</p>
+                <a class="btn btn--yellow" id="btn-pie-sitio" href="../records/">🏅 Ver en Rankings</a>
+                <a class="btn btn--ghost" id="btn-pie-sitio-juego" href="../hangman/">🪢 Ver en la tapa del Ahorcado</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-tyf-descarte" data-launched="2026-10-27">
+            <details>
+              <summary><h2>🔢 Toque y Fama: los 100 puntos son de quien deduce</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En Jugar solo, en el 🔢 de La Copa y en la ronda del número de la final partes con 100 y cada intento que las pistas ya descartaban resta 15 (el mínimo es 10 si lo sacas). Antes se contaban los intentos a secas, así que el 100 era pura suerte al primer intento. Al terminar, el tablero marca con ⚠️ los intentos descartados.</p>
+                <a class="btn btn--yellow" id="btn-tyf-descarte" href="../bulls-and-cows/">🔢 Ir a Toque y Fama</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-temporadas" data-launched="2026-10-26">
+            <details>
+              <summary><h2>🎃 Halloween en la portada</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">Del 26 al 31 de octubre, la portada y Rankings se disfrazan un poco. El ícono de la pestaña es una calabaza, el fondo brilla en naranjo, hay una telaraña en la esquina, el 🎲 del título se turna con 🎃 👻 🦇 y entre las partículas del fondo suben murciélagos y fantasmas. Un murciélago cruza la pantalla una vez, de vez en cuando se asoma un fantasma y cada 40 segundos aparece un susto distinto: una calavera gigante que se asoma por el borde, una araña enorme que cruza corriendo, unos ojos que parpadean en la oscuridad o un zombi que sube tambaleándose. Los juegos quedan iguales. El 1 de noviembre se apaga solo.</p>
+                <p class="muted" style="margin:0;font-size:0.85rem">🚀 Lanzado: estos días la ven todos los jugadores. El botón la muestra cualquier día y siempre con el fantasma, que a los jugadores les sale en una de cada quince visitas. Las próximas temporadas se prueban primero acá, solo con tu llave.</p>
+                <a class="btn btn--yellow" id="btn-temporadas" href="../?season=halloween">🎃 Ver la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-splash-cerrar" data-launched="2026-10-27">
+            <details>
+              <summary><h2>🎉 Splash: un toque afuera no la pierde</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Una ventana de novedades sale una sola vez por celular, y un toque afuera por error la cerraba para siempre. Ahora, cerrarla tocando afuera (o con Escape) la deja para otra visita; si vuelves a cerrarla así, ya no sale más. La ✕, «Ahora no» y cualquier botón de la ventana la cierran de una vez, como antes.</p>
+                <a class="btn btn--yellow" id="btn-splash-cerrar" href="../">🎉 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-pie" data-launched="2026-10-27">
+            <details>
+              <summary><h2>🌅 El pie de la portada: atardecer violeta</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. La portada termina en un resplandor morado y rosado, los colores del sitio. La frase que va cambiando queda en blanco, y 💬 Sugerencias y ☕ Invítame a un café son botones de vidrio, cada uno con un círculo de color sobre el nombre. Se eligió entre doce variantes, que siguen acá.</p>
+                <a class="btn btn--yellow" id="btn-pie" href="../">🌅 Ver la portada</a>
+                <a class="btn btn--ghost" id="btn-pie-variantes" href="footer/">🎲 Las doce variantes</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-partidas-plegadas" data-launched="2026-10-26">
+            <details>
+              <summary><h2>👤 Rankings: Tus partidas, plegadas</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En la página de Rankings, la lista de cuántas veces jugaste cada juego viene cerrada, con el total en su título: los rankings quedan a la vista de entrada, y la lista se abre con un toque. Lo pidió un jugador por correo.</p>
+                <a class="btn btn--yellow" id="btn-partidas-plegadas" href="../records/">🏅 Ir a Rankings</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-tyf-una-tarjeta" data-launched="2026-10-26">
+            <details>
+              <summary><h2>🔢 Toque y Fama: una sola tarjeta</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En la portada, Toque y Fama: Palabra ya no tiene tarjeta propia: Toque y Fama dice "el número o la palabra", y adentro dos botones eligen 🔢 Número o 🔤 Palabra, como las variantes de Loteo. Los links viejos a la palabra siguen funcionando. Lo pidió un jugador por correo.</p>
+                <a class="btn btn--yellow" id="btn-tyf-una-tarjeta" href="../bulls-and-cows/">🔢 Ir a Toque y Fama</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-apoyo" data-launched="2026-10-26">
+            <details>
+              <summary><h2>☕ Invítame a un café</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Un aporte voluntario con Stripe, desde US$1, sin anuncios ni popups: al pie de la portada y al final de algunas partidas terminadas, abre una tarjeta encima de la pantalla. El splash 🥂 del brindis se enciende desde 📣 Campañas del panel.</p>
+                <a class="btn btn--yellow" id="btn-apoyo" href="../?support=open">☕ Ver la tarjeta</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-puentes" data-launched="2026-10-26">
+            <details>
+              <summary><h2>🚅 Tren en Vilo</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Inspirado en <a href="https://en.wikipedia.org/wiki/Poly_Bridge" target="_blank" rel="noopener">Poly Bridge</a>: refuerza la vía con vigas sobre un barranco y prueba si el tren cruza. Salió del laboratorio a la portada, Uno al día y La Copa; acá quedan las hojas con que se eligieron el tren y los visitantes.</p>
+                <a class="btn btn--yellow" id="btn-puentes" href="../bridges/">🚅 Jugar Tren en Vilo</a>
+                <a class="btn btn--ghost" id="btn-puentes-trenes" href="bridges/trains/">🚄 Los colores del tren bala</a>
+                <a class="btn btn--ghost" id="btn-puentes-visitas" href="bridges/visitors/">🛸 Los visitantes</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-dudo-tradicional" data-launched="2026-10-28">
+            <details>
+              <summary><h2>🎲 Dudo: reglas tradicionales</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. El interruptor «📜 Reglas clásicas» al preparar la partida, apagado de entrada: nadie abre en ases, al as se pasa con la mitad más uno, se puede calzar en un duelo y, con un dado, en cualquier momento. Quien queda con un dado abre la ronda obligada, anunciada a toda la mesa y abierta: ves el dado de los demás, no el tuyo. Debajo, una fila plegada «Variantes» con Pasar y Dudar a la siciliana. Y la primera vez que puedes calzar, una línea te explica qué es.</p>
+                <a class="btn btn--yellow" id="btn-dudo-tradicional" href="../liars-dice/">🎲 Jugar Dudo</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-dudo-cacho" data-launched="2026-10-25">
+            <details>
+              <summary><h2>🎲 Dudo: agita el cacho y juega contra el reloj</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Al armar la partida, <b>🫨 Agitar para tirar</b> viene encendido: cada ronda tu mano se vuelve un paño verde con dados más grandes, que ruedan mientras agitas el celular y quedan como cayeron cuando paras; luego el paño vuelve a ser tu mano con los dados en fila (en un computador, o si no das permiso en el iPhone, sale un botón). <b>⏱️ 30 segundos por turno</b> viene apagado: quien no apuesta, duda ni calza a tiempo pierde un dado, sin destapar la mesa.</p>
+                <a class="btn btn--yellow" id="btn-dudo-cacho" href="../liars-dice/">🎲 Jugar Dudo</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-estado" data-launched="2026-10-24">
+            <details>
+              <summary><h2>🏆 La Copa: qué te toca en cada copa</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. En "Tus copas", bajo el nombre de cada copa en curso, una línea dice dónde estás: ▶ "¡entra a jugar!" si hay un día listo (o "hoy último día para jugar" si cierra esta noche), ⏸ "termina tu juego" si quedó a medias, ✅ si ya jugaste y cuándo abre el próximo, ⏳ cuánto falta para que parta, 🚪 "Eliminado" si quedaste fuera. Si hay un solo día por jugar, tocar la copa lo abre directo.</p>
+                <a class="btn btn--yellow" id="btn-copa-estado" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-generala-escalera-as" data-launched="2026-10-23">
+            <details>
+              <summary><h2>🎲 Generala: la escalera con el as arriba</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Cuando los dados salen 3‑4‑5‑6‑1 y la escalera está libre, debajo de los dados se lee que también es escalera: el 1 va después del 6. Un jugador creyó que era un error.</p>
+                <a class="btn btn--yellow" id="btn-generala-escalera-as" href="../generala/">🎲 Jugar Generala</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-uad-ranking-rapido" data-launched="2026-10-23">
+            <details>
+              <summary><h2>📅 Uno al día: el ranking más rápido</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. El ranking de Uno al día aparece antes: se ve la última lista que viste hoy mientras llega la nueva, ya no vuelve a decir "Cargando…" cada vez que la página se actualiza, y pide sus datos una sola vez.</p>
+                <a class="btn btn--yellow" id="btn-uad-ranking-rapido" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-portada-al-tiro" data-launched="2026-10-23">
+            <details>
+              <summary><h2>⚡ La portada al tiro</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Desde la segunda visita del día, la lista de juegos, La Copa y Uno al día salen en cuanto se abre la portada, sin esperar a que cargue el resto: el celular recuerda cómo se veían la última vez. Y si ya jugaste el Uno al día de hoy, tu puesto del mes se actualiza solo en la tarjeta, sin entrar a Uno al día.</p>
+                <a class="btn btn--yellow" id="btn-portada-al-tiro" href="../">🎲 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-volver-atras" data-launched="2026-10-23">
+            <details>
+              <summary><h2>👈 Salir en medio de una partida pregunta antes</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Deslizar desde el borde para volver, tocar Atrás en Android o tocar «‹ Menú» en medio de una partida pregunta «¿Salir de la partida?», con Seguir jugando o Salir. Al terminar la partida, volver funciona como siempre.</p>
+                <a class="btn btn--yellow" id="btn-volver-atras" href="../hangman/">🪢 Jugar El Ahorcado</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-uad-intento" data-launched="2026-10-23">
+            <details>
+              <summary><h2>📅 Uno al día: el primer intento vale desde que empieza</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. El intento cuenta desde que empiezas a jugar: en un solitario, al volver sigues donde ibas, con tu tiempo; en El Ahorcado, Batalla Naval, Dudo o Generala, dejarlo a medias cuenta 0. Si no lo terminas en el día, también queda en 0. Mientras tengas uno a medias, Uno al día te lleva directo a él, sin el dado. Si entraste con tu nombre, vale también si lo empezaste en otro celular.</p>
+                <a class="btn btn--yellow" id="btn-uad-intento" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-copa-reloj" data-launched="2026-10-23">
+            <details>
+              <summary><h2>🏆 La Copa: el reloj no vuelve a cero en otro celular</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Si sigues un día de la copa en otro celular (o se borró la memoria del navegador), el reloj sigue desde que empezaste, y la pantalla lo dice. El ejemplo abre una copa de mentira, solo en tu celular, donde tu día empezó hace 4 minutos en otro.</p>
+                <a class="btn btn--yellow" id="btn-copa-reloj" href="../cup/?test&amp;demo=resumed">🏆 Ver el ejemplo</a>
+              </div>
+            </details>
+          </section>
+          <section class="panel seccion plegada" id="seccion-resumen-copa" data-launched="2026-10-23">
+            <details>
+              <summary><h2>🏆 Resumen de la copa al volver</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Cuando termina una copa que jugaste, la próxima vez que abres la portada sale una ventana con la tabla final, cómo cambió cada lugar día a día y un botón para ver la copa. Sale una vez por copa, solo durante la semana después de que terminó, y esa vez no sale el splash de novedades.</p>
+                <p class="muted" style="margin:0;font-size:0.85rem">El botón la muestra con la copa de ejemplo, sin guardar nada.</p>
+                <a class="btn btn--yellow" id="btn-resumen-copa" href="../?recap=demo">🏆 Ver el resumen de ejemplo</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-resumen-temporada" data-launched="2026-10-23">
+            <details>
+              <summary><h2>📅 Resumen de la temporada de Uno al día</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Cuando termina el mes, la primera vez que abres la portada en la semana siguiente sale una ventana con cómo terminó la temporada de Uno al día: quién ganó, tu lugar y tus puntos, y el top 10 con el lugar de cada uno semana a semana. Sale si jugaste ese mes, una vez por temporada. A quien tiene los avisos de Uno al día le llega además uno que dice que la temporada terminó.</p>
+                <p class="muted" style="margin:0;font-size:0.85rem">El botón la muestra con una temporada de ejemplo, sin guardar nada.</p>
+                <a class="btn btn--yellow" id="btn-resumen-temporada" href="../?recap=season-demo">📅 Ver el resumen de ejemplo</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-una-ventana" data-launched="2026-10-23">
+            <details>
+              <summary><h2>🪟 Una ventana por visita en la portada</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Al abrir la portada sale como máximo una ventana, en este orden: el resumen de una copa o de la temporada de Uno al día; si no hay, la novedad (el splash); y si tampoco, el globo para agregar la app a inicio. Lo demás espera a la próxima visita. Si hay dos novedades, sale una por visita, en orden.</p>
+                <a class="btn btn--yellow" id="btn-una-ventana" href="../">🪟 Ir a la portada</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-uad-invitar-jugar" data-launched="2026-10-21">
+            <details>
+              <summary><h2>📅 Uno al día: +10 por invitar</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Cada amigo que invitas y termina su primer Uno al día suma +10 pts a tu mes, una vez por amigo.</p>
+                <a class="btn btn--yellow" id="btn-uad-invitar-jugar" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-puntos-dia" data-launched="2026-10-21">
+            <details>
+              <summary><h2>🏆 Puntos de Uno al día</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Un puntaje y un ranking del mes para Uno al día: cada día suma el puntaje del juego más un bono por la racha. La tarjeta de la portada abre tu Uno al día, con tus puntos y tu puesto primero. <a href="daily-score/" style="color:inherit">El prototipo con las notas</a> queda guardado.</p>
+                <a class="btn btn--yellow" id="btn-puntos-dia" href="../today/">📅 Ir a Uno al día</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-copa-casilla" data-launched="2026-10-21">
+            <details>
+              <summary><h2>🏆 La Copa: elige la casilla en Toque y Fama</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Lo mismo que ya tiene Toque y Fama, ahora en el 🔢 de La Copa: toca una casilla y la próxima cifra va ahí.</p>
+                <a class="btn btn--yellow" id="btn-copa-casilla" href="../cup/">🏆 Ir a La Copa</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-elegir-casilla" data-launched="2026-10-21">
+            <details>
+              <summary><h2>🔢 Toque y Fama: elige la casilla</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">🚀 Lanzado. Lo pidió un jugador: al adivinar, toca una casilla y la próxima cifra va ahí, en vez de llenarse siempre de izquierda a derecha.</p>
+                <a class="btn btn--yellow" id="btn-elegir-casilla" href="../bulls-and-cows/">🔢 Jugar Toque y Fama</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-portada" data-launched="2026-10-20">
+            <details>
+              <summary><h2>🏠 Experimentos de la portada</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">La portada de verdad, con una barra abajo para prender y apagar lo que se probaba en ella, en cada idioma. Todo lo que se probó ya pasó a todos:</p>
+                <ul class="muted" style="margin:0;padding-left:1.2em;text-align:left">
+                  <li>🚀 Lanzado · 🔎 Buscar: la píldora junto a Nuevos y Populares que se abre en un buscador de juegos.</li>
+                  <li>🚀 Lanzado · 🎉 Splash: la ventana de novedades sobre la portada, que el dueño enciende para una campaña; si hay varias encendidas, sale una por visita, en orden. En la barra se sigue pudiendo mirar cada campaña antes de encenderla.</li>
+                  <li>🚀 Lanzado · la etiqueta 🔥 Popular, las fichas ✨ Nuevos y 🔥 Populares y el nombre de la app en el menú flotante.</li>
+                </ul>
+                <a class="btn btn--yellow" id="btn-portada" href="home/">🏠 Ver la portada con la barra</a>
+              </div>
+            </details>
+          </section>
+
+          <section class="panel seccion plegada" id="seccion-pildoras" data-launched="2026-10-20">
+            <details>
+              <summary><h2>💊 Píldoras de filtros</h2><span class="flecha" aria-hidden="true">›</span></summary>
+              <div class="detalle">
+                <p class="muted" style="margin:0">Seis maneras de distinguir la fila de atajos (🔎 ⭐ ✨ 🔥) de la de tipos. 🚀 Lanzada la B: los atajos con contorno y los tipos con relleno.</p>
+                <a class="btn btn--yellow" id="btn-pildoras" href="pills/">💊 Ver las opciones</a>
+              </div>
+            </details>
+          </section>
+        </section>
+      </section>
+    </div>
+    <footer class="muted" style="text-align:center;padding-top:24px;font-size:0.85rem">
+      <p id="labs-version">Versión activa: …</p>
+      <p id="publicar-dueno" hidden><button type="button">🔑 Entrar como dueño</button></p>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { sparkles } from '../assets/js/ui.js';
+    import { soundToggle, initSound, SFX } from '../assets/js/sound.js';
+    import { versionOf, trackVisit } from '../assets/js/transport/stats.js';
+    trackVisit(); // el tráfico del sitio (D-208)
+    // La versión activa sale del import map que estampa set-version.py: la que de verdad cargó
+    document.getElementById('labs-version').textContent = `Versión activa: v${versionOf(document.getElementById('importmap')?.textContent)}`;
+    sparkles();
+    initSound();
+    document.getElementById('sound-slot').append(soundToggle());
+    document.addEventListener('click', e => { if (e.target.closest('a')) SFX.tap(); });
+    import('./bodega.js').then(m => m.start()); // ✨ Mejoras lanzadas by week and month, with search
+    import('./publish.js').then(m => m.start()); // 🚀 Publicar para todos, only for the owner (D-480)
+  </script>
+</body>
+</html>

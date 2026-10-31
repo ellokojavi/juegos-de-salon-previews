@@ -1,0 +1,300 @@
+/**
+ * Dudo — datos y textos en español, inglés y portugués.
+ * Solo datos, sin lógica. Ver docs/games/liars-dice.md.
+ */
+
+export const GAME_ID = 'dudo';
+/**
+ * `shake` (roll by shaking the phone) and `turnSecs` (the turn's clock; out of time, a die lost),
+ * D-447: off here, which is what Uno al día and older saved games play with. The setup's own
+ * switches start with the shake on and the clock off.
+ */
+export const DEFAULT_CONFIG = { dice: 5, calzar: true, chileno: true, shake: false, turnSecs: 0 };
+/** How long a turn lasts when the clock is on. */
+export const TURN_SECS = 30;
+
+/**
+ * Como se nombran las pintas en una mesa chilena. Van aparte de LOCALES porque son de un solo
+ * idioma: en inglés y en portugués no hay un juego de nombres equivalente instalado, así que ahí
+ * las pintas se dicen por su número y el interruptor ni se ofrece (D-71).
+ */
+export const CHILENO = {
+  one: { 1: 'as', 2: 'tonto', 3: 'tren', 4: 'cuadra', 5: 'quina', 6: 'sexta' },
+  many: { 1: 'ases', 2: 'tontos', 3: 'trenes', 4: 'cuadras', 5: 'quinas', 6: 'sextas' },
+  label: 'Nombres chilenos',
+  hint: 'Ases, tontos, trenes, cuadras, quinas y sextas.',
+};
+
+/* ================================================================== */
+/* ESPAÑOL                                                             */
+/* ================================================================== */
+const ES = {
+  // Los nombres de cada pinta, en singular y en plural ("un as", "cuatro cincos")
+  pintaOne: { 1: 'as', 2: 'dos', 3: 'tres', 4: 'cuatro', 5: 'cinco', 6: 'seis' },
+  pintaMany: { 1: 'ases', 2: 'doses', 3: 'treses', 4: 'cuatros', 5: 'cincos', 6: 'seises' },
+  ui: {
+    // estáticos (index.html)
+    docTitle: 'Dudo 🎲 · Juegos de Salón', gameChip: '🎲 Dudo', menu: '‹ Menú',
+    title: 'Dudo', lead: 'Apuesta cuántos dados hay en toda la mesa viendo solo los tuyos.',
+    rulesSummary: '🎲 ¿Cómo se juega?',
+    modesTitle: '¿Cómo van a jugar?',
+    modeLocal: '📱 Un celular', modeLocalHint: 'Se pasan el celular y cada uno mira sus dados a escondidas.',
+    modeOnline: '📡 Varios celulares', modeOnlineHint: 'Cada uno juega en su celular y nadie ve los dados ajenos.',
+    modeCpu: '🤖 Contra el celular', modeCpuHint: 'Un duelo contra el celular, que solo mira sus propios dados.',
+    // Sala (varios celulares)
+    setupOnline: 'Sala de Dudo', invitedTitle: '¡Invitado a jugar!',
+    yourNameLabel: 'Tu nombre', create: '🎲 Crear sala', join: 'Unirse',
+    joinTitle: '¿Te pasaron un código?', codePlaceholder: 'CÓDIGO',
+    invited: '📩 Sala {code}', invitedHint: 'Escribe tu nombre y entra. La partida la arma quien creó la sala.',
+    lobbyTitle: 'Sala creada', lobbyCode: 'Código', lobbyShare: 'Dile el código al resto o que escaneen el QR.',
+    lobbyPlayers: 'En la sala', lobbyStart: '¡A jugar!', lobbyNeedMore: 'Faltan jugadores',
+    lobbyWaitHost: 'Esperando a que {name} parta la partida', lobbyCancel: 'Cancelar la sala', lobbyLeave: 'Salir de la sala',
+    shareLink: '📤 Compartir link', copyLink: '📋 Copiar link', copied: '¡Copiado!',
+    rematch: '🔁 Revancha', changeMode: 'Cambiar de modo',
+    waitDice: 'Esperando los dados de {name}…', waitRoll: 'Tirando los dados…',
+    errName: 'Escribe tu nombre.', errCode: 'El código son cuatro letras.',
+    errNotFound: 'No existe esa sala. Revisa el código.', errFull: 'La sala ya está llena.',
+    errExpired: 'Esa sala ya venció.', errOtherGame: 'Ese código es de otro juego.',
+    errNet: 'No se pudo conectar. ¿Hay internet?',
+    errOffline: 'No se pudo abrir la sala. Puede ser tu internet o que haya mucha gente jugando. Vuelve a intentarlo o juega en un solo celular, que no necesita internet.',
+    errTooMany: 'Abriste muchas salas seguidas. Espera un ratito y prueba de nuevo.',
+    errSecure: 'Para jugar en varios celulares hace falta una conexión segura (https).',
+    chatTitle: 'Chat de la sala', chatOpen: 'Abrir el chat', chatClose: 'Cerrar el chat', chatSend: 'Enviar',
+    chatPlaceholder: 'Escribe algo…', chatEmpty: 'Acá pueden picarse mientras apuestan. Se borra cuando termina la sala.',
+    whoPlays: '¿Quiénes juegan?',
+    setupHint: 'Anótense en el orden en que están sentados, hacia la derecha.',
+    addPlayer: '+ Agregar jugador', start: '¡A jugar!',
+    calzarLabel: 'Se puede calzar', calzarHint: 'Acertar la cantidad exacta recupera un dado.',
+    endAgain: '¡Otra partida!', changePlayers: 'Cambiar jugadores', backMenu: 'Volver al menú',
+    historyTitle: '🎲 Cómo se fue dando',
+    // dinámicos (game.js)
+    resumeTitle: '⏯ Hay una partida a medias', resumeText: 'Ronda {round}. Le tocaba a {name}.', resume: 'Continuar', delete: 'Borrar',
+    playerPlaceholder: 'Jugador {n}', removePlayer: 'Quitar jugador', maxPlayers: 'Máximo {n} jugadores',
+    errMin: 'Se necesitan al menos {n} jugadores.', errNames: 'Todos los jugadores necesitan un nombre.', errDup: 'Hay nombres repetidos. Pónganse apodos.',
+    yourName: 'Tu nombre', cpuName: 'Celular',
+    rules: [
+      'Cada uno tiene cinco dados y ve solo los suyos.',
+      'Se apuesta cuántos dados de una pinta hay <b>en toda la mesa</b>, como "cuatro quinas".',
+      'Los <b>ases son comodín</b>: cuentan como la pinta apostada.',
+      'El siguiente sube la apuesta (más dados, o los mismos con pinta mayor) o dice "dudo".',
+      'Pasar a ases pide la mitad de los dados, y salir de ases, el doble más uno.',
+      'Al dudar se cuentan los dados: si hay los apostados o más, pierde un dado quien dudó, y si no, quien apostó.',
+      '<b>Calzar</b> es decir que la cantidad es exacta: si aciertas recuperas un dado y si no, pierdes uno. Se puede con tres jugadores o más y desde la mitad de los dados.',
+      'Quien se queda sin dados sale. Gana el último con dados.',
+    ],
+    // The setup switches (D-447, and the classic rules of D-495), told before the last rule; not in Uno al día, which plays with none
+    ruleShake: 'Con <b>Agitar para tirar</b>, cada ronda tus dados salen cuando agitas el celular.',
+    ruleClock: 'Con <b>{n} segundos por turno</b>, quien no juega a tiempo pierde un dado.',
+    diceLeft: '{n} dados', diceLeftOne: '1 dado',
+    tableDice: '{n} dados en la mesa',
+    yourDice: 'Tus dados', turnOf: 'Le toca a', yourTurn: '¡Te toca!',
+    aceWild: 'Los ases son comodín',
+    traditionalLabel: 'Reglas clásicas', traditionalHint: 'Sin abrir en ases, al as con la mitad más uno, calzar con un dado y ronda obligada abierta.', obligadaNote: 'Los ases no son comodín y la pinta no cambia, salvo para quien también tiene un dado', obligadaTitle: 'Ronda obligada', obligadaWho: '{name} quedó con un dado', obligadaOpen: 'Cada uno ve los dados de los demás, pero no el suyo. Los ases no son comodín y la pinta no cambia: solo sube la cantidad. Quien también tiene un dado puede cambiarla, subiendo la cantidad.', obligadaLocal: 'Un solo celular: cuando no lo tengas en la mano, no mires la pantalla, que ahí está tu dado.', obligadaOk: 'Entendido', yourDieHidden: 'Tu dado: esta ronda no lo ves', yourDiceHidden: 'Tus dados: esta ronda no los ves', calzarFirst: 'Ahora puedes calzar: dices que hay exactamente {n} {pinta} en la mesa. Si aciertas, recuperas un dado; si no, pierdes uno.', pasoDo: 'Paso', dudoPasoDo: 'Dudo del paso de {name}', passed: '{name} pasó', saidDudoPaso: '{name} dudó del paso de {other}', pasoYes: 'Tenía mano para pasar', pasoNo: 'No tenía mano para pasar', losesTwo: '{name} pierde dos dados', variantsLabel: 'Variantes', variantsHint: 'Reglas de algunas mesas. Vienen apagadas.', pasarLabel: 'Pasar', pasarHint: 'Con cinco dados todos distintos, todos iguales o un full, pasas una vez por ronda. El siguiente puede dudar del paso.', sicilianaLabel: 'Dudar a la siciliana', sicilianaHint: 'Si alguien duda la primera apuesta de la partida, quien pierde pierde dos dados.', calzarOneDie: 'Puedes calzar porque te queda un dado: dices que hay exactamente {n} {pinta} en la mesa. Si aciertas, recuperas un dado; si no, pierdes uno.', noAceOpenWhy: 'Esta ronda no se abre en ases', obligadaWhy: 'Ronda obligada: la pinta no cambia, solo sube la cantidad (salvo quien también tiene un dado)', sicilianaWhy: 'Primera apuesta de la partida: se pierden dos dados', pasoCan: 'Tienes mano para pasar', pasoBluff: 'Paso de farol', pasoBluffHint: 'Tu mano no da para pasar: si pasas es farol, y te pueden dudar',
+    opens: 'Abres la ronda: apuesta lo que quieras.', opensRoll: 'Abres tú la ronda.', opensOther: '{name} abre la ronda.',
+    standing: '{name} dijo', standingYou: 'Dijiste',
+    pickPinta: 'Elige la pinta', pickAmount: '¿Cuántos hay en la mesa?',
+    bidDo: 'Apuesto {n} {pinta}', bidNothing: 'Apostar', dudoDo: '¡Dudo!', calzaDo: '¡Calzo!',
+    dudoHint: 'Dudar de {n} {pinta}', calzaHint: 'Decir que son {n} justos',
+    round: 'Ronda {n}',
+    // Destape
+    revealTitle: 'Se destapa la mesa', revealCount: 'Había {n} {pinta}', revealCountOne: 'Había 1 {pinta}',
+    saidDudo: '{name} dudó de {n} {pinta}', saidCalza: '{name} calzó {n} {pinta}',
+    losesDie: '{name} pierde un dado', gainsDie: '{name} recupera un dado',
+    isOut: '{name} se quedó sin dados', exactYes: '¡Justo!', exactNo: 'No era exacto',
+    goOn: 'Toca para seguir',
+    verified: 'Dados verificados ✅', notVerified: '⚠️ Los dados de {name} no coinciden',
+    // Pase y pantalla tapada
+    hoPass: 'Pásale el celular a', hoReady: '¡Listo, soy yo!',
+    coverLabel: 'Que nadie más mire. Son los dados de', coverTap: 'Ver mis dados',
+    // Final
+    winner: '¡Ganó {name}!', winnerYou: '¡Ganaste!', loserYou: 'Te quedaste sin dados',
+    endStats: '{rounds} rondas', endStatsOne: 'Una sola ronda',
+    histDudo: '{who} dudó de {n} {pinta} · había {count}', histCalza: '{who} calzó {n} {pinta} · había {count}',
+    histLost: '{name} −1', histGained: '{name} +1',
+    // Agitar para tirar y el reloj del turno (D-447)
+    shakeLabel: '🫨 Agitar para tirar', shakeHint: 'Cada ronda, agita el celular como un cacho para ver tus dados.',
+    timerLabel: '⏱️ {n} segundos por turno', timerHint: 'Quien no juega a tiempo pierde un dado.',
+    shakeNow: 'Agita el celular para tirar tus dados', shakeAllow: '🫨 Permitir agitar', shakeTap: '🎲 Tirar los dados',
+    shakeFirst: 'Tira tus dados para poder apostar.',
+    timeUp: 'A {name} se le acabó el tiempo', histTimeout: '⏱️ A {who} se le acabó el tiempo', secs: '{n} s',
+  },
+};
+
+/* ================================================================== */
+/* ENGLISH                                                             */
+/* ================================================================== */
+const EN = {
+  pintaOne: { 1: 'ace', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six' },
+  pintaMany: { 1: 'aces', 2: 'twos', 3: 'threes', 4: 'fours', 5: 'fives', 6: 'sixes' },
+  ui: {
+    docTitle: 'Liar\'s Dice 🎲 · Party Games', gameChip: '🎲 Liar\'s Dice', menu: '‹ Menu',
+    title: 'Liar\'s Dice', lead: 'Bid how many dice are on the whole table while seeing only your own.',
+    rulesSummary: '🎲 How do you play?',
+    modesTitle: 'How are you playing?',
+    modeLocal: '📱 One phone', modeLocalHint: 'Pass the phone around and each player peeks at their dice in secret.',
+    modeOnline: '📡 Several phones', modeOnlineHint: 'Everyone plays on their own phone and nobody sees anyone else\'s dice.',
+    modeCpu: '🤖 Versus the phone', modeCpuHint: 'A duel against the phone, which only looks at its own dice.',
+    setupOnline: 'Liar\'s Dice room', invitedTitle: 'You\'re invited!',
+    yourNameLabel: 'Your name', create: '🎲 Create room', join: 'Join',
+    joinTitle: 'Got a code?', codePlaceholder: 'CODE',
+    invited: '📩 Room {code}', invitedHint: 'Type your name and join. Whoever created the room starts the game.',
+    lobbyTitle: 'Room created', lobbyCode: 'Code', lobbyShare: 'Tell the others the code or let them scan the QR.',
+    lobbyPlayers: 'In the room', lobbyStart: 'Play!', lobbyNeedMore: 'Need more players',
+    lobbyWaitHost: 'Waiting for {name} to start the game', lobbyCancel: 'Cancel the room', lobbyLeave: 'Leave the room',
+    shareLink: '📤 Share link', copyLink: '📋 Copy link', copied: 'Copied!',
+    rematch: '🔁 Rematch', changeMode: 'Change mode',
+    waitDice: 'Waiting for {name}\'s dice…', waitRoll: 'Rolling the dice…',
+    errName: 'Type your name.', errCode: 'The code is four letters.',
+    errNotFound: 'No such room. Check the code.', errFull: 'The room is full.',
+    errExpired: 'That room has expired.', errOtherGame: 'That code belongs to another game.',
+    errNet: 'Couldn\'t connect. Is there internet?',
+    errOffline: 'Couldn\'t open the room. It might be your connection or too many people playing. Try again, or play on one phone, which needs no internet.',
+    errTooMany: 'You opened too many rooms in a row. Wait a bit and try again.',
+    errSecure: 'Playing on several phones needs a secure connection (https).',
+    chatTitle: 'Room chat', chatOpen: 'Open the chat', chatClose: 'Close the chat', chatSend: 'Send',
+    chatPlaceholder: 'Say something…', chatEmpty: 'Talk trash while you bid. It goes away when the room ends.',
+    whoPlays: 'Who\'s playing?',
+    setupHint: 'Sign up in the order you\'re sitting, going to the right.',
+    addPlayer: '+ Add player', start: 'Play!',
+    calzarLabel: 'Spot on allowed', calzarHint: 'Calling the exact count wins a die back.',
+    endAgain: 'Another game!', changePlayers: 'Change players', backMenu: 'Back to menu',
+    historyTitle: '🎲 How it went',
+    resumeTitle: '⏯ There\'s a game in progress', resumeText: 'Round {round}. It was {name}\'s turn.', resume: 'Continue', delete: 'Delete',
+    playerPlaceholder: 'Player {n}', removePlayer: 'Remove player', maxPlayers: 'Up to {n} players',
+    errMin: 'You need at least {n} players.', errNames: 'Every player needs a name.', errDup: 'Some names are repeated. Use nicknames.',
+    yourName: 'Your name', cpuName: 'Phone',
+    rules: [
+      'Everyone has five dice and sees only their own.',
+      'You bid how many dice of a face there are <b>on the whole table</b>, like "four fives".',
+      '<b>Aces are wild</b>: they count as the face that was bid.',
+      'The next player raises the bid (more dice, or the same count on a higher face) or calls "liar".',
+      'Switching to aces takes half the dice, and switching back from aces, double plus one.',
+      'On a call the dice are counted: if there are as many as bid or more, the caller loses a die, and if not, the bidder does.',
+      '<b>Spot on</b> means the count is exact: get it right and you win a die back, and if not, you lose one. It takes three players or more and a bid of at least half the dice.',
+      'Run out of dice and you\'re out. The last one with dice wins.',
+    ],
+    // The setup switches (D-447, and the classic rules of D-495), told before the last rule; not in Uno al día, which plays with none
+    ruleShake: 'With <b>Shake to roll</b>, each round your dice come out when you shake the phone.',
+    ruleClock: 'With <b>{n} seconds per turn</b>, whoever doesn’t play in time loses a die.',
+    diceLeft: '{n} dice', diceLeftOne: '1 die',
+    tableDice: '{n} dice on the table',
+    yourDice: 'Your dice', turnOf: 'It\'s on', yourTurn: 'Your turn!',
+    aceWild: 'Aces are wild',
+    traditionalLabel: 'Classic rules', traditionalHint: 'No opening on aces, half plus one into aces, spot on with one die, and an open fixed-face round.', obligadaNote: 'Aces are not wild and the face stays, unless you also have one die', obligadaTitle: 'Fixed-face round', obligadaWho: '{name} is down to one die', obligadaOpen: 'Everyone sees the others\' dice, but not their own. Aces are not wild and the face stays: only the quantity goes up. A player who also has one die may change it, raising the quantity.', obligadaLocal: 'One phone: when it is not in your hands, do not look at the screen, your die is on it.', obligadaOk: 'Got it', yourDieHidden: 'Your die: hidden this round', yourDiceHidden: 'Your dice: hidden this round', calzarFirst: 'You can now call spot on: you say there are exactly {n} {pinta} on the table. If you are right you win a die back; if not, you lose one.', pasoDo: 'Pass', dudoPasoDo: 'Doubt {name}\'s pass', passed: '{name} passed', saidDudoPaso: '{name} doubted {other}\'s pass', pasoYes: 'The hand allowed passing', pasoNo: 'The hand did not allow passing', losesTwo: '{name} loses two dice', variantsLabel: 'Variants', variantsHint: 'House rules from some tables. All off.', pasarLabel: 'Pass', pasarHint: 'With five dice all different, all the same or a full house, you may pass once per round. The next player may doubt the pass.', sicilianaLabel: 'Sicilian doubt', sicilianaHint: 'If someone doubts the first bid of the game, whoever loses loses two dice.', calzarOneDie: 'You can call spot on because you have one die left: you say there are exactly {n} {pinta} on the table. If you are right you win a die back; if not, you lose one.', noAceOpenWhy: 'This round does not open on aces', obligadaWhy: 'Fixed-face round: the face stays, only the quantity goes up (unless you also have one die)', sicilianaWhy: 'First bid of the game: two dice lost', pasoCan: 'Your hand lets you pass', pasoBluff: 'Bluff a pass', pasoBluffHint: 'Your hand does not let you pass: passing is a bluff, and it can be doubted',
+    opens: 'You open the round: bid whatever you like.', opensRoll: 'You open the round.', opensOther: '{name} opens the round.',
+    standing: '{name} said', standingYou: 'You said',
+    pickPinta: 'Pick the face', pickAmount: 'How many on the table?',
+    bidDo: 'Bid {n} {pinta}', bidNothing: 'Bid', dudoDo: 'Liar!', calzaDo: 'Spot on!',
+    dudoHint: 'Call {n} {pinta}', calzaHint: 'Say it\'s exactly {n}',
+    round: 'Round {n}',
+    revealTitle: 'Open them up', revealCount: 'There were {n} {pinta}', revealCountOne: 'There was 1 {pinta}',
+    saidDudo: '{name} called {n} {pinta}', saidCalza: '{name} said {n} {pinta} exactly',
+    losesDie: '{name} loses a die', gainsDie: '{name} wins a die back',
+    isOut: '{name} is out of dice', exactYes: 'Exactly!', exactNo: 'Not exact',
+    goOn: 'Tap to go on',
+    verified: 'Dice verified ✅', notVerified: '⚠️ {name}\'s dice don\'t match',
+    hoPass: 'Pass the phone to', hoReady: 'Got it, that\'s me!',
+    coverLabel: 'Nobody else look. These dice belong to', coverTap: 'See my dice',
+    winner: '{name} wins!', winnerYou: 'You win!', loserYou: 'You ran out of dice',
+    endStats: '{rounds} rounds', endStatsOne: 'A single round',
+    histDudo: '{who} called {n} {pinta} · there were {count}', histCalza: '{who} said {n} {pinta} exactly · there were {count}',
+    histLost: '{name} −1', histGained: '{name} +1',
+    shakeLabel: '🫨 Shake to roll', shakeHint: 'Each round, shake the phone like a dice cup to see your dice.',
+    timerLabel: '⏱️ {n} seconds per turn', timerHint: 'Whoever doesn’t play in time loses a die.',
+    shakeNow: 'Shake the phone to roll your dice', shakeAllow: '🫨 Allow shaking', shakeTap: '🎲 Roll the dice',
+    shakeFirst: 'Roll your dice to bid.',
+    timeUp: '{name} ran out of time', histTimeout: '⏱️ {who} ran out of time', secs: '{n} s',
+  },
+};
+
+/* ================================================================== */
+/* PORTUGUÊS (BR)                                                      */
+/* ================================================================== */
+const PT = {
+  pintaOne: { 1: 'ás', 2: 'dois', 3: 'três', 4: 'quatro', 5: 'cinco', 6: 'seis' },
+  pintaMany: { 1: 'ases', 2: 'dois', 3: 'três', 4: 'quatros', 5: 'cincos', 6: 'seis' },
+  ui: {
+    docTitle: 'Dado Mentiroso 🎲 · Jogos de Salão', gameChip: '🎲 Dado Mentiroso', menu: '‹ Menu',
+    title: 'Dado Mentiroso', lead: 'Aposte quantos dados tem na mesa inteira vendo só os seus.',
+    rulesSummary: '🎲 Como se joga?',
+    modesTitle: 'Como vocês vão jogar?',
+    modeLocal: '📱 Um celular', modeLocalHint: 'Vocês passam o celular e cada um olha seus dados escondido.',
+    modeOnline: '📡 Vários celulares', modeOnlineHint: 'Cada um joga no seu celular e ninguém vê os dados dos outros.',
+    modeCpu: '🤖 Contra o celular', modeCpuHint: 'Um duelo contra o celular, que só olha os próprios dados.',
+    setupOnline: 'Sala de Dado Mentiroso', invitedTitle: 'Você foi convidado!',
+    yourNameLabel: 'Seu nome', create: '🎲 Criar sala', join: 'Entrar',
+    joinTitle: 'Te passaram um código?', codePlaceholder: 'CÓDIGO',
+    invited: '📩 Sala {code}', invitedHint: 'Escreva seu nome e entre. Quem criou a sala é quem começa a partida.',
+    lobbyTitle: 'Sala criada', lobbyCode: 'Código', lobbyShare: 'Diga o código aos outros ou deixe eles escanearem o QR.',
+    lobbyPlayers: 'Na sala', lobbyStart: 'Bora jogar!', lobbyNeedMore: 'Faltam jogadores',
+    lobbyWaitHost: 'Esperando {name} começar a partida', lobbyCancel: 'Cancelar a sala', lobbyLeave: 'Sair da sala',
+    shareLink: '📤 Compartilhar link', copyLink: '📋 Copiar link', copied: 'Copiado!',
+    rematch: '🔁 Revanche', changeMode: 'Trocar de modo',
+    waitDice: 'Esperando os dados de {name}…', waitRoll: 'Jogando os dados…',
+    errName: 'Escreva seu nome.', errCode: 'O código são quatro letras.',
+    errNotFound: 'Essa sala não existe. Confira o código.', errFull: 'A sala já está cheia.',
+    errExpired: 'Essa sala já venceu.', errOtherGame: 'Esse código é de outro jogo.',
+    errNet: 'Não deu pra conectar. Tem internet?',
+    errOffline: 'Não foi possível abrir a sala. Pode ser a sua internet ou muita gente jogando ao mesmo tempo. Tente de novo ou jogue em um celular só, que não precisa de internet.',
+    errTooMany: 'Você abriu muitas salas seguidas. Espere um pouco e tente de novo.',
+    errSecure: 'Pra jogar em vários celulares precisa de conexão segura (https).',
+    chatTitle: 'Chat da sala', chatOpen: 'Abrir o chat', chatClose: 'Fechar o chat', chatSend: 'Enviar',
+    chatPlaceholder: 'Escreva algo…', chatEmpty: 'Provoquem à vontade enquanto apostam. Some quando a sala acabar.',
+    whoPlays: 'Quem vai jogar?',
+    setupHint: 'Cadastrem-se na ordem em que estão sentados, para a direita.',
+    addPlayer: '+ Adicionar jogador', start: 'Bora jogar!',
+    calzarLabel: 'Pode cravar', calzarHint: 'Acertar a quantidade exata devolve um dado.',
+    endAgain: 'Mais uma partida!', changePlayers: 'Trocar jogadores', backMenu: 'Voltar ao menu',
+    historyTitle: '🎲 Como foi',
+    resumeTitle: '⏯ Tem uma partida pela metade', resumeText: 'Rodada {round}. Era a vez de {name}.', resume: 'Continuar', delete: 'Apagar',
+    playerPlaceholder: 'Jogador {n}', removePlayer: 'Tirar jogador', maxPlayers: 'No máximo {n} jogadores',
+    errMin: 'São necessários pelo menos {n} jogadores.', errNames: 'Todo jogador precisa de um nome.', errDup: 'Tem nomes repetidos. Usem apelidos.',
+    yourName: 'Seu nome', cpuName: 'Celular',
+    rules: [
+      'Cada um tem cinco dados e vê só os seus.',
+      'Aposta-se quantos dados de uma face tem <b>na mesa inteira</b>, como "quatro cincos".',
+      'Os <b>ases são curinga</b>: contam como a face apostada.',
+      'O próximo aumenta a aposta (mais dados, ou os mesmos com face maior) ou fala "duvido".',
+      'Passar para ases pede a metade dos dados, e sair dos ases, o dobro mais um.',
+      'Na dúvida contam-se os dados: se tem o apostado ou mais, perde um dado quem duvidou, e se não, quem apostou.',
+      '<b>Cravar</b> é dizer que a quantidade é exata: se acertar, ganha um dado de volta, e se não, perde um. Pode com três jogadores ou mais e a partir da metade dos dados.',
+      'Quem fica sem dados sai. Ganha o último com dados.',
+    ],
+    // The setup switches (D-447, and the classic rules of D-495), told before the last rule; not in Uno al día, which plays with none
+    ruleShake: 'Com <b>Sacudir para jogar os dados</b>, a cada rodada seus dados saem quando você sacode o celular.',
+    ruleClock: 'Com <b>{n} segundos por vez</b>, quem não joga a tempo perde um dado.',
+    diceLeft: '{n} dados', diceLeftOne: '1 dado',
+    tableDice: '{n} dados na mesa',
+    yourDice: 'Seus dados', turnOf: 'É a vez de', yourTurn: 'É a sua vez!',
+    aceWild: 'Os ases são curinga',
+    traditionalLabel: 'Regras clássicas', traditionalHint: 'Sem abrir em ases, aos ases com metade mais um, cravar com um dado e rodada obrigada aberta.', obligadaNote: 'Os ases não são curinga e a face não muda, salvo para quem também tem um dado', obligadaTitle: 'Rodada obrigada', obligadaWho: '{name} ficou com um dado', obligadaOpen: 'Cada um vê os dados dos outros, mas não o seu. Os ases não são curinga e a face não muda: só sobe a quantidade. Quem também tem um dado pode mudá-la, subindo a quantidade.', obligadaLocal: 'Um só celular: quando não estiver com ele na mão, não olhe a tela, o seu dado está nela.', obligadaOk: 'Entendi', yourDieHidden: 'Seu dado: nesta rodada você não vê', yourDiceHidden: 'Seus dados: nesta rodada você não vê', calzarFirst: 'Agora você pode cravar: diz que há exatamente {n} {pinta} na mesa. Se acertar, recupera um dado; se não, perde um.', pasoDo: 'Passo', dudoPasoDo: 'Duvido do passe de {name}', passed: '{name} passou', saidDudoPaso: '{name} duvidou do passe de {other}', pasoYes: 'A mão permitia passar', pasoNo: 'A mão não permitia passar', losesTwo: '{name} perde dois dados', variantsLabel: 'Variantes', variantsHint: 'Regras de algumas mesas. Vêm desligadas.', pasarLabel: 'Passar', pasarHint: 'Com cinco dados todos diferentes, todos iguais ou um full, você passa uma vez por rodada. O próximo pode duvidar do passe.', sicilianaLabel: 'Duvidar à siciliana', sicilianaHint: 'Se alguém duvidar da primeira aposta da partida, quem perder perde dois dados.', calzarOneDie: 'Você pode cravar porque tem um dado só: diz que há exatamente {n} {pinta} na mesa. Se acertar, recupera um dado; se não, perde um.', noAceOpenWhy: 'Esta rodada não abre em ases', obligadaWhy: 'Rodada obrigada: a face não muda, só sobe a quantidade (salvo quem também tem um dado)', sicilianaWhy: 'Primeira aposta da partida: perdem-se dois dados', pasoCan: 'Sua mão permite passar', pasoBluff: 'Passo blefando', pasoBluffHint: 'Sua mão não permite passar: passar é blefe, e podem duvidar',
+    opens: 'Você abre a rodada: aposte o que quiser.', opensRoll: 'Você abre a rodada.', opensOther: '{name} abre a rodada.',
+    standing: '{name} falou', standingYou: 'Você falou',
+    pickPinta: 'Escolha a face', pickAmount: 'Quantos tem na mesa?',
+    bidDo: 'Aposto {n} {pinta}', bidNothing: 'Apostar', dudoDo: 'Duvido!', calzaDo: 'Cravo!',
+    dudoHint: 'Duvidar de {n} {pinta}', calzaHint: 'Dizer que são {n} certinhos',
+    round: 'Rodada {n}',
+    revealTitle: 'Abre a mesa', revealCount: 'Tinha {n} {pinta}', revealCountOne: 'Tinha 1 {pinta}',
+    saidDudo: '{name} duvidou de {n} {pinta}', saidCalza: '{name} cravou {n} {pinta}',
+    losesDie: '{name} perde um dado', gainsDie: '{name} ganha um dado',
+    isOut: '{name} ficou sem dados', exactYes: 'Certinho!', exactNo: 'Não era exato',
+    goOn: 'Toque para seguir',
+    verified: 'Dados verificados ✅', notVerified: '⚠️ Os dados de {name} não batem',
+    hoPass: 'Passe o celular para', hoReady: 'Pronto, sou eu!',
+    coverLabel: 'Ninguém mais olhe. Os dados são de', coverTap: 'Ver meus dados',
+    winner: '{name} ganhou!', winnerYou: 'Você ganhou!', loserYou: 'Você ficou sem dados',
+    endStats: '{rounds} rodadas', endStatsOne: 'Uma rodada só',
+    histDudo: '{who} duvidou de {n} {pinta} · tinha {count}', histCalza: '{who} cravou {n} {pinta} · tinha {count}',
+    histLost: '{name} −1', histGained: '{name} +1',
+    shakeLabel: '🫨 Sacudir para jogar os dados', shakeHint: 'A cada rodada, sacuda o celular como um copo de dados para ver seus dados.',
+    timerLabel: '⏱️ {n} segundos por vez', timerHint: 'Quem não joga a tempo perde um dado.',
+    shakeNow: 'Sacuda o celular para jogar seus dados', shakeAllow: '🫨 Permitir sacudir', shakeTap: '🎲 Jogar os dados',
+    shakeFirst: 'Jogue seus dados para poder apostar.',
+    timeUp: 'O tempo de {name} acabou', histTimeout: '⏱️ O tempo de {who} acabou', secs: '{n} s',
+  },
+};
+
+/* ================================================================== */
+/* DEUTSCH                                                             */
+/* ================================================================== */
+export const LOCALES = { es: ES, en: EN, pt: PT };

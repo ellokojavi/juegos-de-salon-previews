@@ -1,0 +1,123 @@
+/* ==========================================================
+   Línea de Tiempo — estilos propios
+   ========================================================== */
+.screen { display: none; flex-direction: column; flex: 1; }
+.screen.active { display: flex; animation: slideUp 0.3s ease-out both; }
+
+.intro-hero { text-align: center; padding: 6px 0 8px; }
+.intro-hero .icon { font-size: 4.2rem; display: block; animation: bounce 2.4s ease-in-out infinite; filter: drop-shadow(0 0 18px rgba(255, 210, 63, 0.6)); }
+.modes { display: grid; gap: 10px; }
+.mode { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; text-align: left; background: var(--glass); border: 2px solid var(--glass-border); border-radius: var(--radius); padding: 14px 16px; color: var(--ink); cursor: pointer; font-family: var(--font-body); transition: transform 0.1s; }
+.mode:active { transform: scale(0.98); }
+.mode:disabled { opacity: 0.5; cursor: not-allowed; }
+.mode b { font-family: var(--font-display); font-size: 1.4rem; letter-spacing: 0.04em; text-transform: uppercase; display: block; }
+.mode small { color: var(--muted); font-weight: 700; }
+.mode .go { font-family: var(--font-display); font-size: 2rem; color: var(--yellow); }
+
+/* Setup */
+#screen-setup > h2 { margin-bottom: 16px; }
+.field { display: grid; gap: 6px; margin-bottom: 12px; }
+.field label { font-weight: 900; font-size: 0.9rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.field input { width: 100%; font: 900 1.1rem var(--font-body); color: var(--ink); background: rgba(0,0,0,0.3); border: 2px solid transparent; border-radius: 14px; padding: 12px 14px; outline: none; }
+.field input:focus { border-color: var(--cyan); }
+.field input::placeholder { color: rgba(255,255,255,0.35); }
+/* El nombre es lo único que el jugador escribe: grande y al centro */
+.field--name { margin-bottom: 16px; }
+.field--name label { text-align: center; }
+.field input.name { font: 900 1.5rem var(--font-body); text-align: center; padding: 14px 12px; border-color: var(--glass-border); }
+.field input.name:focus { border-color: var(--cyan); }
+.seg { display: flex; gap: 6px; background: rgba(0,0,0,0.3); border-radius: 14px; padding: 5px; }
+.seg button { flex: 1; border: 0; background: transparent; color: var(--muted); font: 900 0.95rem var(--font-body); padding: 10px 4px; border-radius: 10px; cursor: pointer; }
+.seg button.on { background: var(--yellow); color: #3a1200; }
+/* Las tres formas de repartir, lado a lado (D-52). El emoji arriba y el nombre completo
+   debajo: si no cabe en una línea parte en dos, que es mejor que abreviarlo (C-8). */
+.seg--cards button { display: grid; align-content: center; gap: 3px; padding: 8px 3px; min-height: 44px; font-size: 0.78rem; line-height: 1.15; text-wrap: balance; }
+.seg--cards .em { font-size: 1.3rem; line-height: 1; }
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.theme-card { display: grid; gap: 2px; justify-items: center; text-align: center; padding: 12px 8px; border-radius: 16px; background: rgba(0,0,0,0.3); border: 2px solid transparent; color: var(--ink); cursor: pointer; font-family: var(--font-body); }
+.theme-card .em { font-size: 1.8rem; }
+.theme-card b { font-size: 1rem; }
+.theme-card small { color: var(--muted); font-size: 0.75rem; font-weight: 700; text-wrap: balance; }
+.theme-card.on { border-color: var(--yellow); background: rgba(255, 210, 63, 0.15); }
+.player-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; background: rgba(0,0,0,0.25); border-radius: 14px; padding: 6px 10px; margin-bottom: 6px; }
+.player-row .num { font-family: var(--font-display); font-size: 1.2rem; color: var(--yellow); text-align: center; }
+.player-row input { background: transparent; border: 0; padding: 10px 0; }
+.player-row .del { border: 0; background: transparent; color: var(--muted); font-size: 1.2rem; width: 32px; height: 36px; cursor: pointer; }
+.player-row .del:disabled { opacity: 0.2; }
+.form-error { color: var(--yellow); font-weight: 800; text-align: center; min-height: 1.4em; margin: 6px 0; }
+
+/* ---------- Juego ---------- */
+.status { text-align: center; margin: 2px 0 6px; }
+.status .who { font-family: var(--font-display); font-size: clamp(1.5rem, 7vw, 2.2rem); letter-spacing: 0.04em; text-shadow: 0 4px 0 rgba(0,0,0,0.35), 0 0 24px rgba(46, 230, 214, 0.5); }
+.status .sub { color: var(--muted); font-weight: 800; font-size: 0.85rem; min-height: 1.2em; }
+.score { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 8px; }
+.score .p { display: flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,0.25); font-weight: 800; font-size: 0.85rem; }
+.score .p.turn { background: var(--cyan); color: #03302c; }
+.score .p .n { font: 900 0.9rem var(--font-num); font-variant-numeric: tabular-nums; }
+
+/* Mano */
+
+/* Línea de tiempo */
+/* La página se desplaza con normalidad y el botón de confirmar queda flotando abajo,
+   así la línea puede crecer sin que se pierda el control (ver docs, canon C-8). */
+.line-wrap { padding: 2px; margin-top: 2px; padding-bottom: 4px; }
+#screen-play { padding-bottom: 4px; }
+
+
+/* Resultado */
+.result-hero { text-align: center; padding: 2px 0 6px; }
+.result-hero .trophy { font-size: 4.2rem; display: block; animation: pop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+.ranking { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 6px; }
+.ranking li { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; background: rgba(0,0,0,0.25); border-radius: 12px; padding: 8px 12px; font-weight: 800; }
+.ranking li .pos { font-family: var(--font-display); font-size: 1.3rem; color: var(--yellow); }
+/* Una línea por jugador: el nombre se recorta antes que la fila se parta en dos */
+.ranking li .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking li .info { color: var(--cyan); font-size: 0.8rem; text-align: right; white-space: nowrap; }
+.ranking li .info .time { color: var(--muted); font: 900 0.78rem var(--font-num); font-variant-numeric: tabular-nums; }
+.ranking li.top { background: linear-gradient(90deg, rgba(255,210,63,0.28), rgba(255,46,136,0.28)); }
+.replay { margin-top: 10px; padding: 12px 16px; }
+.replay summary { font-size: 1rem; }
+/* El aire con lo de arriba lo da el repaso o el panel marcado con data-tablero (D-309) */
+#screen-result #result-actions { margin-top: 0; }
+
+/* Sala (varios celulares) */
+#screen-lobby > h2 { margin-bottom: 16px; }
+.field input.code { text-transform: uppercase; letter-spacing: 0.4em; text-align: center; font-family: var(--font-display); font-size: 2rem; }
+.or { text-align: center; color: var(--muted); font-weight: 900; margin: 6px 0; }
+.code-big { font-family: var(--font-display); font-size: clamp(3rem, 20vw, 5rem); letter-spacing: 0.25em; text-align: center; color: var(--yellow); text-shadow: 0 5px 0 rgba(0,0,0,0.4), 0 0 30px rgba(255, 210, 63, 0.6); margin: 2px 0; padding-left: 0.25em; }
+.qr { display: grid; place-items: center; margin: 8px auto; background: #fff; border-radius: 16px; padding: 8px; width: fit-content; }
+.qr svg { display: block; width: min(46vw, 190px); height: auto; }
+.lobby-players { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0; }
+.lobby-players .p { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(0,0,0,0.28); font-weight: 800; font-size: 0.9rem; animation: pop 0.3s cubic-bezier(0.2,0.9,0.3,1.4) both; }
+.lobby-players .p.me { background: var(--cyan); color: #03302c; }
+.lobby-players .p.off { opacity: 0.45; }
+.waiting { text-align: center; color: var(--muted); font-weight: 800; }
+.waiting .dots::after, .dots::after { content: '…'; animation: dots 1.2s steps(4) infinite; }
+@keyframes dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+
+/* Con el chat en pantalla, la burbuja flota abajo a la derecha: que no tape los botones del final */
+
+
+/* ---------- Jugar solo: la ⏳ Línea Relámpago (D-142) ----------
+   La mano, la línea y el veredicto vienen de assets/css/linea.css; aquí solo la barra con el
+   reloj y la pantalla del resultado. */
+.solo-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 0 4px; }
+.solo-top b { font-family: var(--font-display); font-size: 1.35rem; letter-spacing: 0.04em; }
+.solo-top .cron { font: 900 1.05rem var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,0.3); }
+.aviso { text-align: center; font-weight: 800; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,0.08); }
+.aviso.bien { background: rgba(157, 255, 58, 0.14); color: var(--lime); }
+#screen-solo-result .result-hero { display: grid; gap: 4px; justify-items: center; }
+#screen-solo-result .result-hero .lead, #screen-solo-result .result-hero .muted { margin: 0; }
+/* El puntaje es una cifra que se compara: Nunito, no Bangers (C-1, D-30) */
+.puntos { display: flex; align-items: baseline; gap: 2px; }
+.puntos b { font: 900 3.2rem/1 var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); text-shadow: 0 4px 0 rgba(0,0,0,0.35); }
+.puntos small { font: 900 1.1rem var(--font-num); color: var(--muted); }
+.tarjeta { font-size: 1.3rem; letter-spacing: 0.08em; margin-top: 4px; }
+.solo-como { margin-top: 4px; }
+.solo-como summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 900; font-size: 1rem; }
+.solo-como .lead { margin: 8px 0 4px; font-size: 1rem; }
+/* Terminada la línea, el aviso y "Ver resultado" van arriba: aire antes de la línea */
+#solo-juego .lt-juego > .stack:not(:empty) { margin-bottom: 12px; }
+.solo-como ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-weight: 700; font-size: 0.9rem; line-height: 1.4; }
+.solo-como .muted { margin: 0; font-size: 0.9rem; line-height: 1.4; }

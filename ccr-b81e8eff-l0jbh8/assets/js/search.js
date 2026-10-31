@@ -1,0 +1,287 @@
+/**
+ * The home page's search (the owner's request; for everyone since D-403): a 🔎 pill, first in the filter row
+ * (left of ⭐ Favoritos, D-396), that opens into a field with a dropdown of the games it finds (drawSearch, D-390), by the game's name in any language, its tagline, its
+ * types and the keywords below, in the four languages ("lógica", "dice", "Würfel"). Accents and case do not count, and each
+ * word typed must start some word of the game ("dad" finds Dudo).
+ */
+import { GAMES, SUELTOS, TIPOS } from './games.js';
+
+/**
+ * What a player might type for each game, in every language of the app (es, en, pt, de; D-404): what it is, what it
+ * is played with and what it is like, beyond its name and tagline. All are searched whatever the language. Each game's
+ * `keywords` live in its entry in games.js, the manifest (#855); every game on the home page must have all four (search.test.mjs).
+ */
+export const KEYWORDS = Object.fromEntries([...GAMES, ...SUELTOS].filter(g => g.keywords).map(g => [g.id, g.keywords]));
+
+/** "Lógica" → "logica": what is compared, so accents and capitals never get in the way. */
+export const plain = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ß/g, 'ss').toLowerCase();
+const words = s => plain(s).split(/[^a-z0-9ñ]+/).filter(Boolean);
+
+/** Every word a game can be found by: its name and tagline in every language, its types and its keywords. */
+export function wordsOf(g) {
+  const all = [
+    ...Object.values(g.name || {}), ...Object.values(g.tagline || {}),
+    ...(g.tipos || []).flatMap(t => [t, ...Object.values(TIPOS[t]?.name || {})]),
+    ...Object.values(KEYWORDS[g.id] || {}).flat(),
+  ];
+  return new Set(all.flatMap(words));
+}
+
+// A typed word matches a game's word that starts with it ("dad" → "dados"), or one it starts with
+// but for a short ending, so "reinas" also finds "reina" and "dados" finds "dado"
+const matches = (typed, word) => word.startsWith(typed) || (word.length >= 4 && typed.startsWith(word) && typed.length - word.length <= 2);
+
+/** The ids of the games that every typed word finds, or null when nothing is typed (no search). */
+export function search(query, games) {
+  const typed = words(query);
+  if (!typed.length) return null;
+  return new Set(games.filter(g => { const own = wordsOf(g); return typed.every(t => [...own].some(w => matches(t, w))); }).map(g => g.id));
+}
+
+/**
+ * The word that found the game, as it is written (with its accents), to show next to it: the first
+ * one a typed word matched that is not already in the game's name, or null when the name says it.
+ * Words of three letters or fewer never show: typing "la" would name "las" from a tagline.
+ */
+export function matchedWord(query, g, lang = 'es') {
+  // Only the name the player sees: "dados" finds Dudo through its Portuguese name, Dado Mentiroso,
+  // but in Spanish what says it is the tagline
+  const named = new Set(words(g.name?.[lang] ?? g.name?.es));
+  const sources = [g.tagline?.[lang], ...(g.tipos || []).map(t => TIPOS[t]?.name?.[lang]), ...Object.values(KEYWORDS[g.id] || {}).flat(), ...Object.values(g.tagline || {})];
+  for (const t of words(query)) {
+    if ([...named].some(w => matches(t, w))) continue;
+    for (const src of sources) for (const raw of String(src ?? '').split(/[^\p{L}\p{N}]+/u)) if (raw.length >= 4 && matches(t, plain(raw))) return raw.toLowerCase();
+  }
+  return null;
+}
+
+/**
+ * How well a game answers the query (the owner's request, D-397): its name in the player's language
+ * first, its name in another language next, then its keywords, its types, its tagline last; between
+ * equals, the shorter name ("toque": Toque y Fama before Toque y Fama: Palabra). Each typed
+ * word scores by the best place it is found; a game a typed word does not find scores 0.
+ */
+export function relevance(query, g, lang = 'es') {
+  const typed = words(query);
+  if (!typed.length) return 0;
+  const own = words(g.name?.[lang] ?? g.name?.es);
+  const tiers = [
+    [4, own],
+    [3, Object.values(g.name || {}).flatMap(words)],
+    [2, Object.values(KEYWORDS[g.id] || {}).flat().flatMap(words)],
+    // A type is coarse ("Dados" holds several games): below the game's own keywords
+    [1.5, (g.tipos || []).flatMap(t => [t, ...Object.values(TIPOS[t]?.name || {})]).flatMap(words)],
+    [1, Object.values(g.tagline || {}).flatMap(words)],
+  ];
+  let total = 0;
+  for (const t of typed) {
+    const best = tiers.find(([, ws]) => ws.some(w => matches(t, w)));
+    if (!best) return 0;
+    // A word that starts the name ("toq" → Toque y Fama) beats one later in it ("fama" → Toque y Fama: Palabra)
+    total += best[0] + (best[0] === 4 && own[0]?.startsWith(t) ? 0.5 : 0);
+  }
+  return total;
+}
+
+/** The games found, the best answers first; equal ones by the shorter name, then the home page's order. */
+export function ranked(query, games, lang = 'es') {
+  const ids = search(query, games);
+  if (!ids) return [];
+  return games.map((g, i) => ({ g, i, r: relevance(query, g, lang) })).filter(x => ids.has(x.g.id))
+    .sort((a, b) => b.r - a.r || words(a.g.name?.[lang] ?? a.g.name?.es).length - words(b.g.name?.[lang] ?? b.g.name?.es).length || a.i - b.i).map(x => x.g);
+}
+
+export const TEXTS = {
+  es: { placeholder: 'Buscar: lógica, dados…', label: 'Buscar un juego', none: 'Ningún juego con «{q}».', clear: 'Cerrar la búsqueda', all: 'Ver los {n} juegos con «{q}»', one: 'Ver el juego con «{q}» en la lista', soon: 'Próximamente' },
+  en: { placeholder: 'Search: logic, dice…', label: 'Find a game', none: 'No game matches “{q}”.', clear: 'Close the search', all: 'See the {n} games with “{q}”', one: 'See the game with “{q}” in the list', soon: 'Coming soon' },
+  pt: { placeholder: 'Buscar: lógica, dados…', label: 'Buscar um jogo', none: 'Nenhum jogo com “{q}”.', clear: 'Fechar a busca', all: 'Ver os {n} jogos com “{q}”', one: 'Ver o jogo com “{q}” na lista', soon: 'Em breve' },
+};
+
+/** How many games the dropdown names before "see them all". */
+export const SUGGESTIONS = 5;
+
+/**
+ * A 🔎 pill in the row of ✨ Nuevos and 🔥 Populares (`into`'s `.atajos`). Tapped, it opens into a field
+ * over that whole row, and while typing a dropdown under it names up to SUGGESTIONS games (a tap opens
+ * one) and ends with "see the n games", which filters the list below through `onChange(ids)`. The list
+ * does not move while typing. ✕ closes the field and brings the pills back. Returns `clear()`, for the
+ * home page's "show all".
+ *
+ * On a computer, ↓ and ↑ move through the dropdown's options and wrap around, Enter opens the one
+ * selected (or filters, as "see them all"), and Escape folds the dropdown and then closes the field;
+ * the mouse selects what it is over, so there is never a second highlight (D-393).
+ */
+export function drawSearch({ into, lang, games, onChange, pickName = (n, l) => n?.[l] ?? n?.es }) {
+  const T = TEXTS[lang] || TEXTS.es;
+  const row = into.querySelector('.atajos') || into;
+  const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(props)) if (k === 'class') e.className = v; else if (k in e && typeof v !== 'string') e[k] = v; else e.setAttribute(k, v); e.append(...kids); return e; };
+  const pill = el('button', { type: 'button', class: 'buscar-pill', 'aria-label': T.label, title: T.label, 'aria-expanded': 'false' }, el('span', { class: 'ficha-emoji', 'aria-hidden': 'true' }, '🔎'));
+  const input = el('input', { type: 'search', id: 'buscar', placeholder: T.placeholder, autocomplete: 'off', enterkeyhint: 'search', 'aria-label': T.label, role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'buscar-lista', 'aria-autocomplete': 'list', spellcheck: 'false' });
+  const cerrar = el('button', { type: 'button', class: 'buscar-cerrar', 'aria-label': T.clear, title: T.clear }, '✕');
+  const lista = el('div', { class: 'buscar-lista', id: 'buscar-lista', role: 'listbox', hidden: true });
+  const campo = el('div', { class: 'buscar' }, el('span', { class: 'buscar-lupa', 'aria-hidden': 'true' }, '🔎'), input, cerrar, lista);
+  row.append(pill, campo);
+  row.hidden = false;
+  const style = document.createElement('style');
+  style.textContent = `
+    .filtros .atajos:has(.buscar-pill) { gap: 6px; }
+    .filtros .atajos:has(.buscar-pill) button { padding-inline: 12px; }
+    .filtros .atajos .buscar-pill { order: -1; flex: 0 0 auto; min-width: 44px; padding-inline: 10px; }
+    .filtros .atajos .buscar-pill .ficha-emoji { font-size: 1.15rem; }
+    .filtros .atajos .buscar { display: none; }
+    /* Opening and closing (D-398, smoothed in D-402): the field lies over the row instead of taking
+       its place, so nothing in the row moves. It grows out of the 🔎 pill's own box (measured, --l and
+       --r) and folds back into it; its 🔎 starts and ends exactly over the pill's (--dx), the pills it
+       covers fade out and back in while it moves, and its cyan border and ✕ arrive at the end */
+    .filtros .atajos:has(.buscar-pill) { position: relative; }
+    .filtros .atajos:has(.buscar-pill) > :not(.buscar) { transition: opacity 0.08s ease, background 0.15s, color 0.15s, transform 0.1s; }
+    .filtros .atajos.buscando > :not(.buscar) { opacity: 0; pointer-events: none; }
+    .filtros .atajos.buscando.cerrando > :not(.buscar):not(.buscar-pill) { opacity: 1; transition-duration: 0.1s; transition-delay: 0.14s; }
+    .filtros .atajos.buscando .buscar { display: block; position: absolute; inset: 0; z-index: 30; }
+    @keyframes buscar-abre { from { clip-path: inset(0 var(--r, 0px) 0 var(--l, 0px) round 22px); } to { clip-path: inset(0 0 0 0 round 22px); } }
+    @keyframes buscar-lupa { from { transform: translate(var(--dx, 0px), -50%); } }
+    @keyframes buscar-borde { from { border-color: var(--glass-border); } }
+    @keyframes buscar-aparece { from { opacity: 0; } }
+    .filtros .atajos.buscando .buscar { animation: buscar-abre 0.28s cubic-bezier(0.3, 0, 0.2, 1); }
+    .filtros .atajos.buscando .buscar-lupa { animation: buscar-lupa 0.28s cubic-bezier(0.3, 0, 0.2, 1); }
+    .filtros .atajos.buscando .buscar-cerrar { animation: buscar-aparece 0.14s ease-out 0.14s both; }
+    /* The placeholder, too, only once the field is open: mid-motion it would cross the fading pills and the moving 🔎 */
+    @property --buscar-ph { syntax: '<color>'; inherits: true; initial-value: transparent; }
+    @keyframes buscar-texto { from, 60% { --buscar-ph: transparent; } }
+    .filtros .atajos .buscar input { --buscar-ph: var(--muted); }
+    .filtros .atajos.buscando .buscar input { animation: buscar-borde 0.28s ease-in, buscar-texto 0.28s linear; }
+    /* Closing plays the same motions backwards under their own names: an animation that already ran
+       does not start over when only its direction changes, so the field froze folded and then vanished */
+    @keyframes buscar-pliega { from { clip-path: inset(0 0 0 0 round 22px); } to { clip-path: inset(0 var(--r, 0px) 0 var(--l, 0px) round 22px); } }
+    @keyframes buscar-lupa-vuelve { to { transform: translate(var(--dx, 0px), -50%); } }
+    @keyframes buscar-borde-sale { 40%, to { border-color: var(--glass-border); } }
+    @keyframes buscar-texto-sale { 40%, to { --buscar-ph: transparent; } }
+    @keyframes buscar-se-va { 50%, to { opacity: 0; } }
+    .filtros .atajos.buscando.cerrando .buscar { animation: buscar-pliega 0.24s cubic-bezier(0.3, 0, 0.2, 1) both; }
+    .filtros .atajos.buscando.cerrando .buscar-lupa { animation: buscar-lupa-vuelve 0.24s cubic-bezier(0.3, 0, 0.2, 1) both; }
+    .filtros .atajos.buscando.cerrando .buscar input { animation: buscar-borde-sale 0.24s linear both, buscar-texto-sale 0.24s linear both; }
+    .filtros .atajos.buscando.cerrando .buscar-cerrar { animation: buscar-se-va 0.24s linear both; }
+    /* The pill's 🔎 never fades: the field's 🔎 lies exactly on it at both ends, so it simply takes over */
+    .filtros .atajos:has(.buscar-pill) > .buscar-pill { transition: background 0.15s, color 0.15s, transform 0.1s; }
+    .filtros .atajos.buscando.cerrando .buscar-lista { display: none; }
+    @media (prefers-reduced-motion: reduce) { .filtros .atajos .buscar, .filtros .atajos .buscar *, .filtros .atajos > * { animation: none !important; transition: none !important; } }
+    .buscar input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 10px 44px 10px 40px; border-radius: 999px;
+      font: inherit; font-weight: 700; font-size: 1rem; color: var(--ink); background: var(--glass); border: 1px solid var(--cyan); }
+    .buscar input::placeholder { color: var(--buscar-ph, var(--muted)); font-weight: 600; }
+    .buscar input:focus { outline: none; }
+    .buscar input::-webkit-search-cancel-button { display: none; }
+    .buscar-lupa { position: absolute; left: 14px; font-size: 1.15rem; line-height: 1; top: 50%; transform: translateY(-50%); pointer-events: none; }
+    .buscar-cerrar { position: absolute; right: 0; top: 0; width: 44px; height: 44px; border: 0; background: none; color: var(--muted); font: inherit; font-weight: 800; cursor: pointer; }
+    .buscar-lista { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 20; display: grid; padding: 6px; border-radius: 18px;
+      background: #1a0a2e; border: 1px solid var(--glass-border); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); text-align: left; }
+    .buscar-lista[hidden] { display: none; }
+    .buscar-lista a, .buscar-lista .sug { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 10px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 700; }
+    .buscar-lista a:hover, .buscar-lista a:focus-visible, .buscar-lista button:hover, .buscar-lista .sel { background: var(--glass); outline: none; }
+    .buscar-lista .sug-emoji { font-size: 1.3rem; width: 1.6rem; text-align: center; }
+    .buscar-lista .sug-nombre { flex: 0 0 auto; }
+    .buscar-lista .sug-por { color: var(--muted); font-weight: 600; font-style: italic; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .buscar-lista .sug.soon { opacity: 0.55; }
+    .buscar-lista .buscar-todos { min-height: 44px; margin-top: 4px; border: 0; border-top: 1px solid var(--glass-border); border-radius: 0 0 12px 12px; background: none; color: var(--cyan); font: inherit; font-weight: 800; cursor: pointer; text-align: center; }
+    .buscar-lista .buscar-nada { margin: 0; padding: 10px; text-align: center; color: var(--muted); font-weight: 700; }`;
+  document.head.append(style);
+  // Who is listening to the home page: the ⭐ chip moves to fit the row with the pill in it
+  document.dispatchEvent(new CustomEvent('favoritos'));
+
+  // Opening it brings the filters to the top of the screen, so the dropdown has room above the keyboard
+  const subir = () => {
+    const marca = document.getElementById('filtros-marca');
+    const barra = document.getElementById('filtros-barra');
+    if (!marca || !barra) return;
+    const y = Math.ceil(marca.getBoundingClientRect().top + scrollY - (parseFloat(getComputedStyle(barra).top) || 0));
+    if (y > scrollY) scrollTo({ top: y, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  };
+  const abrir = () => { clearTimeout(reserva); row.classList.remove('cerrando'); row.classList.add('buscando'); medir(); pill.setAttribute('aria-expanded', 'true'); input.focus({ preventScroll: true }); subir(); sugerir(); };
+  const plegar = () => { lista.hidden = true; input.setAttribute('aria-expanded', 'false'); elegir(-1); };
+  const verTodos = ids => { plegar(); input.blur(); onChange(ids); };
+  // The option the keyboard (or the mouse over it) has selected: -1 is none
+  let sel = -1;
+  const opciones = () => [...lista.querySelectorAll('[role="option"]')];
+  const elegir = i => {
+    sel = i;
+    opciones().forEach((o, j) => { o.classList.toggle('sel', j === i); o.setAttribute('aria-selected', String(j === i)); });
+    if (i >= 0) input.setAttribute('aria-activedescendant', `buscar-op-${i}`); else input.removeAttribute('aria-activedescendant');
+  };
+  const sugerir = () => {
+    const q = input.value.trim();
+    const ids = search(q, games);
+    if (!ids) { plegar(); return; }
+    // The name first (D-397): Toque y Fama before a game whose tagline says «toquen»
+    const found = ranked(q, games, lang);
+    const kids = found.slice(0, SUGGESTIONS).map(g => {
+      const por = matchedWord(q, g, lang);
+      const kidsOf = [el('span', { class: 'sug-emoji', 'aria-hidden': 'true' }, g.emoji), el('span', { class: 'sug-nombre' }, pickName(g.name, lang)), (por || !g.available) ? el('span', { class: 'sug-por' }, `· ${g.available ? por : T.soon}`) : ''];
+      return g.available ? el('a', { class: 'sug', href: g.path, role: 'option', 'data-id': g.id }, ...kidsOf) : el('div', { class: 'sug soon', role: 'option', 'aria-disabled': 'true', 'data-id': g.id }, ...kidsOf);
+    });
+    if (found.length) kids.push(el('button', { type: 'button', class: 'buscar-todos', role: 'option', tabIndex: -1, onclick: () => verTodos(ids) }, (found.length === 1 ? T.one : T.all).replace('{n}', found.length).replace('{q}', q)));
+    else kids.push(el('p', { class: 'buscar-nada', 'aria-live': 'polite' }, T.none.replace('{q}', q)));
+    lista.replaceChildren(...kids);
+    opciones().forEach((o, i) => { o.id = `buscar-op-${i}`; o.addEventListener('pointerenter', () => elegir(i)); });
+    elegir(-1);
+    lista.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  };
+  // Where the 🔎 pill is inside the row, so the field opens out of it and its 🔎 starts on the pill's
+  const lupa = campo.querySelector('.buscar-lupa');
+  const medir = () => {
+    const r = row.getBoundingClientRect(), p = pill.getBoundingClientRect(), e = pill.firstChild.getBoundingClientRect();
+    campo.style.setProperty('--l', `${p.left - r.left}px`);
+    campo.style.setProperty('--r', `${r.right - p.right}px`);
+    campo.style.setProperty('--dx', `${e.left + e.width / 2 - (r.left + 14 + lupa.offsetWidth / 2)}px`);
+  };
+  // Closing waits for the field to fold back into the pill (D-398); without motion, at once
+  let reserva = null;
+  const quieto = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cerrarTodo = () => {
+    input.value = ''; plegar(); pill.setAttribute('aria-expanded', 'false'); onChange(null);
+    if (!row.classList.contains('buscando') || row.classList.contains('cerrando')) return;
+    const fin = () => {
+      // Opened again while it was closing: it stays open
+      if (!row.classList.contains('cerrando') && !quieto()) return;
+      row.classList.remove('buscando', 'cerrando');
+    };
+    if (quieto()) { fin(); return; }
+    medir();
+    row.classList.add('cerrando');
+    let hecho = false;
+    const una = () => { if (!hecho) { hecho = true; clearTimeout(reserva); fin(); } };
+    const h = e => { if (e.target === campo) { campo.removeEventListener('animationend', h); una(); } };
+    campo.addEventListener('animationend', h);
+    // In case the animation never ends (a hidden tab): the row still comes back. Reopening clears it,
+    // so a quick close, open, close does not cut the second fold short
+    reserva = setTimeout(una, 400);
+  };
+  pill.addEventListener('click', abrir);
+  // The list below stays as it is while typing (the owner's choice): only the dropdown follows
+  input.addEventListener('input', sugerir);
+  input.addEventListener('focus', () => { if (input.value.trim()) sugerir(); });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (lista.hidden) sugerir();
+      const n = opciones().length;
+      if (!n || lista.hidden) return;
+      // From none, ↓ takes the first and ↑ the last ("see them all"); past either end it wraps
+      elegir(sel < 0 ? (e.key === 'ArrowDown' ? 0 : n - 1) : (sel + (e.key === 'ArrowDown' ? 1 : n - 1)) % n);
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const o = !lista.hidden && sel >= 0 ? opciones()[sel] : null;
+      // A game or the Cup opens; one coming soon does nothing
+      if (o?.href) { location.href = o.href; return; }
+      if (o && o.getAttribute('aria-disabled') === 'true') return;
+      // "See them all", or nothing selected: filters, and the keyboard goes away so the list is seen
+      const ids = search(input.value, games); if (ids?.size) verTodos(ids); else input.blur();
+    }
+    // Escape folds the dropdown first, then closes the field
+    if (e.key === 'Escape') { e.preventDefault(); if (!lista.hidden) plegar(); else cerrarTodo(); }
+  });
+  cerrar.addEventListener('click', cerrarTodo);
+  // A tap outside folds the dropdown away, leaving the field and what it filtered
+  document.addEventListener('pointerdown', e => { if (!campo.contains(e.target)) plegar(); });
+  return { clear: () => { if (input.value || row.classList.contains('buscando')) cerrarTodo(); } };
+}

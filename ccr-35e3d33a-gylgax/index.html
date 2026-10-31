@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta name="robots" content="noindex">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#150726">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Juegos de Salón 🎲</title>
+  <!--
+    Sin destello de idioma (D-194): el HTML trae los textos en español y los módulos los cambian
+    al cargar. Si el idioma elegido es otro, la página no se pinta hasta que estén puestos: los
+    módulos corren antes de DOMContentLoaded. El tope de 1,5 s la muestra igual si algo falla.
+  -->
+  <script>
+    (function () {
+      try {
+        var u = (new URLSearchParams(location.search).get('lang') || '').toLowerCase();
+        var l = u || localStorage.getItem('juegos-de-salon:lang') || 'es';
+        if (l === 'es') return;
+        var h = document.documentElement, listo = function () { h.classList.remove('i18n-pendiente'); };
+        h.classList.add('i18n-pendiente');
+        document.addEventListener('DOMContentLoaded', listo);
+        setTimeout(listo, 1500);
+      } catch (_) { /* sin almacenamiento: se pinta como siempre */ }
+    })();
+  </script>
+  <!-- generated: og · rewritten by node tools/release/og.mjs cards -->
+  <meta name="description" content="Juegos cortos de mesa, de lógica y de destreza para jugar solo o con amigos: La Copa, Línea de Tiempo, Toque y Fama, El Ahorcado, Dudo, Generala y Batalla Naval. Además, Uno al día y juegos para jugar solo. Gratis, sin instalar y sin cuenta.">
+  <link rel="canonical" href="https://juegosdesalon.cl/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Juegos de Salón">
+  <meta property="og:url" content="https://juegosdesalon.cl/">
+  <meta property="og:title" content="Juegos de Salón 🎲">
+  <meta property="og:description" content="Juegos cortos de mesa, de lógica y de destreza para jugar solo o con amigos: La Copa, Línea de Tiempo, Toque y Fama, El Ahorcado, Dudo, Generala y Batalla Naval. Además, Uno al día y juegos para jugar solo. Gratis, sin instalar y sin cuenta.">
+  <meta property="og:image" content="https://juegosdesalon.cl/assets/og/menu.jpg?h=42cc2968">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Juegos de Salón: 🏆 ⏳ 🔢 🪢 🎲 📝 ⚓">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <link rel="alternate" hreflang="es" href="https://juegosdesalon.cl/">
+  <link rel="alternate" hreflang="pt" href="https://juegosdesalon.cl/pt/">
+  <link rel="alternate" hreflang="en" href="https://juegosdesalon.cl/en/">
+  <link rel="alternate" hreflang="x-default" href="https://juegosdesalon.cl/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Juegos de Salón 🎲">
+  <meta name="twitter:description" content="Juegos cortos de mesa, de lógica y de destreza para jugar solo o con amigos: La Copa, Línea de Tiempo, Toque y Fama, El Ahorcado, Dudo, Generala y Batalla Naval. Además, Uno al día y juegos para jugar solo. Gratis, sin instalar y sin cuenta.">
+  <meta name="twitter:image" content="https://juegosdesalon.cl/assets/og/menu.jpg?h=42cc2968">
+  <meta name="twitter:image:alt" content="Juegos de Salón: 🏆 ⏳ 🔢 🪢 🎲 📝 ⚓">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"Juegos de Salón","description":"Juegos cortos de mesa, de lógica y de destreza para jugar solo o con amigos: La Copa, Línea de Tiempo, Toque y Fama, El Ahorcado, Dudo, Generala y Batalla Naval. Además, Uno al día y juegos para jugar solo. Gratis, sin instalar y sin cuenta.","url":"https://juegosdesalon.cl/","inLanguage":"es"}</script>
+  <!-- /generated -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    // El manifest del idioma elegido, antes de que el navegador lo lea: cambiarlo después no siempre alcanza (D-222)
+    (function () {
+      try {
+        var l = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('juegos-de-salon:lang') || '').toLowerCase();
+        var m = document.querySelector('link[rel="manifest"]');
+        if (m && /^(en|pt)$/.test(l)) m.href = m.href.replace(/manifest\.webmanifest$/, 'manifest.' + l + '.webmanifest');
+      } catch (_) { /* queda el del español */ }
+    })();
+  </script>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <script src="assets/js/vigia.js?h=40f0a9a1"></script>
+  <link rel="preload" href="assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/bangers-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <meta name="release" content="0.239.5-3b26117">
+  <script type="importmap" id="importmap">{"imports": {"./assets/js/arrastre.js": "./assets/js/arrastre.js?h=b9425a6d", "./assets/js/azar.js": "./assets/js/azar.js?h=f6a0f599", "./assets/js/back-guard.js": "./assets/js/back-guard.js?h=eb3877c2", "./assets/js/buzon-form.js": "./assets/js/buzon-form.js?h=89e2e000", "./assets/js/buzon.js": "./assets/js/buzon.js?h=212b6320", "./assets/js/chat.js": "./assets/js/chat.js?h=66123346", "./assets/js/compartir-portada.js": "./assets/js/compartir-portada.js?h=b6a4b9c4", "./assets/js/compartir.js": "./assets/js/compartir.js?h=b852978c", "./assets/js/controls.js": "./assets/js/controls.js?h=2e4c2f9a", "./assets/js/cuenta-regresiva.js": "./assets/js/cuenta-regresiva.js?h=6960f6ae", "./assets/js/cup-today.js": "./assets/js/cup-today.js?h=dbbee63f", "./assets/js/dado3d.js": "./assets/js/dado3d.js?h=5e15fa29", "./assets/js/daily-points.js": "./assets/js/daily-points.js?h=8cb06b46", "./assets/js/daily-recap.js": "./assets/js/daily-recap.js?h=6579b6b0", "./assets/js/dato.js": "./assets/js/dato.js?h=92313f30", "./assets/js/favoritos.js": "./assets/js/favoritos.js?h=6c9afb09", "./assets/js/fin.js": "./assets/js/fin.js?h=65925e37", "./assets/js/firebase-config.js": "./assets/js/firebase-config.js?h=5d3c31ee", "./assets/js/flag-list.js": "./assets/js/flag-list.js?h=26e4d9af", "./assets/js/flags.js": "./assets/js/flags.js?h=b9cf7d6e", "./assets/js/frases.js": "./assets/js/frases.js?h=7b82bf50", "./assets/js/games.js": "./assets/js/games.js?h=dce147b6", "./assets/js/handoff.js": "./assets/js/handoff.js?h=f12a6232", "./assets/js/home-windows.js": "./assets/js/home-windows.js?h=cc063f50", "./assets/js/how-to-play-facts.js": "./assets/js/how-to-play-facts.js?h=34d8ea51", "./assets/js/i18n.js": "./assets/js/i18n.js?h=cb32a3d8", "./assets/js/instalable.js": "./assets/js/instalable.js?h=a0c20beb", "./assets/js/instalar.js": "./assets/js/instalar.js?h=2dfd05ee", "./assets/js/jugador-firebase.js": "./assets/js/jugador-firebase.js?h=2cecad64", "./assets/js/jugador-local.js": "./assets/js/jugador-local.js?h=d7495e49", "./assets/js/jugador.js": "./assets/js/jugador.js?h=bf2cf82e", "./assets/js/keyboard.js": "./assets/js/keyboard.js?h=e27a429c", "./assets/js/lab-access.js": "./assets/js/lab-access.js?h=6d60f915", "./assets/js/labs-idioma.js": "./assets/js/labs-idioma.js?h=302da30f", "./assets/js/labs-puerta.js": "./assets/js/labs-puerta.js?h=ae4ae8ca", "./assets/js/llegada.js": "./assets/js/llegada.js?h=d42edc11", "./assets/js/load-css.js": "./assets/js/load-css.js?h=4bf0403a", "./assets/js/month-end.js": "./assets/js/month-end.js?h=819f353b", "./assets/js/name-guard.js": "./assets/js/name-guard.js?h=0b2c585b", "./assets/js/notification-sheets.js": "./assets/js/notification-sheets.js?h=3190bce6", "./assets/js/on-screen.js": "./assets/js/on-screen.js?h=0504b6bf", "./assets/js/parametros.js": "./assets/js/parametros.js?h=73c2bf4a", "./assets/js/push.js": "./assets/js/push.js?h=c6703034", "./assets/js/qr.js": "./assets/js/qr.js?h=e21987b2", "./assets/js/ranking.js": "./assets/js/ranking.js?h=0f725c7c", "./assets/js/recap.js": "./assets/js/recap.js?h=5fe62ba9", "./assets/js/records.js": "./assets/js/records.js?h=11ce237e", "./assets/js/region-patterns.js": "./assets/js/region-patterns.js?h=20d295c4", "./assets/js/rng.js": "./assets/js/rng.js?h=ba7e5a86", "./assets/js/room-flow.js": "./assets/js/room-flow.js?h=3be116ea", "./assets/js/search.js": "./assets/js/search.js?h=2f0674b8", "./assets/js/season.js": "./assets/js/season.js?h=3a99c2a6", "./assets/js/session.js": "./assets/js/session.js?h=9330b47f", "./assets/js/share-grid.js": "./assets/js/share-grid.js?h=f8a42662", "./assets/js/site-footer.js": "./assets/js/site-footer.js?h=9f43c964", "./assets/js/sobre.js": "./assets/js/sobre.js?h=de580b39", "./assets/js/sound.js": "./assets/js/sound.js?h=00325dd0", "./assets/js/splash.js": "./assets/js/splash.js?h=bb9bc3cc", "./assets/js/support.js": "./assets/js/support.js?h=af830516", "./assets/js/teclado.js": "./assets/js/teclado.js?h=0905b503", "./assets/js/time-format.js": "./assets/js/time-format.js?h=1921e1e4", "./assets/js/transport/best-effort.js": "./assets/js/transport/best-effort.js?h=b8f82884", "./assets/js/transport/cleanup.js": "./assets/js/transport/cleanup.js?h=8706857e", "./assets/js/transport/dispose.js": "./assets/js/transport/dispose.js?h=24e516c5", "./assets/js/transport/errors.js": "./assets/js/transport/errors.js?h=65f7809c", "./assets/js/transport/firebase.js": "./assets/js/transport/firebase.js?h=338d28ce", "./assets/js/transport/local.js": "./assets/js/transport/local.js?h=338088fa", "./assets/js/transport/ratelimit.js": "./assets/js/transport/ratelimit.js?h=026e11fc", "./assets/js/transport/seat.js": "./assets/js/transport/seat.js?h=72ee2f56", "./assets/js/transport/stats.js": "./assets/js/transport/stats.js?h=7252ff48", "./assets/js/uad-days.js": "./assets/js/uad-days.js?h=dec58d63", "./assets/js/uad-place.js": "./assets/js/uad-place.js?h=368dd032", "./assets/js/ui.js": "./assets/js/ui.js?h=f4332760", "./assets/js/uno-al-dia-avisos.js": "./assets/js/uno-al-dia-avisos.js?h=1b7b8537", "./assets/js/uno-al-dia-red.js": "./assets/js/uno-al-dia-red.js?h=c90acb7c", "./assets/js/uno-al-dia-ui.js": "./assets/js/uno-al-dia-ui.js?h=686c684f", "./assets/js/uno-al-dia.js": "./assets/js/uno-al-dia.js?h=5a4faaac", "./assets/js/vapid.js": "./assets/js/vapid.js?h=74c138b9", "./assets/js/vendor/qrcode.js": "./assets/js/vendor/qrcode.js?h=18ae399f", "./assets/js/vigia.js": "./assets/js/vigia.js?h=40f0a9a1", "./assets/season/templates.js": "./assets/season/templates.js?h=30550765", "./battleship/engine.js": "./battleship/engine.js?h=b9fdd30a", "./battleship/flota.js": "./battleship/flota.js?h=379777c5", "./battleship/game.js": "./battleship/game.js?h=51dd9360", "./battleship/rules.js": "./battleship/rules.js?h=351d6bd6", "./bulls-and-cows/engine.js": "./bulls-and-cows/engine.js?h=2a478102", "./bulls-and-cows/game.js": "./bulls-and-cows/game.js?h=bd9d61b9", "./bulls-and-cows/rules.js": "./bulls-and-cows/rules.js?h=14208f2d", "./cup/admin.js": "./cup/admin.js?h=5f905eed", "./cup/avisos.js": "./cup/avisos.js?h=c2c39ff1", "./cup/clock.js": "./cup/clock.js?h=1e53e7d2", "./cup/code.js": "./cup/code.js?h=06f0e1c6", "./cup/create.js": "./cup/create.js?h=4cbe1d95", "./cup/cuenta.js": "./cup/cuenta.js?h=010d8bac", "./cup/demo.js": "./cup/demo.js?h=9af378c1", "./cup/desglose.js": "./cup/desglose.js?h=0d91dcbb", "./cup/engine.js": "./cup/engine.js?h=f8baa5b6", "./cup/game.js": "./cup/game.js?h=8a8c6cc6", "./cup/games/agents/clues-en.js": "./cup/games/agents/clues-en.js?h=7fbffb8c", "./cup/games/agents/clues-pt.js": "./cup/games/agents/clues-pt.js?h=e05323cc", "./cup/games/agents/clues.js": "./cup/games/agents/clues.js?h=2e8e7706", "./cup/games/agents/engine.js": "./cup/games/agents/engine.js?h=9d44fea2", "./cup/games/agents/numbers.js": "./cup/games/agents/numbers.js?h=81d095cf", "./cup/games/agents/texts.js": "./cup/games/agents/texts.js?h=ccb45212", "./cup/games/agents/ui.js": "./cup/games/agents/ui.js?h=d461185d", "./cup/games/audiencia.js": "./cup/games/audiencia.js?h=3938fe5f", "./cup/games/bridges/engine.js": "./cup/games/bridges/engine.js?h=3b44eef9", "./cup/games/bridges/neon-visitors.js": "./cup/games/bridges/neon-visitors.js?h=4110a7a9", "./cup/games/bridges/neon.js": "./cup/games/bridges/neon.js?h=20c67986", "./cup/games/bridges/physics.js": "./cup/games/bridges/physics.js?h=13ce59f3", "./cup/games/bridges/pixel.js": "./cup/games/bridges/pixel.js?h=585ab3d1", "./cup/games/bridges/scene.js": "./cup/games/bridges/scene.js?h=30d5de83", "./cup/games/bridges/texts.js": "./cup/games/bridges/texts.js?h=970971f6", "./cup/games/bridges/trains.js": "./cup/games/bridges/trains.js?h=bd7f14cb", "./cup/games/bridges/ui.js": "./cup/games/bridges/ui.js?h=d3ad61ec", "./cup/games/bridges/visitors.js": "./cup/games/bridges/visitors.js?h=b0f575fa", "./cup/games/case/engine.js": "./cup/games/case/engine.js?h=ef61f182", "./cup/games/case/ui.js": "./cup/games/case/ui.js?h=4302c637", "./cup/games/connections/engine.js": "./cup/games/connections/engine.js?h=004cabe9", "./cup/games/connections/grillas-en.js": "./cup/games/connections/grillas-en.js?h=6b4d1c8f", "./cup/games/connections/grillas-pt.js": "./cup/games/connections/grillas-pt.js?h=bcea9e47", "./cup/games/connections/grillas.js": "./cup/games/connections/grillas.js?h=25c7e0d1", "./cup/games/connections/ui.js": "./cup/games/connections/ui.js?h=638ace98", "./cup/games/deshacer.js": "./cup/games/deshacer.js?h=6d8e7e32", "./cup/games/final/engine.js": "./cup/games/final/engine.js?h=c2147166", "./cup/games/final/ui.js": "./cup/games/final/ui.js?h=384b0699", "./cup/games/index.js": "./cup/games/index.js?h=a64335ff", "./cup/games/mazos.js": "./cup/games/mazos.js?h=44c8fd92", "./cup/games/number/engine.js": "./cup/games/number/engine.js?h=8b9ea39b", "./cup/games/number/ui.js": "./cup/games/number/ui.js?h=65efdc9e", "./cup/games/paint-mines/dibujos.js": "./cup/games/paint-mines/dibujos.js?h=0c7752b9", "./cup/games/paint-mines/engine.js": "./cup/games/paint-mines/engine.js?h=43481356", "./cup/games/paint-mines/texts.js": "./cup/games/paint-mines/texts.js?h=00a1da35", "./cup/games/paint-mines/ui.js": "./cup/games/paint-mines/ui.js?h=78113c66", "./cup/games/plots/engine.js": "./cup/games/plots/engine.js?h=6ed65667", "./cup/games/plots/texts.js": "./cup/games/plots/texts.js?h=45c598b8", "./cup/games/plots/ui.js": "./cup/games/plots/ui.js?h=d5272707", "./cup/games/queens/engine.js": "./cup/games/queens/engine.js?h=cfe894bd", "./cup/games/queens/ui.js": "./cup/games/queens/ui.js?h=76e6efc4", "./cup/games/routes/engine.js": "./cup/games/routes/engine.js?h=8fe57b67", "./cup/games/routes/texts.js": "./cup/games/routes/texts.js?h=8f6909ec", "./cup/games/routes/ui.js": "./cup/games/routes/ui.js?h=6c381176", "./cup/games/semilla.js": "./cup/games/semilla.js?h=85160e6c", "./cup/games/solo.js": "./cup/games/solo.js?h=f218475c", "./cup/games/tango/engine.js": "./cup/games/tango/engine.js?h=3164e192", "./cup/games/tango/ui.js": "./cup/games/tango/ui.js?h=380e6b09", "./cup/games/timeline/engine.js": "./cup/games/timeline/engine.js?h=6ef6c2d4", "./cup/games/timeline/ui.js": "./cup/games/timeline/ui.js?h=c21b24f6", "./cup/games/untangle/engine.js": "./cup/games/untangle/engine.js?h=f0485091", "./cup/games/untangle/ui.js": "./cup/games/untangle/ui.js?h=c4e412c1", "./cup/games/where/ciudades.js": "./cup/games/where/ciudades.js?h=6f2f63cd", "./cup/games/where/engine.js": "./cup/games/where/engine.js?h=bb4d3f44", "./cup/games/where/globo.js": "./cup/games/where/globo.js?h=4cfa832e", "./cup/games/where/mapa.js": "./cup/games/where/mapa.js?h=78f414aa", "./cup/games/where/nombres.js": "./cup/games/where/nombres.js?h=10b9dfdc", "./cup/games/where/ui.js": "./cup/games/where/ui.js?h=a519e764", "./cup/games/word/engine.js": "./cup/games/word/engine.js?h=598eb701", "./cup/games/word/palabras.js": "./cup/games/word/palabras.js?h=80be5ef2", "./cup/games/word/ui.js": "./cup/games/word/ui.js?h=e251cec4", "./cup/games/year/engine.js": "./cup/games/year/engine.js?h=9e052cca", "./cup/games/year/ui.js": "./cup/games/year/ui.js?h=6fd81b9a", "./cup/games/zip/engine.js": "./cup/games/zip/engine.js?h=444881b2", "./cup/games/zip/ui.js": "./cup/games/zip/ui.js?h=a0f8b648", "./cup/join.js": "./cup/join.js?h=34c05a34", "./cup/planilla.js": "./cup/planilla.js?h=bcdb129f", "./cup/recap.js": "./cup/recap.js?h=3610e666", "./cup/reportes.js": "./cup/reportes.js?h=2a6e17c0", "./cup/result.js": "./cup/result.js?h=57b246c3", "./cup/rules.js": "./cup/rules.js?h=b058ac2c", "./cup/store-firebase.js": "./cup/store-firebase.js?h=a95382f3", "./cup/store-local.js": "./cup/store-local.js?h=9a60888f", "./cup/table-image.js": "./cup/table-image.js?h=85646475", "./generala/engine.js": "./generala/engine.js?h=4fe1f3fc", "./generala/game.js": "./generala/game.js?h=d8d6c651", "./generala/rules.js": "./generala/rules.js?h=aa38ff34", "./hangman/decks/animales.js": "./hangman/decks/animales.js?h=681eff68", "./hangman/decks/chile.js": "./hangman/decks/chile.js?h=4c565470", "./hangman/decks/cine.js": "./hangman/decks/cine.js?h=38dd21ad", "./hangman/decks/comida.js": "./hangman/decks/comida.js?h=f3139966", "./hangman/decks/deportes.js": "./hangman/decks/deportes.js?h=194ec9b7", "./hangman/decks/index.js": "./hangman/decks/index.js?h=f0c8c0b5", "./hangman/engine.js": "./hangman/engine.js?h=a2b705fb", "./hangman/game.js": "./hangman/game.js?h=7fc3e04d", "./hangman/rules.js": "./hangman/rules.js?h=3f4daf05", "./labs/bodega.js": "./labs/bodega.js?h=1f4cde03", "./labs/bridges/trains/sheet.js": "./labs/bridges/trains/sheet.js?h=e61ce596", "./labs/bridges/visitors/sheet.js": "./labs/bridges/visitors/sheet.js?h=df537ffa", "./labs/chameleon/engine.js": "./labs/chameleon/engine.js?h=d0138ecd", "./labs/chameleon/game.js": "./labs/chameleon/game.js?h=ba1df2d1", "./labs/chameleon/rules.js": "./labs/chameleon/rules.js?h=9a308669", "./labs/code/engine-palabra.js": "./labs/code/engine-palabra.js?h=4ea17011", "./labs/code/engine.js": "./labs/code/engine.js?h=9c6a100c", "./labs/code/game.js": "./labs/code/game.js?h=c0aff8a2", "./labs/dominorama/engine.js": "./labs/dominorama/engine.js?h=39cea63e", "./labs/dominorama/game.js": "./labs/dominorama/game.js?h=02f73c6d", "./labs/exploding-numbers/engine.js": "./labs/exploding-numbers/engine.js?h=680b00f7", "./labs/exploding-numbers/game.js": "./labs/exploding-numbers/game.js?h=047efa70", "./labs/fourth-king/engine.js": "./labs/fourth-king/engine.js?h=44f9f09f", "./labs/fourth-king/game.js": "./labs/fourth-king/game.js?h=678dfaac", "./labs/fourth-king/rules.js": "./labs/fourth-king/rules.js?h=a523fadd", "./labs/home/experiments.js": "./labs/home/experiments.js?h=c3089b12", "./labs/julep/engine.js": "./labs/julep/engine.js?h=8ff80af4", "./labs/julep/game.js": "./labs/julep/game.js?h=b4c88de4", "./labs/julep/rules.js": "./labs/julep/rules.js?h=777d25f4", "./labs/publish.js": "./labs/publish.js?h=7f4f41ab", "./labs/stack/engine.js": "./labs/stack/engine.js?h=47b96079", "./labs/stack/game.js": "./labs/stack/game.js?h=e6dae282", "./labs/stack/scene.js": "./labs/stack/scene.js?h=9295e673", "./labs/stick/engine.js": "./labs/stick/engine.js?h=2783ea84", "./labs/stick/game.js": "./labs/stick/game.js?h=01d1d4f8", "./labs/stick/scene.js": "./labs/stick/scene.js?h=dee73398", "./liars-dice/engine.js": "./liars-dice/engine.js?h=44b0eedd", "./liars-dice/game.js": "./liars-dice/game.js?h=f9fd784a", "./liars-dice/rules.js": "./liars-dice/rules.js?h=c54ecf10", "./panel/aggregate.js": "./panel/aggregate.js?h=ef3a73e3", "./panel/campaigns.js": "./panel/campaigns.js?h=a59bd34c", "./panel/copas.js": "./panel/copas.js?h=33fa58c9", "./panel/dominios.js": "./panel/dominios.js?h=423f8c9d", "./panel/feedback.js": "./panel/feedback.js?h=3d7943a9", "./panel/panel.js": "./panel/panel.js?h=06c3df31", "./panel/release-push.js": "./panel/release-push.js?h=e77f31af", "./panel/rooms-watch.js": "./panel/rooms-watch.js?h=6a525722", "./panel/rutas.js": "./panel/rutas.js?h=bb30b0c9", "./panel/timeline.js": "./panel/timeline.js?h=9aa1526a", "./privacy/texts.js": "./privacy/texts.js?h=2c1a9621", "./sw.js": "./sw.js?h=27ccfe95", "./timeline/decks/brasil.js": "./timeline/decks/brasil.js?h=231eae24", "./timeline/decks/chile.js": "./timeline/decks/chile.js?h=a8cc1127", "./timeline/decks/futbol.js": "./timeline/decks/futbol.js?h=31b8f32e", "./timeline/decks/historia.js": "./timeline/decks/historia.js?h=a239a7dc", "./timeline/decks/index.js": "./timeline/decks/index.js?h=ab999761", "./timeline/decks/musica.js": "./timeline/decks/musica.js?h=4b5db315", "./timeline/decks/pop.js": "./timeline/decks/pop.js?h=98a53476", "./timeline/engine.js": "./timeline/engine.js?h=5d408db9", "./timeline/game.js": "./timeline/game.js?h=f466ae40", "./timeline/rules.js": "./timeline/rules.js?h=1d7cc440"}}</script>
+  <link rel="stylesheet" href="assets/css/base.css?h=b829d3c0">
+  <!-- One a Day's card and the modules only it brings, fetched with the page and not one after another
+       (they used to arrive 1.4 s late on a slow network); stats.js too, which the page itself now
+       loads on its own. home-preload.test.mjs fails if one is missing -->
+  <link rel="modulepreload" href="assets/js/uno-al-dia.js?h=5a4faaac">
+  <link rel="modulepreload" href="assets/js/uno-al-dia-ui.js?h=686c684f">
+  <link rel="modulepreload" href="assets/js/time-format.js?h=1921e1e4">
+  <link rel="modulepreload" href="assets/js/records.js?h=11ce237e">
+  <link rel="modulepreload" href="cup/games/semilla.js?h=85160e6c">
+  <link rel="modulepreload" href="assets/js/rng.js?h=ba7e5a86">
+  <link rel="modulepreload" href="assets/js/daily-points.js?h=8cb06b46">
+  <link rel="modulepreload" href="assets/js/fin.js?h=65925e37">
+  <link rel="modulepreload" href="assets/js/transport/stats.js?h=7252ff48">
+  <link rel="modulepreload" href="assets/js/firebase-config.js?h=5d3c31ee">
+  <link rel="modulepreload" href="assets/js/transport/cleanup.js?h=8706857e">
+  <link rel="modulepreload" href="assets/js/back-guard.js?h=eb3877c2">
+  <style>
+    .hero { text-align: center; padding: 28px 0 18px; }
+    .hero .emoji { font-size: 3.2rem; display: block; margin-bottom: 6px; }
+    .emoji-swap { display: inline-block; transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+    .emoji-swap.out { opacity: 0; transform: scale(0.3) rotate(-40deg); }
+    .hero .sub { color: var(--muted); font-weight: 700; margin-top: 10px; }
+    /* Free and no account, said before the first button: what a stranger asks first (U-1) */
+    .hero .sub-free { color: var(--text, #fff); font-weight: 800; margin-top: 4px; }
+    /* Una columna que no crece más que la pantalla: sin el minmax(0, …), una palabra larga que el
+       navegador no sabe partir ("Galgenmännchen" en el Chrome de Linux, sin diccionario de alemán)
+       ensanchaba todas las tarjetas y la portada se corría de lado (D-238) */
+    .games { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 10px; container-type: inline-size; }
+    .game-slot > .game-card, .game-card .texto { min-width: 0; }
+    .game-card h2 > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+    .game-card {
+      display: grid; grid-template-columns: 64px 1fr auto; column-gap: 14px; align-items: center;
+      grid-template-areas: "emoji texto ir" "emoji meta ir";
+      text-decoration: none; color: var(--ink);
+      background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius);
+      padding: 16px; transition: transform 0.12s, border-color 0.2s;
+      animation: slideUp 0.4s ease-out both;
+    }
+    .game-card:active { transform: scale(0.98); }
+    .game-card .emoji {
+      font-size: 2.6rem; width: 64px; height: 64px; display: grid; place-items: center;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+      border-radius: 18px; grid-area: emoji;
+    }
+    .game-card .texto { grid-area: texto; align-self: end; }
+    .game-card h2 { font-family: var(--font-display); font-size: 1.7rem; margin: 0; letter-spacing: 0.04em; text-transform: uppercase; }
+    .game-card .tag { color: var(--muted); font-size: 0.95rem; margin: 2px 0 6px; }
+    .game-card .meta { grid-area: meta; align-self: start; display: flex; flex-wrap: wrap; gap: 6px; }
+    .game-card .meta span { font-size: 0.78rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(0,0,0,0.25); white-space: nowrap; }
+    /* La palabra "jugadores" va en su propio span: sin el `> span` le tocaba el fondo de la píldora de La Copa (.torneo) */
+    .game-card .meta span > span.unidad { padding: 0; background: none; font: inherit; border-radius: 0; }
+    .game-card .go { grid-area: ir; font-family: var(--font-display); font-size: 2rem; color: var(--yellow); }
+    /* En una tarjeta angosta (un celular de 360 px, o uno más ancho con la letra agrandada) las
+       píldoras no caben al lado del emoji: jugadores y duración se partían en dos líneas. Ahí
+       bajan a su propia fila, de borde a borde, y la flecha sigue al lado del nombre. Se mide la
+       tarjeta y no la pantalla: el zoom de accesibilidad de Android achica el ancho en px. */
+    @container (max-width: 380px) {
+      .game-card { grid-template-areas: "emoji texto ir" "meta meta meta"; row-gap: 10px; }
+      .game-card .texto { align-self: center; }
+      .game-card .tag { margin-bottom: 0; }
+    }
+    /* `animation: slideUp` anima opacity hasta 1 y con `both` lo deja puesto: sin apagar la
+       animación, el opacity: 0.55 de acá quedaba tapado y la tarjeta se veía intacta aunque no
+       se pudiera tocar (D-88). */
+    .game-card.soon { pointer-events: none; animation: none; }
+    /* Se apaga todo menos "Próximamente", que es lo que explica por qué no se abre */
+    .game-card.soon .emoji, .game-card.soon .tag, .game-card.soon .meta, .game-card.soon h2 > span:first-child { opacity: 0.55; }
+    .game-card.soon .go { visibility: hidden; }
+    .game-card h2 { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
+    .game-card h2 .proximamente {
+      font: 900 0.78rem var(--font-body); letter-spacing: 0; text-transform: none; white-space: nowrap;
+      padding: 3px 9px; border-radius: 999px; background: var(--yellow); color: #3a1200;
+    }
+    /* "New" (D-333): a dark sticker stuck on the card, a bit tilted, with a white edge and its shadow;
+       the title's rainbow runs through its letters (`shimmer`, base.css), one gradient across the
+       word, like the home page title. A glow breathes and now and then it wobbles around its tilt.
+       The 4 px above and below keep its tilted corners off the name and the description, also
+       mid-wobble (U-11). Soft, so it sits on the card rather than over it (D-373): a see-through fill,
+       a thin faint edge and a low glow. */
+    .game-card h2 .nuevo {
+      --giro: -6deg; margin-block: 4px;
+      font: 900 0.78rem var(--font-body); letter-spacing: 0; text-transform: none; white-space: nowrap;
+      padding: 3px 9px; border-radius: 999px; background: rgba(26, 11, 46, 0.45);
+      border: 1px solid rgba(46, 230, 214, 0.35);
+      transform: rotate(var(--giro));
+      filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2));
+      animation: nuevoBrillo 2.4s ease-in-out infinite, nuevoBaile 5s ease-in-out infinite;
+    }
+    .game-card h2 .nuevo > span {
+      background: linear-gradient(90deg, var(--yellow), var(--pink), var(--cyan), var(--lime), var(--yellow));
+      background-size: 300% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
+    @keyframes nuevoBrillo {
+      0%, 100% { box-shadow: 0 0 3px rgba(255, 46, 136, 0.2); }
+      50% { box-shadow: 0 0 8px rgba(46, 230, 214, 0.3); }
+    }
+    @keyframes nuevoBaile {
+      0%, 84%, 100% { transform: rotate(var(--giro)) scale(1); }
+      88% { transform: rotate(calc(var(--giro) - 6deg)) scale(1.1); }
+      92% { transform: rotate(calc(var(--giro) + 5deg)) scale(1.1); }
+      96% { transform: rotate(calc(var(--giro) - 2deg)) scale(1.04); }
+    }
+    /* "Popular" (D-361): the same sticker as "New", in fire instead of the rainbow, with its 🔥 outside
+       the gradient so the emoji keeps its own colors (the owner's request). */
+    .game-card h2 .popular {
+      --giro: -6deg; margin-block: 4px;
+      font: 900 0.78rem var(--font-body); letter-spacing: 0; text-transform: none; white-space: nowrap;
+      padding: 3px 9px; border-radius: 999px; background: rgba(42, 10, 6, 0.45);
+      border: 1px solid rgba(255, 138, 61, 0.4);
+      transform: rotate(var(--giro));
+      filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.2));
+      animation: popularBrillo 2.4s ease-in-out infinite, nuevoBaile 5s ease-in-out infinite;
+    }
+    .game-card h2 .popular > span:last-child {
+      background: linear-gradient(90deg, var(--yellow), #ff8a3d, #ff3d2e, #ff8a3d, var(--yellow));
+      background-size: 300% 100%;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
+    @keyframes popularBrillo {
+      0%, 100% { box-shadow: 0 0 3px rgba(255, 61, 46, 0.2); }
+      50% { box-shadow: 0 0 8px rgba(255, 138, 61, 0.35); }
+    }
+    @media (prefers-reduced-motion: reduce) { .game-card h2 .nuevo, .game-card h2 .nuevo > span, .game-card h2 .popular, .game-card h2 .popular > span { animation: none; } }
+    /* Filtros (D-142, D-149): el tipo de juego, en fichas que se prenden y se apagan. */
+    .filtros { display: grid; gap: 10px; margin-top: 4px; }
+    .filtros > * { min-width: 0; }
+    .filtros .tipos button {
+      min-height: 44px; cursor: pointer; font: 900 0.9rem var(--font-body);
+      border-radius: 999px; transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+    /* Los tipos van siempre en una fila (D-144): si no caben con el emoji al lado, el emoji sube
+       arriba del nombre, como una barra de pestañas. */
+    .filtros { container-type: inline-size; }
+    .filtros .tipos { display: flex; gap: 8px; justify-content: center; }
+    .filtros .tipos button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+      background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); padding: 6px 14px;
+    }
+    @container (max-width: 520px) {
+      .filtros .tipos { gap: 6px; }
+      .filtros .tipos button { flex: 1 1 auto; flex-direction: column; gap: 0; padding: 6px 6px; border-radius: 18px; font-size: 0.8rem; line-height: 1.15; }
+      .filtros .tipos button .ficha-emoji { font-size: 1.15rem; }
+    }
+    /* A 320 px (284 de caja) las cuatro fichas pedían 299: se salían por la derecha y quedaban
+       pegadas al borde, sin el margen de la izquierda (U-11). Menos aire adentro, y cabe. */
+    @container (max-width: 300px) {
+      .filtros .tipos { gap: 4px; }
+      .filtros .tipos button { padding: 6px 3px; }
+    }
+    /* "⭐ Favoritos" (D-238, D-241) sale solo con algún favorito marcado. Va primera en la fila de
+       los tipos si cabe con su nombre; si no, con la ⭐ sola y menos aire entre las fichas y dentro
+       de ellas (3 px, como a 320 px sin favoritos: con 4, a 360 px en español faltaba 1 px); y si
+       tampoco (a 320 px, salvo en inglés), en su propia línea arriba. Lo decide `acomodarFav`, que mide. */
+    .filtros .ficha-fav[hidden] { display: none !important; }
+    .filtros .tipos .ficha-fav { flex: 0 0 auto; }
+    .filtros .tipos .ficha-fav.sola { min-width: 44px; padding-inline: 4px; }
+    .filtros .tipos .ficha-fav.sola .ficha-emoji { font-size: 1.3rem; }
+    .filtros .tipos .ficha-fav.sola span:last-child { display: none; }
+    .filtros .tipos.apretada { gap: 4px; }
+    .filtros .tipos.apretada button { padding-inline: 3px; }
+    .filtros .favs { display: flex; justify-content: center; }
+    .filtros .favs[hidden] { display: none; }
+    .filtros .ficha-fav {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 6px 16px; cursor: pointer; white-space: nowrap;
+      font: 900 0.9rem var(--font-body); border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink);
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+    /* "✨ Nuevos" and "🔥 Populares" (D-362, for everyone since D-369): a row of their own above the types, the same
+       pill as ⭐ Favoritos; each one shows only when it has games. */
+    .filtros .atajos { display: flex; gap: 8px; justify-content: center; }
+    .filtros .atajos .ficha-fav { flex: 0 0 auto; }
+    .filtros .atajos .ficha-fav.sola { min-width: 44px; padding-inline: 4px; }
+    .filtros .atajos .ficha-fav.sola .ficha-emoji { font-size: 1.3rem; }
+    .filtros .atajos .ficha-fav.sola span:last-child { display: none; }
+    .filtros .atajos.apretada { gap: 4px; }
+    .filtros .atajos.apretada button { padding-inline: 10px; gap: 4px; }
+    .filtros .atajos[hidden], .filtros .atajos button[hidden] { display: none; }
+    .filtros .atajos button {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 6px 16px; cursor: pointer; white-space: nowrap;
+      font: 900 0.9rem var(--font-body); border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink);
+      transition: background 0.15s, color 0.15s, transform 0.1s;
+    }
+    /* The shortcuts (🔎 ⭐ ✨ 🔥) are outlined and the types filled (D-407, option B of /labs/pills/): two
+       kinds of filter, one choice, so the chosen one is the same cyan in both rows */
+    .filtros .atajos button:not(.on), .filtros .ficha-fav:not(.on) { background: transparent; border-color: rgba(255, 255, 255, 0.28); }
+    .filtros .atajos button.on, .filtros .tipos button.on, .filtros .ficha-fav.on { background: var(--cyan); border-color: transparent; color: #03302c; }
+    .filtros button:active { transform: scale(0.96); }
+    .filtros-cuenta { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; align-items: center; color: var(--muted); font-weight: 700; font-size: 0.9rem; margin: 0; min-height: 44px; }
+    .filtros-cuenta[hidden] { display: none; }
+    /* Una línea que se apaga en las puntas: acá terminan los filtros y empiezan los juegos */
+    .filtros-fin { border: 0; height: 1px; margin: 12px 6% 4px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.28), transparent); }
+    /* The same line closes the list, between the last card and the footer's phrase */
+    .lista-fin { margin: 16px 6% 4px; }
+    /* Al bajar por la lista, los filtros se quedan pegados arriba: cambiar de tipo no obliga a
+       volver a subir. Sin fondo mientras están en su lugar; pegados, toman el del sitio. */
+    /* While they float, the filters stop 36 px below the top and the app's name (D-364) fills that
+       space above them, out of the flow: nothing in the page moves when it appears (D-369). */
+    .filtros-barra {
+      --titulo: 36px;
+      position: sticky; top: calc(var(--safe-top) + var(--titulo)); z-index: 5;
+      margin: 0 -18px; padding: 8px 18px;
+    }
+    /* El fondo es una sola capa que sube hasta tapar también la franja de la muesca, para que las
+       tarjetas no se vean pasar por detrás de la hora: con una capa aparte para la franja, el
+       desenfoque no le llegaba y se leían las tarjetas, o quedaba una costura de dos colores (U-12). */
+    .filtros-barra::before {
+      /* 4 px below the last row, so the space under the filters matches the space above the title (D-369) */
+      content: ''; position: absolute; z-index: -1; inset: calc(-1 * (var(--safe-top) + var(--titulo))) 0 -4px 0;
+      border-radius: 0 0 20px 20px; pointer-events: none; opacity: 0; transition: opacity 0.2s;
+      background: rgba(21, 7, 38, 0.82); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 24px rgba(0, 0, 0, 0.35);
+    }
+    .filtros-barra.pegada::before { opacity: 1; }
+    /* The app's name on top of the filters, only while they float (D-364, for everyone since D-369):
+       scrolling down a long list, the floating menu still says where you are; a tap goes back up. */
+    .barra-titulo { display: none; }
+    .filtros-barra.pegada .barra-titulo {
+      display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px;
+      position: absolute; left: 0; right: 0; top: calc(-1 * var(--titulo));
+      margin: 0; padding: 0; border: 0; background: none; cursor: pointer;
+      font-family: var(--font-display); font-size: 1.35rem; letter-spacing: 0.04em; color: var(--ink);
+    }
+    .filtros-barra.pegada .barra-titulo span:last-child {
+      background: linear-gradient(90deg, var(--yellow), var(--pink), var(--cyan), var(--lime), var(--yellow));
+      background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: shimmer 6s linear infinite;
+    }
+    @media (prefers-reduced-motion: reduce) { .filtros-barra.pegada .barra-titulo span:last-child { animation: none; } }
+    .link-btn { background: none; border: 0; color: var(--yellow); font: 900 0.9rem var(--font-body); text-decoration: underline; cursor: pointer; min-height: 44px; padding: 0 6px; }
+    .game-card[hidden], .game-slot[hidden] { display: none !important; }
+    /* La ⭐ de favorito (D-238): en la esquina de arriba de la tarjeta, encima y no adentro (un
+       botón no puede ir dentro del link). Cae sobre la columna de la ›, así que no tapa el texto:
+       44 px de toque (C-8) contra los 46 que hay entre el borde y el texto. */
+    .game-slot { position: relative; display: grid; }
+    .fav {
+      position: absolute; top: 0; right: 0; width: 44px; height: 44px; display: grid; place-items: center;
+      background: none; border: 0; padding: 0; cursor: pointer; font-size: 1.35rem; line-height: 1;
+      color: rgba(255, 255, 255, 0.45); animation: slideUp 0.4s ease-out both;
+    }
+    .fav.on { color: var(--yellow); text-shadow: 0 0 10px rgba(255, 210, 63, 0.55); }
+    .fav.salta { animation: favSalta 0.35s ease-out; }
+    @keyframes favSalta { 40% { transform: scale(1.45); } }
+    .fav:active { transform: scale(0.88); }
+    /* La Copa es otra cosa que una partida: una semana con amigos. Su tarjeta lo dice con un
+       degradé que se mueve despacio (dorado, rosa, morado) y un borde dorado, para invitar a armar
+       una. Con "reducir movimiento" el degradé queda quieto. */
+    .game-card.torneo {
+      border-color: rgba(255, 210, 63, 0.55);
+      background: linear-gradient(115deg, rgba(255, 210, 63, 0.42), rgba(255, 46, 136, 0.45) 30%, rgba(138, 77, 255, 0.48) 55%, rgba(255, 122, 26, 0.42) 80%, rgba(255, 210, 63, 0.42)) 0% 50% / 300% 300%;
+      box-shadow: 0 0 26px rgba(255, 210, 63, 0.25);
+      animation: slideUp 0.4s ease-out both, copaFondo 7s ease-in-out infinite alternate;
+    }
+    .game-card.torneo .tag { color: rgba(255, 255, 255, 0.88); }
+    .game-card.torneo .meta span { background: rgba(0, 0, 0, 0.32); }
+    @keyframes copaFondo { to { background-position: 100% 50%; } }
+    .game-card .meta span.idioma { background: rgba(46, 230, 214, 0.18); }
+    footer { margin-top: auto; padding-top: 28px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+    /* The footer's look (phrase, option tiles, the violet sunset) lives in base.css, shared with site-footer.js */
+    /* Juego al azar (D-188): el botón bajo la bajada y el dado que rueda sobre la portada */
+    .azar-slot { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 16px; }
+    .btn-azar {
+      display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 8px 22px 8px 16px; cursor: pointer;
+      font: 400 1.35rem var(--font-display); letter-spacing: 0.06em; color: #3a1200;
+      background: linear-gradient(180deg, #ffe27a, var(--yellow)); border: 0; border-radius: 999px;
+      box-shadow: 0 4px 0 #c99a00, 0 8px 22px rgba(255, 210, 63, 0.3); transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-azar:active { transform: translateY(3px); box-shadow: 0 1px 0 #c99a00, 0 4px 12px rgba(255, 210, 63, 0.3); }
+    .btn-azar-dado { font-size: 1.5rem; display: inline-block; transition: transform 0.4s; }
+    .btn-azar:hover .btn-azar-dado { transform: rotate(-25deg); }
+    /* Uno al día como botón, a la derecha de "Al azar" (la forma de antes, en /labs/): en una línea, con la racha en una píldora */
+    .btn-uad {
+      position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; padding: 8px 18px; cursor: pointer;
+      color: #fff; background: linear-gradient(180deg, #ff5fa5, var(--pink)); border: 0; border-radius: 999px;
+      box-shadow: 0 4px 0 #a3104f, 0 8px 22px rgba(255, 46, 136, 0.3); transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .btn-uad:active { transform: translateY(3px); box-shadow: 0 1px 0 #a3104f, 0 4px 12px rgba(255, 46, 136, 0.3); }
+    .btn-uad.hecho { color: #05302b; background: linear-gradient(180deg, #7ff5ea, var(--cyan)); box-shadow: 0 4px 0 #149a8f, 0 8px 22px rgba(46, 230, 214, 0.25); }
+    .btn-uad-titulo { display: inline-flex; gap: 8px; align-items: center; font: 400 1.25rem/1.1 var(--font-display); letter-spacing: 0.06em; }
+    .btn-uad-racha { font: 900 0.8rem/1 var(--font-body); padding: 4px 7px; border-radius: 999px; background: rgba(0, 0, 0, 0.22); white-space: nowrap; }
+    .btn-uad-punto {
+      position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; border-radius: 50%;
+      background: var(--lime); box-shadow: 0 0 0 2px var(--bg2), 0 0 10px var(--lime); animation: uadPulso 1.6s ease-in-out infinite;
+    }
+    @keyframes uadPulso { 50% { transform: scale(1.3); } }
+    /* Al lado del dado (lo elegido): los dos botones se achican para caber en una fila, también a 320 px */
+    .azar-slot.con-uad { flex-wrap: nowrap; gap: 8px; }
+    .azar-slot.con-uad .btn-azar { flex: 0 1 auto; min-width: 0; gap: 6px; padding: 8px 16px 8px 12px; font-size: clamp(1.05rem, 4.8vw, 1.3rem); white-space: nowrap; }
+    .azar-slot.con-uad .btn-azar-dado { font-size: 1.3rem; }
+    .azar-slot.con-uad .btn-uad { flex: 0 1 auto; min-width: 0; gap: 6px; padding: 8px 14px 8px 12px; }
+    .azar-slot.con-uad .btn-uad-titulo { gap: 6px; font-size: clamp(1.05rem, 4.8vw, 1.3rem); white-space: nowrap; }
+    /* En 340 px o menos ("Spiel des Tages" con la racha), todo un poco más apretado */
+    @media (max-width: 340px) {
+      .azar-slot.con-uad { gap: 6px; }
+      .azar-slot.con-uad .btn-azar { padding: 8px 12px 8px 9px; font-size: 0.95rem; gap: 4px; }
+      .azar-slot.con-uad .btn-azar-dado { font-size: 1.1rem; }
+      .azar-slot.con-uad .btn-uad { padding: 8px 9px; gap: 4px; }
+      .azar-slot.con-uad .btn-uad-titulo { font-size: 0.95rem; gap: 4px; }
+      .azar-slot.con-uad .btn-uad-racha { padding: 3px 5px; font-size: 0.72rem; }
+    }
+    /* Una fila de dos tarjetas altas, La Copa y Uno al día (D-239) */
+    .fila-alta { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+    /* El emoji va a la izquierda del título, y la bajada y las píldoras de borde a borde: la fila
+       queda casi 90 px más baja que con el emoji arriba (D-239) */
+    .game-card.alta { position: relative; grid-template-columns: auto 1fr; grid-template-rows: auto auto 1fr; grid-template-areas: "emoji h2" "tag tag" "meta meta"; column-gap: 8px; row-gap: 8px; align-items: center; justify-items: start; text-align: left; padding: 14px 12px; font: inherit; cursor: pointer; }
+    .game-card.alta .emoji { width: 40px; height: 40px; font-size: 1.6rem; border-radius: 12px; }
+    .game-card.alta .texto { display: contents; }
+    .game-card.alta h2 { grid-area: h2; font-size: clamp(1.05rem, 5vw, 1.35rem); line-height: 1.05; }
+    .game-card.alta .tag { grid-area: tag; font-size: 0.82rem; line-height: 1.3; margin: 0; }
+    .game-card.alta .go { display: none; }
+    /* Jugadores y duración, en una sola línea: "👥 2–10 jugadores" no cabía al lado de "⏱ 7 días"
+       en media fila, así que la palabra se esconde a la vista (el lector de pantalla la lee) */
+    .game-card.alta .meta { flex-wrap: nowrap; gap: 5px; }
+    /* Las píldoras (jugadores y días; la racha o cómo va hoy) van abajo a la izquierda, aparte de la
+       bajada: la última fila se lleva el alto que sobra, así quedan a la misma altura en las dos tarjetas */
+    .game-card.alta .meta { align-self: end; padding-top: 4px; }
+    .game-card.alta .meta span { font-size: 0.72rem; padding: 3px 7px; }
+    .game-card.alta .meta span .unidad { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; padding: 0; }
+    @media (max-width: 340px) { .game-card.alta .meta { gap: 4px; } .game-card.alta .meta span { padding: 3px 5px; font-size: 0.68rem; } }
+    /* La Copa y Uno al día no son un juego más: el título va en color, dorado y celeste */
+    .game-card.torneo h2 > span:first-child, .uad-card h2 > span:first-child {
+      background: linear-gradient(180deg, #fff3b0, var(--yellow) 55%, var(--orange)); -webkit-background-clip: text; background-clip: text; color: transparent;
+      filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.35));
+    }
+    .uad-card h2 > span:first-child { background-image: linear-gradient(180deg, #d9fffb, var(--cyan) 60%, #19b8ab); }
+    .uad-card { border-color: rgba(255, 46, 136, 0.6); background: linear-gradient(160deg, rgba(255, 95, 165, 0.42), rgba(138, 77, 255, 0.38)); box-shadow: 0 0 22px rgba(255, 46, 136, 0.22); color: var(--ink); }
+    .uad-card.hecho { border-color: rgba(46, 230, 214, 0.6); background: linear-gradient(160deg, rgba(46, 230, 214, 0.32), rgba(138, 77, 255, 0.3)); }
+    .uad-card.reserva .emoji span { opacity: 0.5; }
+    .uad-card .tag { color: rgba(255, 255, 255, 0.88); }
+    .uad-card .meta .uad-card-estado { background: rgba(0, 0, 0, 0.32); white-space: normal; }
+    .uad-card .btn-uad-punto { top: 10px; right: 10px; }
+    .uad-card.invita .btn-uad-punto { display: none; }
+    .uad-card:has(.uad-card-mes) .btn-uad-punto { top: 18px; }
+    /* La Copa with a day to play today (lab flag copa-hoy): One a Day's ▶ chip, in the Cup's gold */
+    .game-card.torneo .meta .copa-hoy-chip { min-height: 44px; flex: 0 1 auto; max-width: 100%; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 999px; border: 0; background: var(--yellow); color: #2a1600; font: 900 0.9rem/1.1 var(--font-body); text-align: center; white-space: normal; }
+    .game-card.torneo .meta .copa-hoy-chip.espera { background: rgba(255,255,255,0.16); color: inherit; font-weight: 800; }
+    @media (max-width: 340px) { .game-card.torneo .meta .copa-hoy-chip.espera { padding: 0 8px; font-size: 0.78rem; letter-spacing: -0.01em; } }
+    @media (max-width: 340px) { .game-card.torneo .meta .copa-hoy-chip { padding: 0 10px; font-size: 0.82rem; } }
+    /* Beside One a Day's played box (#1 and its points), La Copa's chip is as wide and as tall (#1029) */
+    .fila-alta:has(.uad-card.hecho) .game-card.torneo .meta { align-self: end; justify-self: stretch; width: 100%; }
+    .fila-alta:has(.uad-card.hecho) .game-card.torneo .meta .copa-hoy-chip { width: 100%; flex: 1 1 100%; border-radius: 18px; min-height: calc(14px + 2.1rem * 0.95 + 0.78rem * 1.1); }
+    /* Two destinations (lab, D-414): the link covers the card; the chip sits above it */
+    .uad-card.dos { position: relative; }
+    .uad-card .uad-card-mes { position: absolute; top: -11px; right: 12px; z-index: 3; padding: 1px 12px; border-radius: 999px; border: 1px solid rgba(255, 46, 136, 0.6); background: #2a1a4f; color: #ff8cc0; font: 900 0.75rem/1.4 var(--font-body); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+    .fila-alta:has(.uad-card-mes) { margin-top: 14px; }
+    .uad-card.invita .uad-card-mes { background: #ff2e88; color: #fff; border-color: #ff8cc0; }
+    .uad-card.hecho .uad-card-mes { border-color: rgba(46, 230, 214, 0.6); color: #5ee6d8; }
+    .uad-card-link { position: absolute; inset: 0; border-radius: inherit; z-index: 1; }
+    .uad-card-link:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+    .uad-card.dos .meta { position: relative; z-index: 2; flex-wrap: wrap; align-items: center; }
+    .uad-card.dos .meta .uad-card-estado { white-space: nowrap; }
+    .uad-card-chip { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border-radius: 999px; border: 0; background: var(--yellow); color: #2a1600; font: 900 0.9rem var(--font-body); text-decoration: none; cursor: pointer; flex: 1 1 auto; max-width: 100%; box-sizing: border-box; justify-content: center; text-align: center; line-height: 1.1; }
+    @media (max-width: 340px) { .uad-card-chip { padding: 0 10px; font-size: 0.82rem; } }
+    .uad-card.hecho .uad-card-chip { background: rgba(0, 0, 0, 0.32); color: var(--ink); }
+    /* Played today: the month's place big, with the site's gradient, and the points under it (owner-approved) */
+    .uad-card.hecho .meta { align-self: end; justify-self: stretch; width: 100%; }
+    .uad-card.hecho .meta .uad-card-chip { width: 100%; flex: 1 1 100%; flex-direction: column; gap: 2px; padding: 6px 10px; border-radius: 18px; }
+    .uad-card .meta .uad-card-chip span { background: none; padding: 0; border: 0; border-radius: 0; white-space: nowrap; }
+    .uad-card .meta .uad-card-chip .uad-card-pos { font: 800 2.1rem/0.95 var(--font-num); letter-spacing: -0.02em; padding-right: 0.06em; background: linear-gradient(90deg, var(--yellow), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .uad-card .meta .uad-card-chip .uad-card-sub { font: 800 0.78rem/1.1 var(--font-body); color: var(--muted); }
+    .uad-card-sub i { font-style: normal; }
+    .uad-card-sub b { color: var(--yellow); font-family: var(--font-num); }
+    .uad-card .meta .uad-card-chip .uad-card-fuego { color: var(--ink); font-family: var(--font-num); }
+    @media (max-width: 340px) { .uad-card-sub i { display: none; } }
+    /* El punto no se monta sobre el título: "Spiel des Tages" llega hasta el borde (U-12) */
+    .uad-card:not(.hecho) h2 { padding-right: 14px; }
+    @media (prefers-reduced-motion: reduce) { .btn-uad-punto { animation: none; } }
+    /* La barra de arriba en dos bloques: el idioma a la izquierda y las acciones (sonido, rankings,
+       compartir) a la derecha. Si en un celular angosto no caben juntos, las acciones bajan a otra
+       línea y siguen a la derecha. Con 6 px de aire caben en una sola línea desde 375 px (un
+       iPhone común): con los 10 y 8 de la barra de los juegos se pasaban por 1 px (C-8). */
+    .portada-barra { flex-wrap: wrap; gap: 6px; }
+    .portada-barra .tools { margin-left: auto; gap: 6px; }
+    /* What the module draws has its place from the start (sizes measured at 320–900 px): without it
+       the whole page jumped down once the scripts arrived, a layout shift of 0.53 on a slow network */
+    #lang-slot:empty { min-width: 194px; min-height: 54px; }
+    @media (min-width: 441px) { #lang-slot:empty { min-width: 298px; } }
+    /* Sound, 🏅 and share: 🏅 is in the HTML, the other two arrive with the module; their empty
+       slots hold a button's place so 🏅 does not sit alone on the left and then slide over (U-12) */
+    .portada-barra .tools { min-height: 44px; }
+    .portada-barra .tools > span:empty { width: 44px; height: 44px; }
+    .azar-slot:empty { min-height: 48px; }
+    /* Lab flag home-pill-bar (#1027): the round buttons become pills as tall as the language toggle, so the bar reads as one row */
+    .pill-bar .portada-barra, .pill-bar .portada-barra .tools { align-items: stretch; }
+    .pill-bar .portada-barra .tools > span { display: flex; }
+    .pill-bar .portada-barra .tools .icon-btn, .pill-bar .portada-barra .tools .sound-toggle { width: 48px; height: auto; min-height: 44px; }
+    .pill-bar .portada-barra .tools > span:empty { width: 48px; }
+    /* Below 441 px the toggle stacks flag over code (54 px) and the buttons may drop to their own row: same height there too */
+    @media (max-width: 440px) { .pill-bar .portada-barra .tools .icon-btn, .pill-bar .portada-barra .tools .sound-toggle { min-height: 54px; } }
+    /* Two rows: ⭐ ✨ 🔥 and the types (measured in the four languages; one row of 50 px before D-362) */
+    .filtros:empty { min-height: 104px; }
+    @media (min-width: 557px) { .filtros:empty { min-height: 98px; } }
+    /* The list holds the footer below the fold until its cards arrive */
+    .games:empty { min-height: 100vh; }
+    /* Over the last visit's copy the real cards come in still: the copy already made the entrance */
+    .games.foto .game-card, .games.foto .fav { animation: none; }
+    .games.foto .game-card.torneo { animation: copaFondo 7s ease-in-out infinite alternate; }
+  </style>
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Juegos de Salón">
+  <script type="module">import './assets/js/instalable.js';</script>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar portada-barra"><div id="lang-slot"></div><div class="tools"><span id="sound-slot"></span><a class="icon-btn" id="btn-rankings" href="records/" title="Rankings" aria-label="Rankings">🏅</a><span id="share-slot"></span></div></div>
+    <header class="hero">
+      <span class="emoji bounce"><span class="emoji-swap" id="hero-emoji" aria-hidden="true">🎲</span></span>
+      <h1 class="display display--xl rainbow" data-i18n="appTitle">Juegos de Salón</h1>
+      <p class="sub" data-i18n="appSub">Juegos cortos de mesa, de lógica y de destreza para jugar solo o con amigos.</p>
+      <p class="sub sub-free" data-i18n="appFree">Gratis, sin instalar y sin cuenta.</p>
+      <div class="azar-slot" id="azar-slot"></div>
+    </header>
+
+    <div class="filtros-marca" id="filtros-marca" aria-hidden="true"></div>
+    <div class="filtros-barra" id="filtros-barra">
+      <section class="filtros" id="filtros"></section>
+      <p class="filtros-cuenta" id="filtros-cuenta" aria-live="polite" hidden></p>
+    </div>
+    <hr class="filtros-fin" aria-hidden="true">
+    <section class="games" id="games" aria-label="Lista de juegos"></section>
+    <script>
+      /* The cards as they looked on the last visit, drawn before any module arrives (the owner's
+         request, D-435; for everyone since 2026-10-23): the page's module saves a copy
+         of the list once drawn, and here it comes back at once. It is a link like any other card,
+         so a game opens even before the modules arrive. The copy counts only for the same version,
+         language and day (a ✨ Nuevo or Uno al día's state changes with the date) and with no
+         filter in the link; the module draws the real cards over it in the same instant. */
+      (function () {
+        try {
+          var m = document.getElementById('importmap'), d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+          var v = m ? ((m.textContent.match(/\?v=([^"]+)/) || [])[1] || '') : '';
+          var l = (new URLSearchParams(location.search).get('lang') || '').toLowerCase() || localStorage.getItem('juegos-de-salon:lang') || 'es';
+          var hoy = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate());
+          // Today played or not is part of the key: a copy drawn before playing would show ▶ Jugar hoy
+          // after it, and its tap would roll the die again
+          var uad = JSON.parse(localStorage.getItem('juegos-de-salon:uno-al-dia') || 'null');
+          var k = [v, l, hoy, uad && uad.dias && uad.dias[hoy] ? 1 : 0].join('|');
+          window.__fotoPortada = { k: k };
+          var f = JSON.parse(localStorage.getItem('juegos-de-salon:portada-foto') || 'null');
+          if (!f || f.k !== k || typeof f.html !== 'string' || /[?&](type|tipo|daily)=/.test(location.search)) return;
+          var g = document.getElementById('games');
+          // The copy's words wrap as the drawn ones do (German hyphenates by the page's language)
+          if (/^(es|en|pt)$/.test(l)) document.documentElement.lang = l;
+          g.innerHTML = f.html;
+          g.classList.add('foto');
+          // The copy's ▶ chip is a button with no module behind it yet: a tap on it is kept and
+          // carried out by the real card when it arrives, instead of doing nothing (U-12)
+          var c = g.querySelector('button#btn-uad-chip');
+          if (c) c.addEventListener('click', function () { window.__fotoPortada.chip = true; c.disabled = true; });
+        } catch (_) { /* without storage the list arrives with the modules, as always */ }
+      })();
+    </script>
+
+    <hr class="filtros-fin lista-fin" aria-hidden="true">
+    <footer class="atardecer">
+      <p class="footer-msg" id="footer-msg" aria-live="polite">Toma con responsabilidad y con agua a mano. Si manejas, no tomas. 🚕</p>
+      <div class="footer-links" id="footer-links"><button type="button" class="buzon-link footer-buzon" id="btn-buzon-portada"></button></div>
+      <p class="muted">v0.239.5 · <a href="https://github.com/ellokojavi/juegos-de-salon" style="color:inherit" data-i18n="code">código en GitHub</a> · <a href="privacy/" style="color:inherit" data-i18n="privacy">Privacidad</a></p>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { PORTADA, TIPOS, TIPOS_VIEJOS, rangoJugadores, esNuevo, populares } from './assets/js/games.js';
+    import { sparkles, el, con, ICONO_COMPARTIR } from './assets/js/ui.js';
+    import { botonCompartirPortada } from './assets/js/compartir-portada.js';
+    import { compartirApp, comparteArchivos } from './assets/js/compartir.js';
+    import { getLang, langToggle, applyStatic, pickLang, COMMON, homeUrl } from './assets/js/i18n.js';
+    import { FRASES } from './assets/js/frases.js';
+    import { SFX, soundToggle, initSound } from './assets/js/sound.js';
+    import { botonAzar, TEXTOS as AZAR } from './assets/js/azar.js';
+    import { favoritos, alternarFavorito } from './assets/js/favoritos.js';
+    import { param } from './assets/js/parametros.js';
+    import { season } from './assets/js/season.js';
+    // The site's traffic (D-208), loaded on its own: counting the visit never holds up the list
+    import('./assets/js/transport/stats.js').then(({ trackVisit }) => trackVisit()).catch(() => {});
+    sparkles();
+    initSound();
+    document.getElementById('sound-slot').append(soundToggle());
+    document.addEventListener('click', e => { if (e.target.closest('.game-card, .fav, .lang-toggle button, .filtros button, .link-btn')) SFX.tap(); });
+    const lang = getLang();
+    document.documentElement.lang = lang;
+    const T = COMMON[lang];
+    applyStatic(T);
+    // The inbox's fixed place (D-345): always here, opening the form in its overlay
+    const btnBuzon = document.getElementById('btn-buzon-portada');
+    btnBuzon.textContent = T.buzon.abrir;
+    btnBuzon.addEventListener('click', () => import('./assets/js/buzon.js').then(m => m.abrirBuzon({ pantalla: 'portada' })));
+    // "☕ Buy me a coffee", always beside the inbox
+    // Its card opens over the page; Stripe comes back with ?support=thanks, which opens the thank-you (D-449)
+    const footerLinks = import('./assets/js/support.js').then(m => { m.supportFromUrl({ lang }); return m.supportFooterLink(lang); }).then(a => { if (!a) return; const links = document.getElementById('footer-links'); links.append(a); links.classList.add('tiles'); }).catch(() => {});
+    // The footer's sunset: each option's leading emoji becomes its color circle, so the label wraps under it
+    footerLinks.then(() => {
+      for (const b of document.getElementById('footer-links').children) {
+        const [ic, ...label] = b.textContent.split(' ');
+        b.replaceChildren(el('span', { class: 'ic', 'aria-hidden': 'true' }, ic), ' ', el('span', {}, label.join(' '))); // the space keeps the text whole
+      }
+    }).catch(() => {});
+    document.title = `${T.appTitle} 🎲`;
+    document.getElementById('lang-slot').append(langToggle());
+    // Los rankings (D-212): un botón en la barra, que la portada no tiene espacio para más
+    // Mientras estén en el laboratorio, solo en los celulares que los activaron
+    import('./assets/js/jugador.js').then(({ rankingsVisibles }) => {
+      const b = document.getElementById('btn-rankings');
+      for (const k of ['title', 'aria-label']) b.setAttribute(k, T.rk.rankings);
+      b.hidden = !rankingsVisibles();
+    }).catch(() => {});
+    // Compartir la app: el botón abre una hoja con el video promocional y dos maneras de
+    // compartir (compartir-portada.js): invitar a jugar, con la tarjeta social del idioma en que se
+    // está mirando (D-74, D-226), o mandar el video
+    // Toque y Fama: Palabra is not on the home page: Toque y Fama's page picks the number or the word (#767).
+    // It still plays in Uno al día and La Copa, and 🎲 still draws it (D-188)
+    const JUEGOS_PORTADA = PORTADA.filter(g => g.id !== 'letras');
+    const app = compartirApp({ C: T, lang, juegos: JUEGOS_PORTADA.filter(g => g.available).length });
+    // The sheet with the vertical video in every language, on the Spanish or English tab (D-410)
+    document.getElementById('share-slot').append(
+      botonCompartirPortada({ C: T, app, url: homeUrl(lang), icono: ICONO_COMPARTIR, lang, tap: () => SFX.tap() }));
+    // La imagen se baja antes, y solo donde se va a mandar: al tocar "Invitar a jugar", el menú del
+    // sistema tiene que abrirse enseguida (Safari lo niega si el toque quedó atrás)
+    if (comparteArchivos()) (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => app.imagen());
+
+    // The windows the home page opens on its own: the recap (D-423, D-424), the splash (D-351) and the
+    // install bubble (D-232), through one gate that opens at most one per visit (D-431, in the lab)
+    import('./assets/js/home-windows.js').then(({ startHomeWindows }) => startHomeWindows({ lang, T, url: homeUrl(lang), tap: () => SFX.tap() })).catch(() => {});
+    // The lab's experiments bar (D-363): opened from /labs/home/ with ?lab, on the real home page
+    // Only for lab key holders, like everything still in development (D-395)
+    // The experiments' bar, only with a lab key (D-395). lab: #seccion-portada
+    if (param('lab') !== null) import('./assets/js/lab-access.js').then(({ labAccess }) => labAccess()).then(yes => yes && import('./labs/home/experiments.js').then(({ drawBar }) => drawBar())).catch(() => {});
+
+    // The copy of the list the next visit draws at once (D-435): only of the whole list, never a
+    // filtered or searched one, nor one drawn with ?daily=
+    const FOTO = 'juegos-de-salon:portada-foto';
+    const guardarFoto = () => {
+      try {
+        const k = window.__fotoPortada?.k;
+        // Never from a link that changes the layout (?daily=button puts Uno al día next to the die)
+        if (k && param('daily') === null && !list.querySelector('[hidden], .reserva')) localStorage.setItem(FOTO, JSON.stringify({ k, html: list.innerHTML }));
+      } catch (_) { /* without storage, every visit waits for the modules, as before */ }
+    };
+
+    // 1) Lo importante primero: la lista de juegos, con los de La Copa al final (D-142).
+    const list = document.getElementById('games');
+    // The last visit's copy (the script under #games, D-435): the real cards take its place in
+    // this same task, so nothing blinks. Its Uno al día card stays until the real one arrives, as
+    // the empty card does without a copy.
+    const uadFoto = list.classList.contains('foto') ? list.querySelector('#btn-uno-al-dia') : null;
+    list.replaceChildren();
+    const marcados = new Set(favoritos());
+    const botonFavorito = (g, card) => {
+      const b = el('button', { type: 'button', class: 'fav', 'data-id': g.id, style: card.getAttribute('style'),
+        'aria-label': T.favorite.replace('{juego}', pickLang(g.name, lang)), title: T.favorite.replace('{juego}', pickLang(g.name, lang)) });
+      const pintar = () => { const on = marcados.has(g.id); b.textContent = on ? '★' : '☆'; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+      b.addEventListener('click', () => {
+        if (alternarFavorito(g.id)) marcados.add(g.id); else marcados.delete(g.id);
+        pintar();
+        if (b.classList.contains('on')) { b.classList.remove('salta'); void b.offsetWidth; b.classList.add('salta'); }
+        document.dispatchEvent(new CustomEvent('favoritos'));
+      });
+      pintar();
+      return b;
+    };
+    // The 🔥 "Popular" label on the top three (D-361; for everyone since D-369)
+    const top = populares();
+    const tarjetas = JUEGOS_PORTADA.map((g, i) => {
+      const [, max] = rangoJugadores(g.players);
+      // Un juego que no está disponible se ve, pero no se abre: sin href, ni con el teclado (C-5)
+      const card = el('a', { class: 'game-card' + (g.available ? '' : ' soon') + (g.torneo ? ' torneo' : ''), href: g.available ? g.path : null, 'aria-disabled': g.available ? null : 'true', 'data-id': g.id, style: `animation-delay:${i * 60}ms` },
+        el('div', { class: 'emoji' }, el('span', { class: con('', g.emoji) }, g.emoji)),
+        el('div', { class: 'texto' },
+          // "Próximamente" va pegado al nombre: abajo, entre las píldoras, no se veía
+          el('h2', {}, el('span', {}, pickLang(g.name, lang)), !g.available && el('span', { class: 'proximamente' }, T.soon),
+            // A new game says so for a week (D-333, D-507)
+            g.available && esNuevo(g) && el('span', { class: 'nuevo' }, el('span', {}, T.newGame)),
+            top.has(g.id) && el('span', { class: 'popular' }, el('span', {}, '🔥 '), el('span', {}, T.popularGame))),
+          el('div', { class: 'tag' }, pickLang(g.tagline, lang)),
+        ),
+        el('div', { class: 'meta' },
+          // La palabra va aparte: la tarjeta alta la esconde a la vista para que quepa en una línea
+          g.players && el('span', {}, `👥 ${g.players}`, el('span', { class: 'unidad' }, ` ${max === 1 ? T.player : T.players}`)),
+          g.duration && el('span', {}, `⏱ ${g.duration} ${g.durationUnit ? pickLang(g.durationUnit, lang) : T.minutes}`),
+          // Lo que por ahora se juega solo en español lo dice antes de abrirlo (D-98)
+          g.available && g.idiomas && !g.idiomas.includes(lang) && el('span', { class: 'idioma' }, `🇪🇸 ${T.onlySpanish}`),
+        ),
+        el('div', { class: 'go' }, '›'),
+      );
+      // La ⭐ de favorito (D-238) va al lado de la tarjeta y no adentro: un botón dentro de un link
+      // no se puede tocar sin abrir el juego. La Copa no lleva: es una semana con amigos, no una partida
+      if (!g.available || g.torneo) { list.append(card); return { g, card, caja: card }; }
+      const caja = el('div', { class: 'game-slot' }, card, botonFavorito(g, card));
+      list.append(caja);
+      return { g, card, caja };
+    });
+
+
+    // Juego al azar (D-188): always from every game on the home page, whatever filter is on; only
+    // `alAzar` leaves some out (La Copa, and the games that need a group, D-374)
+    document.getElementById('azar-slot').append(botonAzar({ lang, candidatos: () => PORTADA }));
+    // Uno al día (D-230): el juego de hoy, el mismo para todos. Va en una tarjeta de media fila junto
+    // a La Copa (D-239, lo que eligió el dueño); ?daily=button lo pone al lado del dado, como antes
+    // The row is drawn now, with an empty card in One a Day's place, so La Copa does not first show
+    // at full width and then jump when the modules arrive
+    const copa = tarjetas.find(t => t.g.torneo)?.card;
+    // null (never false) without one, so `reserva?.remove()` holds with ?daily=button
+    const reserva = !['button', 'off'].includes(param('daily')) && copa
+      ? (uadFoto || el('div', { class: 'game-card alta uad-card reserva', 'aria-hidden': 'true' }, el('div', { class: 'emoji' }, el('span', {}, '📅')))) : null;
+    if (reserva) {
+      const fila = el('div', { class: 'fila-alta' });
+      copa.replaceWith(fila);
+      copa.classList.add('alta');
+      fila.append(copa, reserva);
+    }
+    // La Copa's card says what to do today (flag copa-hoy): ▶ Jugar hoy with a day to play. lab: #seccion-copa-hoy
+    // With today's day played, Día N en Xh Ym (flag copa-espera). lab: #seccion-copa-espera
+    // The top bar's buttons as pills of one height (flag home-pill-bar, #1027). lab: #seccion-home-pill-bar
+    import('./assets/js/flags.js').then(({ flag }) => flag('home-pill-bar')).then(on => on && document.documentElement.classList.add('pill-bar')).catch(() => {});
+    if (copa) import('./assets/js/flags.js').then(({ flag }) => flag('copa-hoy')).then(on => on && import('./assets/js/cup-today.js'))
+      .then(m => m && import('./assets/js/flags.js').then(({ flag }) => flag('copa-espera')).then(wait => {
+        m.decorateCupCard(copa, { lang, wait });
+        // ▶ Jugar hoy only for a day the server does not have played (another phone, a late read)
+        if (param('test') === null) m.confirmCupCard(copa, { lang, wait });
+      })).catch(() => {});
+    const uadListo = Promise.all([import('./assets/js/uno-al-dia.js'), import('./assets/js/uno-al-dia-ui.js')]).then(([{ formaAcceso, estado }, { botonUnoAlDia, tarjetaUnoAlDia }]) => {
+      if (formaAcceso() === 'off') { reserva?.remove(); return; }
+      import('./assets/js/uno-al-dia-avisos.js').then(Av => Av.globo()).catch(() => {});
+      if (formaAcceso() === 'card' && reserva) {
+        const card = tarjetaUnoAlDia({ lang, alTocar: () => SFX.tap() });
+        reserva.replaceWith(card);
+        // Back from today's game (bfcache) brings the page as it was, ▶ Jugar hoy included: once
+        // today is played the card is drawn again, with its place
+        let actual = card;
+        const siJugado = () => {
+          if (actual.classList.contains('hecho') || !estado().dia) return;
+          const nueva = tarjetaUnoAlDia({ lang, alTocar: () => SFX.tap() });
+          actual.replaceWith(nueva); actual = nueva;
+          // The next visit's copy goes under today-played's key, which the script under #games reads
+          if (window.__fotoPortada?.k) window.__fotoPortada.k = window.__fotoPortada.k.replace(/\|0$/, '|1');
+          import('./assets/js/uad-place.js').then(({ refreshPlace }) => refreshPlace(nueva, { lang, alTocar: () => SFX.tap() })).then(() => guardarFoto()).catch(() => {});
+        };
+        addEventListener('pageshow', e => { if (e.persisted) siJugado(); });
+        // Played in another tab while this one waited in the background
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) siJugado(); });
+        // Played on another phone, or before this one's memory was cleared: the server says so,
+        // and the card shows it played instead of inviting to play again. Once the page is drawn
+        if (!card.classList.contains('hecho')) (window.requestIdleCallback || (f => setTimeout(f, 300)))(() => import('./assets/js/uno-al-dia-red.js')
+          .then(R => R.hoyJugadoEnRed()).then(si => si && siJugado()).catch(() => {}));
+        // A tap on the copy's ▶ chip before the modules arrived: carried out now
+        if (window.__fotoPortada?.chip) { window.__fotoPortada.chip = false; card.querySelector('button#btn-uad-chip')?.click(); }
+        // The month's place fresh from the server, once the page is drawn (D-435): until it
+        // answers, the chip shows the last one cached
+        (window.requestIdleCallback || (f => setTimeout(f, 300)))(() => import('./assets/js/uad-place.js')
+          .then(({ refreshPlace }) => refreshPlace(card, { lang, alTocar: () => SFX.tap() })).then(cambio => cambio && guardarFoto()).catch(() => {}));
+      } else {
+        reserva?.remove();
+        const slot = document.getElementById('azar-slot');
+        slot.classList.add('con-uad');
+        // En la misma fila, los dos con etiqueta corta: "Al azar" y "Uno al día" (decisión del dueño)
+        const azar = slot.querySelector('.btn-azar span:last-child');
+        if (azar) azar.textContent = (AZAR[lang] || AZAR.es).corto;
+        slot.append(botonUnoAlDia({ lang, alTocar: () => SFX.tap() }));
+      }
+    // Without the modules (offline, an error) the empty card goes away and La Copa takes the row
+    }).catch(() => reserva?.remove());
+    uadListo.then(() => guardarFoto());
+    // A ⭐ marked or unmarked shows on the next visit's copy too
+    document.addEventListener('favoritos', () => uadListo.then(guardarFoto));
+
+    // Filtro por tipo (D-142, D-149): la lista ya es larga. Va en la URL (?type=logic, en inglés
+    // como las rutas: D-214), así volver desde un juego lo deja como estaba y un link filtrado se
+    // puede compartir. Cuántos juegan no se filtra: cada juego pregunta su modo adentro.
+    // "⭐ Favoritos" (D-238) es una ficha más, al principio, y solo con algún favorito marcado:
+    // ?type=favorites en un celular sin favoritos muestra todos, sin ruido.
+    try {
+      const q = new URLSearchParams(location.search);
+      const pedido = q.get('type') || TIPOS_VIEJOS[q.get('tipo')];
+      const FAV = 'favorites';
+      const hayFavoritos = () => tarjetas.some(t => t.caja !== t.card && marcados.has(t.g.id));
+      // "✨ Nuevos" and "🔥 Populares" (D-362; for everyone since D-369)
+      const NEW = 'new', POP = 'popular';
+      const top3 = populares();
+      const atajo = { [NEW]: g => g.available && esNuevo(g), [POP]: g => top3.has(g.id) };
+      const tieneAtajo = k => JUEGOS_PORTADA.some(atajo[k]);
+      const filtro = { tipo: TIPOS[pedido] || (pedido === FAV && hayFavoritos()) || (atajo[pedido] && tieneAtajo(pedido)) ? pedido : null };
+      // The search (D-390, for everyone since D-403): the games "see them all" filtered, or null with nothing typed
+      const busca = { ids: null, clear: () => {} };
+      const caben = ({ g, card, caja }) => (!busca.ids || busca.ids.has(g.id)) && (!filtro.tipo
+        || (filtro.tipo === FAV ? caja !== card && marcados.has(g.id) : atajo[filtro.tipo] ? atajo[filtro.tipo](g) : (g.tipos || []).includes(filtro.tipo)));
+      const caja = document.getElementById('filtros');
+      caja.setAttribute('aria-label', T.filters);
+      const tipos = el('div', { class: 'tipos', role: 'group', 'aria-label': T.filters });
+      const cuenta = document.getElementById('filtros-cuenta');
+      const botones = [];
+      const fav = el('button', { type: 'button', class: 'ficha-fav', 'data-tipo': FAV, 'aria-label': T.favorites, title: T.favorites, onClick: () => { filtro.tipo = filtro.tipo === FAV ? null : FAV; aplicar(); } }, el('span', { class: 'ficha-emoji', 'aria-hidden': 'true' }, '⭐'), el('span', {}, T.favorites));
+      const favs = el('div', { class: 'favs' }, fav);
+      botones.push(fav);
+      // Solo los tipos que tiene algún juego que se puede abrir: así la lista nunca queda vacía
+      for (const [id, t] of Object.entries(TIPOS)) {
+        if (!JUEGOS_PORTADA.some(g => g.available && (g.tipos || []).includes(id))) continue;
+        const b = el('button', { type: 'button', 'data-tipo': id, onClick: () => { filtro.tipo = filtro.tipo === id ? null : id; aplicar(); } }, el('span', { class: 'ficha-emoji', 'aria-hidden': 'true' }, t.emoji), el('span', {}, pickLang(t.name, lang)));
+        tipos.append(b); botones.push(b);
+      }
+      const atajos = el('div', { class: 'atajos', role: 'group', 'aria-label': T.filters });
+      for (const [k, emoji, texto] of [[NEW, '✨', T.filterNew], [POP, '🔥', T.filterPopular]]) {
+        const b = el('button', { type: 'button', 'data-tipo': k, hidden: !tieneAtajo(k), onClick: () => { filtro.tipo = filtro.tipo === k ? null : k; aplicar(); } }, el('span', { class: 'ficha-emoji', 'aria-hidden': 'true' }, emoji), el('span', {}, texto));
+        atajos.append(b); botones.push(b);
+      }
+      atajos.hidden = ![NEW, POP].some(tieneAtajo);
+      caja.append(favs, atajos, tipos);
+      const limpiar = () => { filtro.tipo = null; busca.clear(); aplicar(); };
+      // Dónde va ⭐ Favoritos (D-241): se prueba de la forma más completa a la más corta y queda la
+      // primera que cabe sin que la fila se desborde. Se mide en vez de fijar un ancho: el largo de
+      // los tipos cambia con el idioma y con las fuentes de cada celular.
+      const acomodarFav = () => {
+        const hay = hayFavoritos();
+        fav.hidden = !hay;
+        // With ✨ Nuevo and 🔥 Populares (D-362), ⭐ goes first in their row, with its name if it fits (D-364)
+        const conFila = hay && [NEW, POP].some(tieneAtajo);
+        // In that row: with its name; with its name and less air; the ⭐ alone
+        const formas = hay ? [...(conFila ? [['atajos', false, false], ['atajos', false, true], ['atajos', true, true]] : []), ['fila', false], ['fila', true], ['linea', false]] : [['linea', false]];
+        for (const [donde, sola, justa = sola] of formas) {
+          if (donde === 'atajos') { if (fav.parentNode !== atajos) atajos.prepend(fav); }
+          else if (donde === 'fila') { if (fav.parentNode !== tipos) tipos.prepend(fav); }
+          else if (fav.parentNode !== favs) favs.append(fav);
+          fav.classList.toggle('sola', sola);
+          tipos.classList.toggle('apretada', donde === 'fila' && sola);
+          atajos.classList.toggle('apretada', donde === 'atajos' && justa);
+          const fila = donde === 'atajos' ? atajos : tipos;
+          if (donde === 'linea' || fila.scrollWidth <= fila.clientWidth + 0.5) break;
+        }
+        favs.hidden = !hay || fav.parentNode !== favs;
+        atajos.hidden = ![NEW, POP].some(tieneAtajo) && fav.parentNode !== atajos;
+      };
+      const aplicar = (primera = false) => {
+        for (const b of botones) {
+          const on = b.dataset.tipo === filtro.tipo;
+          b.classList.toggle('on', on); b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        }
+        let n = 0;
+        for (const t of tarjetas) {
+          const ve = caben(t);
+          // Las que vuelven a aparecer entran escalonadas desde arriba, no con el retraso de su lugar original
+          if (!primera && ve && t.card.hidden) for (const x of [t.card, t.caja.querySelector('.fav')]) if (x) x.style.animationDelay = `${n * 40}ms`;
+          t.card.hidden = t.caja.hidden = !ve;
+          if (ve) n++;
+        }
+        acomodarFav();
+        const filtrado = !!filtro.tipo || !!busca.ids;
+        cuenta.hidden = !filtrado || n === 0;
+        cuenta.replaceChildren(el('span', {}, T.shown.replace('{n}', n).replace('{total}', tarjetas.length)),
+          el('button', { class: 'link-btn', type: 'button', onClick: limpiar }, T.clearFilters));
+        // ?jugadores= era el filtro de cuántos juegan (D-142): un link viejo lo pierde sin ruido.
+        // ?tipo= es el nombre de antes de D-214: se reescribe como ?type=
+        const url = new URL(location.href);
+        for (const k of ['jugadores', 'tipo', 'type']) url.searchParams.delete(k);
+        if (filtro.tipo) url.searchParams.set('type', filtro.tipo);
+        // Without the empty `=` URLSearchParams adds to flags: `?test&lab`, not `?test=&lab=`
+        history.replaceState(history.state, '', url.pathname + url.search.replace(/=(?=&|$)/g, '') + url.hash);
+      };
+      aplicar(true);
+      // The 🔎 search, for everyone (D-403): loaded after the list is drawn, so it never delays it
+      import('./assets/js/search.js').then(({ drawSearch }) => {
+        Object.assign(busca, drawSearch({ into: caja, lang, games: JUEGOS_PORTADA, pickName: pickLang, onChange: ids => { busca.ids = ids; aplicar(); } }));
+      }).catch(e => console.warn('búsqueda:', e));
+      // Marcar el primero hace aparecer la ficha; desmarcar estando en Favoritos no saca la tarjeta
+      // de la vista (se puede volver a marcar), salvo que ya no quede ninguno: ahí se ven todos
+      document.addEventListener('favoritos', () => {
+        if (filtro.tipo === FAV && !hayFavoritos()) { filtro.tipo = null; aplicar(); }
+        else acomodarFav();
+      });
+      // Al girar el celular o cuando terminan de cargar las fuentes, puede que ahora quepa (o no)
+      let anchoVisto = 0;
+      new ResizeObserver(() => { const w = Math.round(caja.clientWidth); if (w !== anchoVisto) { anchoVisto = w; acomodarFav(); } }).observe(caja);
+      document.fonts?.ready.then(acomodarFav);
+      // Pegados arriba (ver .filtros-barra): la marca invisible de su lugar de siempre dice si se
+      // pasó de largo. Al cambiar de tipo estando pegados, la lista vuelve a empezar justo debajo.
+      const barra = document.getElementById('filtros-barra');
+      const marca = document.getElementById('filtros-marca');
+      barra.prepend(el('button', { type: 'button', class: 'barra-titulo', 'aria-label': T.appTitle, onClick: () => scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }) },
+        el('span', { 'aria-hidden': 'true' }, '🎲'), el('span', {}, T.appTitle)));
+      // The menu sticks below the space for the title (D-369): it floats once its mark passes that line
+      const tope = parseFloat(getComputedStyle(barra).top) || 0;
+      new IntersectionObserver(([e]) => barra.classList.toggle('pegada', !e.isIntersecting && e.boundingClientRect.top < tope), { rootMargin: `${-tope}px 0px 0px 0px` }).observe(marca);
+      // A short result would not let the page scroll that far, and the menu would drop back to its
+      // place on its own (D-371): an empty space under the list keeps it floating, and it shrinks as
+      // the player scrolls up, so the menu leaves only then. It never grows on a scroll.
+      const relleno = el('div', { class: 'filtros-relleno', 'aria-hidden': 'true' });
+      document.getElementById('games').after(relleno);
+      const sobra = () => Math.max(0, Math.ceil(window.scrollY + innerHeight - (document.documentElement.scrollHeight - relleno.offsetHeight)));
+      window.addEventListener('scroll', () => {
+        if (relleno.offsetHeight && sobra() < relleno.offsetHeight) relleno.style.height = `${sobra()}px`;
+      }, { passive: true });
+      barra.addEventListener('click', e => {
+        if (!e.target.closest('button') || e.target.closest('.barra-titulo') || !barra.classList.contains('pegada')) return;
+        const tope = parseFloat(getComputedStyle(barra).top) || 0;
+        // Rounded up: the page scrolls by whole pixels, and half a pixel short the menu dropped too
+        const y = Math.ceil(marca.getBoundingClientRect().top + window.scrollY - tope);
+        relleno.style.height = '0px';
+        relleno.style.height = `${Math.max(0, Math.ceil(y + innerHeight - document.documentElement.scrollHeight))}px`;
+        window.scrollTo({ top: y });
+      });
+      window.__portada = { get filtro() { return { ...filtro }; }, get visibles() { return tarjetas.filter(t => !t.card.hidden).map(t => t.g.id); }, get favoritos() { return [...marcados]; } };
+    } catch (e) { console.warn('filtros del menú:', e); }
+
+    // 2) Decoraciones: si algo falla aquí, el menú sigue funcionando.
+    try {
+      // Emoji del encabezado: el dado se transforma suavemente en otros emojis festivos cada 3 segundos.
+      const heroEmojis = ['🎲', '🍻', '🎯', '🍸', '🎈', '🍣', '🃏', '🎉', '🥳', '🍕', '🎤', '🔢', '🍹', '🕺', '🎊'];
+      const heroEl = document.getElementById('hero-emoji');
+      let heroIdx = 0;
+      // In a season (season.js) its template's emojis take turns with the dice's: 🎃 → 🎲 → 👻 → 🍻 …
+      season.then(s => {
+        if (!s?.hero?.length) return;
+        const mix = heroEmojis.flatMap((e, i) => (i < s.hero.length ? [s.hero[i], e] : [e]));
+        heroEmojis.splice(0, heroEmojis.length, ...mix);
+        heroEl.textContent = heroEmojis[heroIdx = 0];
+      });
+      setInterval(() => {
+        if (document.hidden) return;
+        heroEl.classList.add('out');
+        setTimeout(() => { heroIdx = (heroIdx + 1) % heroEmojis.length; heroEl.textContent = heroEmojis[heroIdx]; heroEl.classList.remove('out'); }, 350);
+      }, 3000);
+      // Mensajes rotativos del pie: uno al azar al cargar, luego uno nuevo cada 10 segundos con fundido.
+      // 150 frases por idioma, barajadas en cada carga para que cada visita empiece distinto.
+      const msgs = (FRASES[lang] || [T.footer]).slice().sort(() => Math.random() - 0.5);
+      const msgEl = document.getElementById('footer-msg');
+      let idx = 0;
+      msgEl.textContent = msgs[idx];
+      if (msgs.length > 1) setInterval(() => {
+        if (document.hidden) return;
+        msgEl.classList.add('out');
+        setTimeout(() => { idx = (idx + 1) % msgs.length; msgEl.textContent = msgs[idx]; msgEl.classList.remove('out'); }, 500);
+      }, 10000);
+    } catch (e) { console.warn('decoraciones del menú:', e); }
+  </script>
+</body>
+</html>

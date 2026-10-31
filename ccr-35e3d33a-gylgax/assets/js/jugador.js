@@ -1,0 +1,696 @@
+/**
+ * El jugador de este celular y sus récords (D-212). Entrar es opcional: sin jugador todo se
+ * juega igual que siempre y nada sale del celular; con jugador, el mejor puntaje de cada juego
+ * va a los rankings y se cuentan sus partidas.
+ *
+ * El almacén es la base de datos, con la misma forma que Firebase: `jugador-firebase.js` en el
+ * sitio y `jugador-local.js` en las pruebas (hace cumplir lo mismo que las reglas).
+ *
+ *   jugadores/<jid>                 { n: nombre, at, juegos: { <juego>: { n: partidas, at } } }
+ *   jugadorNombres/<clave>/<jid>    true: quiénes usan ese nombre. Se lee para entrar.
+ *   jugadorKeys/<jid>               sha256 del PIN. Nadie lo puede leer. Changed only by a seated
+ *                                   phone that knows the current PIN (D-464).
+ *   jugadorSeats/<jid>/<uid>        el celular `uid` escribe por `jid`; las reglas lo aceptan solo
+ *                                   si trae el mismo hash que jugadorKeys (como en La Copa, D-96)
+ *                                   and this phone's fresh attempt holds it (D-464).
+ *   jugadorIntentos/<jid>           { h, u, at }: the last PIN attempt on that player (D-464). One
+ *                                   every 5 s; a seat or a key change needs this phone's attempt,
+ *                                   from the last minute, with the current key. Nobody reads it.
+ *   records/<tabla>/<periodo>/<jid> { s, ms, k, at, n }: el mejor, y solo si mejora.
+ *   torneoPodios/<código>           el podio de una copa terminada, para el medallero.
+ *                                   `p/<pid>/j` is signed later by that cup player (D-358).
+ *   jugadorCopas/<jid>/<código>     { p, at }: las copas en que está, como el jugador `p` de cada
+ *                                   una (D-220). Solo la leen sus celulares.
+ *   unoAlDia/<jid>/<n>              { j, s, ms, at, w? }: el primer intento de Uno al día del día `n`
+ *   unoAlDiaDias/<n>/<jid>          its score `s` again, the index by day the owner's readers query (D-475)
+ *                                   (días desde 1970, D-230). Se escribe una vez; `w` marca que ya
+ *                                   se sumó a la semana. La lee cualquiera (la racha de quien invita).
+ *   invitados/<jid>/<uid>           { d, at, j? }: el celular `uid` terminó su primer Uno al día el
+ *                                   día `d` con una invitación de `jid` (D-230): le da un comodín.
+ */
+import { envOf, countryOf } from './transport/stats.js';
+import { tiene } from './parametros.js';
+import { UAD_DIAS } from './uad-days.js';
+import {
+  claveNombre, limpiarNombre, esPin, esJid, nuevoJid, hashPinJugador, tablaId, normalizar, esMejor, semana,
+  SIEMPRE, TODOTERRENO, todoterreno, vistaTabla, ordenar, VARIANTE_VICTORIAS, claveOrden, PARTIDAS, esPais,
+  UNO_AL_DIA, UAD_RACHA, periodoDia, MS_MAX, UAD_PUNTOS, RACHA_TOPE, bonoRacha, PUNTOS_INVITAR,
+} from './records.js';
+
+/** Lo que entiende Firebase (y el almacén de prueba) como "la hora del servidor" y "sumar uno". */
+export const HORA = { '.sv': 'timestamp' };
+export const MAS_UNO = { '.sv': { increment: 1 } };
+
+const KEY = 'juegos-de-salon:jugador';
+const MEJORES = 'juegos-de-salon:jugador:mejores';
+const AMIGOS = 'juegos-de-salon:jugador:amigos';
+const PENDIENTES = 'juegos-de-salon:jugador:pendientes';
+
+const falla = code => Object.assign(new Error(code), { code });
+
+/**
+ * Los rankings partieron en el laboratorio (D-212) y se abrieron a todos (D-217). La puerta queda
+ * por si algo de los rankings vuelve a probarse antes de abrirse: con `RANKINGS_EN_LABS = true`,
+ * se ven solo en los celulares que los activaron (`activarRankings`) y siempre en pruebas.
+ */
+export const RANKINGS_EN_LABS = false;
+export const LABS_RANKINGS_KEY = 'juegos-de-salon:labs-rankings';
+export function rankingsVisibles(storage = globalThis.localStorage) {
+  if (!RANKINGS_EN_LABS) return true;
+  try { return envOf(globalThis.location || {}) === 'dev' || storage.getItem(LABS_RANKINGS_KEY) === '1'; } catch (_) { return false; }
+}
+export function activarRankings(si, storage = globalThis.localStorage) {
+  try { if (si) storage.setItem(LABS_RANKINGS_KEY, '1'); else storage.removeItem(LABS_RANKINGS_KEY); } catch (_) { /* sin memoria */ }
+}
+
+/** El jugador guardado en este celular, sin esperar a nada: para dibujar de una. */
+export function leerYo(storage = globalThis.localStorage) {
+  try { const y = JSON.parse(storage.getItem(KEY)); return y && esJid(y.jid) ? y : null; } catch (_) { return null; }
+}
+
+/** Cuántas filas se leen de una tabla: las 10 que se muestran y las de alrededor de quien mira. */
+export const LEER = 100;
+
+/**
+ * `juegos`: los que suman al Todoterreno (los sueltos de la portada). `storage` y `now` se
+ * pueden cambiar en las pruebas.
+ */
+/** How long the rules make a player wait between two PIN attempts (D-464), plus a margin. */
+export const PAUSA_INTENTOS = 5500;
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+
+export function crearJugador({ almacen, storage = globalThis.localStorage, now = () => Date.now(), juegos = [], pais = () => '', esperar = dormir } = {}) {
+  const leer = (k, def) => { try { return JSON.parse(storage.getItem(k)) ?? def; } catch (_) { return def; } };
+  const escribir = (k, v) => { try { if (v === null) storage.removeItem(k); else storage.setItem(k, JSON.stringify(v)); } catch (_) { /* sin memoria */ } };
+  const oyentes = new Set();
+  // The last read of each table, so a page that asks twice in a row reads once (`tabla`'s `reciente`)
+  const lecturas = new Map();
+  const avisar = () => { for (const f of oyentes) try { f(api.yo()); } catch (_) { /* nada */ } };
+
+  /** Mis mejores, por tabla y período, tal como los vio este celular. */
+  const mejores = () => leer(MEJORES, {});
+  const anotarMejor = (t, p, r) => {
+    if (!r) return;
+    const m = mejores();
+    const antes = m[t]?.[p];
+    if (!antes || esMejor(r, antes)) { (m[t] ||= {})[p] = { s: r.s, ms: r.ms }; escribir(MEJORES, m); }
+  };
+  /** Las semanas viejas no sirven para nada: se borran del celular. */
+  const podarMejores = () => {
+    const sem = semana(now()), m = mejores();
+    for (const t of Object.keys(m)) for (const p of Object.keys(m[t])) if (p !== SIEMPRE && p !== sem) delete m[t][p];
+    escribir(MEJORES, m);
+  };
+
+  /**
+   * Este celular queda como `jid`. El país del jugador va junto a su nombre en todas las tablas
+   * (D-219): si el jugador no lo tiene, se le pone el de este celular, una vez.
+   */
+  const quedar = async (jid, n) => {
+    let co = await almacen.get(`jugadores/${jid}/co`).catch(() => null);
+    if (!esPais(co)) {
+      const mio = pais();
+      if (esPais(mio)) { try { await almacen.update({ [`jugadores/${jid}/co`]: mio }); co = mio; } catch (_) { co = null; } }
+    }
+    escribir(KEY, { jid, n, ...(esPais(co) ? { co } : {}) });
+    avisar();
+    // Lo que ya tenía en el servidor, para que el Todoterreno sume desde ahí (D-212)
+    sincronizar().catch(() => {});
+    return { jid, n, ...(esPais(co) ? { co } : {}) };
+  };
+  /** Lo que lleva cada fila de una tabla, además del puntaje: el nombre y el país. */
+  const quien = yo => ({ n: yo.n, ...(esPais(yo.co) ? { co: yo.co } : {}) });
+
+  /** Una partida más en la tabla de partidas (D-219), de la semana y de siempre. Mejor esfuerzo. */
+  async function sumarPartida(yo) {
+    try {
+      const cambios = {};
+      for (const p of [SIEMPRE, semana(now())]) {
+        const v = ((await almacen.get(`records/${PARTIDAS}/${p}/${yo.jid}`))?.s || 0) + 1;
+        cambios[`records/${PARTIDAS}/${p}/${yo.jid}`] = { s: v, ms: 0, k: claveOrden(v, 0), at: HORA, ...quien(yo) };
+      }
+      await almacen.update(cambios);
+    } catch (_) { /* la tabla de partidas es un adorno: la partida ya quedó contada */ }
+  }
+
+  async function sincronizar() {
+    const yo = api.yo();
+    if (!yo) return;
+    escribir(MEJORES, {});
+    const periodos = [SIEMPRE, semana(now())];
+    await Promise.all(juegos.flatMap(j => periodos.map(async p => anotarMejor(j, p, await almacen.get(`records/${j}/${p}/${yo.jid}`)))));
+  }
+
+  /**
+   * A PIN attempt on `jid` (D-464): the rules take one every 5 s per player, and a seat or a key
+   * change needs this phone's attempt with the current key. If the last attempt is too recent, it
+   * waits the 5 s once and tries again; if it is refused again, 'espera'. 'sin-clave' if the player
+   * has no key (a legacy one).
+   */
+  async function intentar(jid, h) {
+    const uid = await almacen.listo();
+    const escribirIntento = () => almacen.update({ [`jugadorIntentos/${jid}`]: { h, u: uid, at: HORA } });
+    try { await escribirIntento(); return; } catch (e) { if (e.code !== 'permiso') throw e; }
+    if (await almacen.get(`jugadores/${jid}/legado`)) throw falla('sin-clave');
+    await esperar(PAUSA_INTENTOS);
+    try { await escribirIntento(); } catch (e) { throw e.code === 'permiso' ? falla('espera') : e; }
+  }
+
+  /** Probar el PIN contra los jugadores que usan ese nombre: el que lo acepta, es. */
+  async function buscar(nombre, pin) {
+    const clave = claveNombre(nombre);
+    const candidatos = Object.keys((await almacen.get(`jugadorNombres/${clave}`)) || {}).filter(esJid);
+    const uid = await almacen.listo();
+    let heredado = null, espera = false;
+    for (const jid of candidatos) {
+      const h = await hashPinJugador(jid, pin);
+      try {
+        await intentar(jid, h);
+        await almacen.update({ [`jugadorSeats/${jid}/${uid}`]: h });
+        return { jid, candidatos };
+      } catch (e) {
+        if (e.code === 'espera') { espera = true; continue; }
+        if (e.code !== 'permiso' && e.code !== 'sin-clave') throw e;
+        // Un jugador de antes de los rankings (sin PIN): sus puntajes esperan a su dueño
+        if (!heredado && await almacen.get(`jugadores/${jid}/legado`)) heredado = jid;
+      }
+    }
+    // A player with that name could not be tried: better wait than create a second one
+    if (espera) throw falla('espera');
+    return { jid: null, candidatos, heredado };
+  }
+
+  let subiendo = null;
+  const api = {
+    /** El jugador de este celular, `{ jid, n }`, o null. */
+    yo: () => leerYo(storage),
+    /** Avisa cuando se entra o se sale (para redibujar). Devuelve cómo dejar de escuchar. */
+    escuchar(f) { oyentes.add(f); return () => oyentes.delete(f); },
+
+    /**
+     * Entrar con nombre y PIN. `{ estado: 'dentro', jid }` si algún jugador con ese nombre tiene
+     * ese PIN; si no, `{ estado: 'nuevo', otros }`: cuántos usan ese nombre con otro PIN. Con eso
+     * la pantalla pregunta si es otra persona antes de crear un jugador nuevo.
+     */
+    async entrar(nombre, pin) {
+      const n = limpiarNombre(nombre);
+      if (!n) throw falla('nombre');
+      if (!esPin(pin)) throw falla('pin-forma');
+      const { jid, candidatos, heredado } = await buscar(n, pin);
+      // `heredado`: hay puntajes de La Copa a ese nombre, de antes de los rankings, sin dueño
+      if (!jid) {
+        const de = heredado ? { heredado, nombreHeredado: (await almacen.get(`jugadores/${heredado}/n`)) || n } : {};
+        return { estado: 'nuevo', otros: candidatos.length - (heredado ? 1 : 0), ...de };
+      }
+      await quedar(jid, (await almacen.get(`jugadores/${jid}/n`)) || n);
+      return { estado: 'dentro', jid };
+    },
+
+    /** Un jugador nuevo. Si ya hay uno con ese nombre y ese PIN, entra a ese (no se duplica). */
+    async crear(nombre, pin) {
+      const n = limpiarNombre(nombre);
+      if (!n) throw falla('nombre');
+      if (!esPin(pin)) throw falla('pin-forma');
+      const ya = await buscar(n, pin);
+      if (ya.jid) return quedar(ya.jid, (await almacen.get(`jugadores/${ya.jid}/n`)) || n);
+      const uid = await almacen.listo();
+      const jid = nuevoJid();
+      const h = await hashPinJugador(jid, pin);
+      await almacen.update({
+        [`jugadores/${jid}`]: { n, at: HORA, ...(esPais(pais()) ? { co: pais() } : {}) },
+        [`jugadorNombres/${claveNombre(n)}/${jid}`]: true,
+        [`jugadorKeys/${jid}`]: h,
+        [`jugadorSeats/${jid}/${uid}`]: h,
+      });
+      return quedar(jid, n);
+    },
+
+    /**
+     * Tomar un jugador heredado (los de La Copa de antes de los rankings, que no tienen PIN): el
+     * primero que entra con ese nombre y dice "son míos" le pone su PIN y se queda con sus puntajes.
+     */
+    async reclamar(jid, pin) {
+      if (!esJid(jid)) throw falla('jid');
+      if (!esPin(pin)) throw falla('pin-forma');
+      const uid = await almacen.listo();
+      const h = await hashPinJugador(jid, pin);
+      await almacen.update({ [`jugadorKeys/${jid}`]: h, [`jugadorSeats/${jid}/${uid}`]: h, [`jugadores/${jid}/legado`]: null });
+      return quedar(jid, (await almacen.get(`jugadores/${jid}/n`)) || '?');
+    },
+
+    /** Salir en este celular. Los récords quedan; se vuelve a entrar con el mismo nombre y PIN. */
+    salir() {
+      const yo = api.yo();
+      escribir(KEY, null); escribir(MEJORES, null);
+      avisar();
+      if (yo) almacen.listo().then(uid => almacen.update({ [`jugadorSeats/${yo.jid}/${uid}`]: null })).catch(() => {});
+    },
+
+    /**
+     * Seat this phone as its player again with the player's PIN (D-416). The seat hangs from the
+     * anonymous session, which the browser can drop while the player stays in localStorage: the
+     * phone still shows the player, but the rules no longer accept its writes. 'pin' if wrong.
+     */
+    async reseat(pin) {
+      const yo = api.yo();
+      if (!yo) throw falla('sin-jugador');
+      if (!esPin(pin)) throw falla('pin-forma');
+      const uid = await almacen.listo();
+      const h = await hashPinJugador(yo.jid, pin);
+      await intentar(yo.jid, h);
+      try { await almacen.update({ [`jugadorSeats/${yo.jid}/${uid}`]: h }); }
+      catch (e) { throw e?.code === 'permiso' ? falla('pin') : e; }
+    },
+
+    /**
+     * Cambiar el PIN: los demás celulares donde estaba quedan afuera. The current PIN is needed
+     * (D-464): a phone that is merely seated cannot change it. 'pin-actual' if it is not the PIN.
+     */
+    async cambiarPin(actual, pin) {
+      const yo = api.yo();
+      if (!yo) throw falla('sin-jugador');
+      if (!esPin(actual) || !esPin(pin)) throw falla('pin-forma');
+      const uid = await almacen.listo();
+      await intentar(yo.jid, await hashPinJugador(yo.jid, actual));
+      const h = await hashPinJugador(yo.jid, pin);
+      try { await almacen.update({ [`jugadorKeys/${yo.jid}`]: h, [`jugadorSeats/${yo.jid}`]: { [uid]: h } }); }
+      catch (e) { throw e?.code === 'permiso' ? falla('pin-actual') : e; }
+    },
+
+    /**
+     * Prove this player's PIN without sitting (D-464): La Copa's admin, linked to their player, uses
+     * it to give someone a new cup PIN. The rules decide whether it was the PIN.
+     */
+    async probarPin(pin) {
+      const yo = api.yo();
+      if (!yo) throw falla('sin-jugador');
+      if (!esPin(pin)) throw falla('pin-forma');
+      await intentar(yo.jid, await hashPinJugador(yo.jid, pin));
+    },
+
+    async perfil(jid = api.yo()?.jid) {
+      return jid ? almacen.get(`jugadores/${jid}`) : null;
+    },
+
+    /**
+     * Anotar una partida terminada. Se cuenta siempre; el puntaje entra a la tabla de siempre y
+     * a la de la semana si las mejora, y al Todoterreno si es un juego suelto. Sin jugador, no
+     * hace nada y devuelve null. Si el PIN cambió en otro celular, este queda afuera ('pin').
+     * Un 0 (rendirse) cuenta como partida jugada, pero no entra a las tablas (dilema #185).
+     */
+    async anotar({ juego, variante = '', s, ms, cuando = now() }) {
+      const yo = api.yo();
+      const r = normalizar({ s, ms });
+      if (!yo || !r) return null;
+      podarMejores();
+      try {
+        await almacen.update({ [`jugadores/${yo.jid}/juegos/${juego}/n`]: MAS_UNO, [`jugadores/${yo.jid}/juegos/${juego}/at`]: HORA });
+      } catch (e) {
+        if (e.code === 'permiso') { escribir(KEY, null); avisar(); throw falla('pin'); }
+        throw e;
+      }
+      await sumarPartida(yo);
+      const t = tablaId(juego, variante);
+      const sem = semana(cuando);
+      const out = {};
+      const cambios = {};
+      for (const [nombre, p] of [['siempre', SIEMPRE], ['semana', sem]]) {
+        const antes = await almacen.get(`records/${t}/${p}/${yo.jid}`);
+        anotarMejor(t, p, antes);
+        const nuevo = r.s > 0 && esMejor(r, antes);
+        out[nombre] = { nuevo, antes: antes ? { s: antes.s, ms: antes.ms } : null, periodo: p };
+        if (nuevo) cambios[`records/${t}/${p}/${yo.jid}`] = { ...r, at: HORA, ...quien(yo) };
+      }
+      if (Object.keys(cambios).length) {
+        await almacen.update(cambios);
+        for (const [nombre, p] of [['siempre', SIEMPRE], ['semana', sem]]) if (out[nombre].nuevo) anotarMejor(t, p, r);
+      }
+      // El Todoterreno va aparte: si este celular no sabe todos sus mejores, su suma puede quedar
+      // corta y las reglas la rechazan sin llevarse el récord del juego.
+      if (!variante && juegos.includes(juego) && Object.keys(cambios).length) {
+        for (const p of [SIEMPRE, sem]) {
+          const suma = todoterreno(Object.fromEntries(juegos.map(j => [j, mejores()[j]?.[p]])), juegos);
+          const tt = suma && normalizar(suma);
+          if (!tt) continue;
+          try {
+            const antes = await almacen.get(`records/${TODOTERRENO}/${p}/${yo.jid}`);
+            if (esMejor(tt, antes)) await almacen.update({ [`records/${TODOTERRENO}/${p}/${yo.jid}`]: { ...tt, at: HORA, ...quien(yo) } });
+          } catch (_) { /* el Todoterreno es un adorno: el récord del juego ya quedó */ }
+        }
+      }
+      return out;
+    },
+
+    /**
+     * A finished game the network did not let `anotar` save: kept on this phone, with its time so
+     * it lands in the week it was played, until `subirPendientes` sends it. Up to 20, for 30 days.
+     */
+    guardarPendiente({ juego, variante = '', s, ms }) {
+      const yo = api.yo();
+      if (!yo || !normalizar({ s, ms })) return false;
+      escribir(PENDIENTES, [...leer(PENDIENTES, []), { jid: yo.jid, juego, variante, s, ms, t: now() }].slice(-20));
+      return true;
+    },
+    pendientes: () => leer(PENDIENTES, []),
+
+    /**
+     * Sends the games `guardarPendiente` kept (on loading the page and when the phone is back
+     * online). One that the network stops again stays for next time; one of another player, one
+     * older than 30 days or one the rules refuse is dropped. Returns how many it sent.
+     */
+    subirPendientes() {
+      // One run at a time: the page's load and the 'online' event can ask together
+      return subiendo ||= (async () => {
+        const yo = api.yo();
+        let enviados = 0;
+        if (!yo) return 0;   // signed out: kept until someone signs in, and then only theirs go
+        for (const x of leer(PENDIENTES, [])) {
+          const quitar = () => escribir(PENDIENTES, leer(PENDIENTES, []).filter(y => y.t !== x.t || y.juego !== x.juego));
+          if (x.jid !== yo.jid || now() - x.t > 30 * 86400000) { quitar(); continue; }
+          try { await api.anotar({ ...x, cuando: x.t }); quitar(); enviados++; } catch (e) {
+            if (e?.code === 'pin' || e?.code === 'permiso') { quitar(); continue; }
+            break;
+          }
+        }
+        return enviados;
+      })().finally(() => { subiendo = null; });
+    },
+
+    /**
+     * Una partida de un juego de grupo terminada (D-212): se cuenta, y si la ganó, suma una
+     * victoria en la tabla de la semana y en la de siempre. Sin jugador, null.
+     */
+    async anotarVictoria({ juego, gano }) {
+      const yo = api.yo();
+      if (!yo) return null;
+      try {
+        await almacen.update({ [`jugadores/${yo.jid}/juegos/${juego}/n`]: MAS_UNO, [`jugadores/${yo.jid}/juegos/${juego}/at`]: HORA });
+      } catch (e) {
+        if (e.code === 'permiso') { escribir(KEY, null); avisar(); throw falla('pin'); }
+        throw e;
+      }
+      await sumarPartida(yo);
+      if (!gano) return { gano: false };
+      const t = tablaId(juego, VARIANTE_VICTORIAS);
+      const out = { gano: true };
+      const cambios = {};
+      for (const [nombre, p] of [['siempre', SIEMPRE], ['semana', semana(now())]]) {
+        const v = ((await almacen.get(`records/${t}/${p}/${yo.jid}`))?.s || 0) + 1;
+        out[nombre] = v;
+        cambios[`records/${t}/${p}/${yo.jid}`] = { s: v, ms: 0, k: claveOrden(v, 0), at: HORA, ...quien(yo) };
+      }
+      await almacen.update(cambios);
+      return out;
+    },
+
+    /**
+     * Una tabla tal como se muestra: `{ top, yo, vecinos, fuera }` (ver `vistaTabla`). Lee de una
+     * vez las primeras 100; si quien mira está más abajo, lee aparte a sus vecinos.
+     * `reciente` (ms): reuse a read of the same table started that recently, or still on its way,
+     * instead of asking the server again (lab, D-436).
+     */
+    async tabla(t, periodo = semana(now()), { top = 10, reciente = 0 } = {}) {
+      const yo = api.yo();
+      const clave = `${t}/${periodo}`, previa = lecturas.get(clave);
+      let lectura;
+      if (reciente && previa && now() - previa.at < reciente) lectura = previa.p;
+      else {
+        lectura = almacen.top(t, periodo, LEER);
+        lecturas.set(clave, { at: now(), p: lectura });
+        lectura.catch(() => { if (lecturas.get(clave)?.p === lectura) lecturas.delete(clave); });
+      }
+      const leidas = await lectura;
+      let vecinosLeidos = null;
+      if (yo && leidas.length >= LEER && !leidas.some(f => f.jid === yo.jid)) {
+        const mio = await almacen.get(`records/${t}/${periodo}/${yo.jid}`);
+        if (mio) vecinosLeidos = { ...(await almacen.vecinos(t, periodo, mio.k, 2)), yo: { jid: yo.jid, ...mio } };
+      }
+      return vistaTabla(leidas, yo?.jid, { top, vecinosLeidos });
+    },
+
+    /** Los amigos: los que este celular conoció en sus copas. */
+    amigos() { return leer(AMIGOS, {}); },
+    conocer(mapa) {
+      const yo = api.yo(), a = api.amigos();
+      let cambio = false;
+      for (const [jid, n] of Object.entries(mapa || {})) if (esJid(jid) && jid !== yo?.jid && a[jid] !== n) { a[jid] = n; cambio = true; }
+      if (cambio) escribir(AMIGOS, a);
+    },
+    /** La tabla entre amigos: yo y los que conocí, con lo que tengan en esa tabla. */
+    async tablaAmigos(t, periodo = semana(now())) {
+      const yo = api.yo();
+      const ids = [...new Set([yo?.jid, ...Object.keys(api.amigos())].filter(esJid))];
+      const filas = (await Promise.all(ids.map(async jid => {
+        const r = await almacen.get(`records/${t}/${periodo}/${jid}`);
+        return r ? { jid, ...r } : null;
+      }))).filter(Boolean);
+      return ordenar(filas);
+    },
+
+    /* -------------------------- Uno al día (D-230) -------------------------- */
+
+    /**
+     * Anota el primer intento de Uno al día del día `n` (número desde 1970): la historia, el ranking
+     * del día, la suma de la semana `semanaP` y, si mejoró, la mejor racha `mejor`. Cada paso es
+     * aparte y de mejor esfuerzo: si la historia ya estaba (otro celular), sigue con lo demás.
+     * Sin jugador, null. With `totales: false` (the lab's night totals, D-500) it writes only the raw
+     * events, the history and the day's row: the week's sum and the best streak are the rebuild's.
+     */
+    async anotarDia({ n, j, s, ms, semanaP, mejor = 0, soloHistoria = false, totales = true }) {
+      const yo = api.yo();
+      const r = normalizar({ s, ms });
+      if (!yo || !r || !Number.isInteger(n) || n < 10000 || n > 99999) return null;
+      const out = { historia: false, dia: false, semana: false, racha: false };
+      const h = `unoAlDia/${yo.jid}/${n}`;
+      // With its entry in the index by day (D-475), in the same write: the rules ask for both together
+      try { await almacen.update({ [h]: { j, s: r.s, ms: r.ms, at: HORA }, [`${UAD_DIAS}/${n}/${yo.jid}`]: r.s }); out.historia = true; } catch (e) {
+        if (e.code === 'permiso' && !(await almacen.get(h).catch(() => null))) { escribir(KEY, null); avisar(); throw falla('pin'); }
+      }
+      const hist = await almacen.get(h).catch(() => null);
+      // Un día viejo de este celular, subido al entrar: va a la historia, no a los rankings
+      if (!hist || soloHistoria) return out;
+      const fila = x => ({ ...x, k: claveOrden(x.s, x.ms), at: HORA, ...quien(yo) });
+      try {
+        const p = periodoDia(n);
+        if (!(await almacen.get(`records/${UNO_AL_DIA}/${p}/${yo.jid}`))) {
+          await almacen.update({ [`records/${UNO_AL_DIA}/${p}/${yo.jid}`]: fila({ s: hist.s, ms: hist.ms }) }); out.dia = true;
+        }
+      } catch (_) { /* el ranking del día es aparte: la historia ya quedó */ }
+      if (!totales) return out;
+      try {
+        if (hist.s > 0 && !hist.w && semanaP) {
+          const antes = await almacen.get(`records/${UNO_AL_DIA}/${semanaP}/${yo.jid}`);
+          const suma = { s: (antes?.s || 0) + hist.s, ms: Math.min(MS_MAX, (antes?.ms || 0) + hist.ms) };
+          await almacen.update({ [`${h}/w`]: true, [`records/${UNO_AL_DIA}/${semanaP}/${yo.jid}`]: { ...fila(suma), u: String(n) } });
+          out.semana = true;
+        }
+      } catch (_) { /* la semana es aparte */ }
+      try {
+        const antes = await almacen.get(`records/${UAD_RACHA}/${SIEMPRE}/${yo.jid}`);
+        if (mejor > 0 && (!antes || mejor > antes.s)) {
+          await almacen.update({ [`records/${UAD_RACHA}/${SIEMPRE}/${yo.jid}`]: fila({ s: mejor, ms: 0 }) }); out.racha = true;
+        }
+      } catch (_) { /* la tabla de rachas es aparte */ }
+      return out;
+    },
+
+    /**
+     * Uno al día points (D-412, D-414): adds day `n` of the history to the month `mesP` once, its game
+     * score plus the streak bonus of `racha` (counted up to 10). Returns true if it added the day.
+     */
+    /**
+     * A day a 🧊 saved (D-415): a marker in the history, `{ c: true }`, so the server's walk (the
+     * backfill's rebuild) keeps the streak through it as the phone does. Once per day, and never over
+     * a day played.
+     */
+    async anotarSalvado({ n }) {
+      const yo = api.yo();
+      if (!yo || !Number.isInteger(n) || n < 10000 || n > 99999) return false;
+      await almacen.update({ [`unoAlDia/${yo.jid}/${n}`]: { c: true, at: HORA } });
+      return true;
+    },
+    async anotarPuntosDia({ n, mesP, racha }) {
+      const yo = api.yo();
+      if (!yo || !Number.isInteger(n) || !/^s[0-9]{4}-[0-9]{2}$/.test(mesP || '')) return false;
+      const h = `unoAlDia/${yo.jid}/${n}`;
+      const hist = await almacen.get(h).catch(() => null);
+      if (!hist || hist.p || hist.c) return false;
+      const ruta = `records/${UAD_PUNTOS}/${mesP}/${yo.jid}`;
+      const antes = await almacen.get(ruta).catch(() => null);
+      const r = Math.max(1, Math.min(RACHA_TOPE, racha, antes?.r ? antes.r + 1 : RACHA_TOPE));
+      const s = (antes?.s || 0) + hist.s + bonoRacha(r);
+      await almacen.update({ [`${h}/p`]: true, [ruta]: { s, ms: 0, k: claveOrden(s, 0), at: HORA, ...quien(yo), u: String(n), r } });
+      return true;
+    },
+
+    /**
+     * The start of day `n`'s first attempt (D-433): `unoAlDiaInicio/<jid>/<n>`, the server's time, once.
+     * Another phone with the same player sees it and counts that attempt 0 if it never finished.
+     */
+    async empezarDia({ n }) {
+      const yo = api.yo();
+      if (!yo || !Number.isInteger(n) || n < 10000 || n > 99999) return false;
+      const ruta = `unoAlDiaInicio/${yo.jid}/${n}`;
+      try { await almacen.update({ [ruta]: HORA }); return true; } catch (_) { return !!(await almacen.get(ruta).catch(() => null)); }
+    },
+    /** When day `n`'s first attempt started (server time), or null. */
+    async inicioDia(n) {
+      const yo = api.yo();
+      return yo && Number.isInteger(n) ? (await almacen.get(`unoAlDiaInicio/${yo.jid}/${n}`)) ?? null : null;
+    },
+
+    /** La historia de Uno al día de un jugador (el propio, si no se dice): `{ n: { j, s, ms } }`. */
+    async historialDia(jid = api.yo()?.jid) {
+      return jid ? ((await almacen.get(`unoAlDia/${jid}`)) || {}) : {};
+    },
+
+    /** Lo público de un jugador, para la tarjeta de quien invita: `{ n, co }`, o null. */
+    async publico(jid) {
+      if (!esJid(jid)) return null;
+      const n = await almacen.get(`jugadores/${jid}/n`).catch(() => null);
+      return n ? { n, co: await almacen.get(`jugadores/${jid}/co`).catch(() => null) } : null;
+    },
+
+    /** Quienes aceptaron mis desafíos: `[{ uid, d, j?, p? }]`. Solo los lee el propio jugador. */
+    async invitados() {
+      const yo = api.yo();
+      if (!yo) return [];
+      return Object.entries((await almacen.get(`invitados/${yo.jid}`).catch(() => null)) || {}).map(([uid, x]) => ({ uid, ...x })).filter(x => Number.isInteger(x?.d));
+    },
+
+    /**
+     * Uno al día points (D-414): a friend who finished their first Uno al día with my invitation adds
+     * +10 to the month `mesP`, once per friend (`p` on their acceptance, in the same write).
+     */
+    async anotarInvitado({ uid, mesP }) {
+      const yo = api.yo();
+      if (!yo || typeof uid !== 'string' || !/^s[0-9]{4}-[0-9]{2}$/.test(mesP || '')) return false;
+      const a = `invitados/${yo.jid}/${uid}`;
+      const acepto = await almacen.get(a).catch(() => null);
+      if (!acepto?.d || acepto.p) return false;
+      const ruta = `records/${UAD_PUNTOS}/${mesP}/${yo.jid}`;
+      const antes = await almacen.get(ruta).catch(() => null);
+      const s = (antes?.s || 0) + PUNTOS_INVITAR;
+      await almacen.update({ [`${a}/p`]: true, [ruta]: { s, ms: 0, k: claveOrden(s, 0), at: HORA, ...quien(yo), ...(antes?.u ? { u: antes.u } : {}), ...(antes?.r ? { r: antes.r } : {}), i: uid } });
+      return true;
+    },
+
+    /**
+     * Este celular terminó su primer Uno al día con una invitación de `jid` (el día `n`): le da un
+     * comodín a quien invitó. Una vez por celular; no vale invitarse a sí mismo.
+     */
+    async aceptarInvitacion(jid, n) {
+      if (!esJid(jid) || !Number.isInteger(n) || n < 20000 || n > 99999) return false;
+      const yo = api.yo();
+      if (yo?.jid === jid) return false;
+      const uid = await almacen.listo();
+      try { await almacen.update({ [`invitados/${jid}/${uid}`]: { d: n, at: HORA, ...(yo ? { j: yo.jid } : {}) } }); return true; } catch (_) { return false; }
+    },
+
+    /**
+     * Los avisos de Uno al día de este celular (D-230): la suscripción (`push/<subId>`, la misma de
+     * La Copa) y lo que pidió (`pushDia/<subId>`: hora, cuáles, y su racha para el texto). No hace
+     * falta jugador: va con la identidad anónima de este celular.
+     */
+    async guardarAvisosDia(subId, sub, datos) {
+      const uid = await almacen.listo();
+      await almacen.update({ [`push/${subId}`]: { ...sub, uid, at: HORA }, [`pushDia/${subId}`]: { ...datos, at: HORA } });
+    },
+    async quitarAvisosDia(subId) { await almacen.update({ [`pushDia/${subId}`]: null }); },
+
+    /** Los podios de las copas terminadas: `{ código: { name, end, de, p } }`. */
+    podios: (n = 200) => almacen.podios(n),
+
+    /**
+     * Sign this player's place on a podium saved without them (D-358): someone who won by name
+     * alone and later sits in that cup with their player. The rules accept it only from a phone
+     * seated as that cup player, and only once. Best effort: false if there is nothing to sign.
+     */
+    async firmarPodio(code, pid) {
+      const yo = api.yo();
+      if (!yo) return false;
+      const x = await almacen.get(`torneoPodios/${code}/p/${pid}`);
+      if (!x || x.j) return false;
+      await almacen.update({ [`torneoPodios/${code}/p/${pid}/j`]: yo.jid });
+      return true;
+    },
+
+    /**
+     * Las copas de este jugador, de cualquier celular (D-220): `[{ code, p, at }]`, la más reciente
+     * primero. Sin jugador, ninguna.
+     */
+    async copas() {
+      const yo = api.yo();
+      if (!yo) return [];
+      const m = (await almacen.get(`jugadorCopas/${yo.jid}`)) || {};
+      return Object.entries(m).filter(([, x]) => x?.p).map(([code, x]) => ({ code, p: x.p, at: x.at || 0 })).sort((a, b) => b.at - a.at);
+    },
+    /** Anotar que este jugador está en la copa `code` como `pid` (la copa ya lo tiene enlazado). */
+    async anotarCopa(code, pid) {
+      const yo = api.yo();
+      if (!yo) return;
+      await almacen.update({ [`jugadorCopas/${yo.jid}/${code}`]: { p: pid, at: HORA } });
+    },
+    /** Sacar de la lista una copa que ya no existe (la borró su admin). */
+    async olvidarCopa(code) {
+      const yo = api.yo();
+      if (yo) await almacen.update({ [`jugadorCopas/${yo.jid}/${code}`]: null });
+    },
+
+    sincronizar,
+
+    /**
+     * The name the server holds, if the owner renamed this player (D-513, `rename-player.mjs`):
+     * the rules refuse a row whose name is not the player's, so an old name here would lose scores.
+     * One small read, without waiting.
+     */
+    async refrescarNombre() {
+      const yo = api.yo();
+      if (!yo) return;
+      const n = await almacen.get(`jugadores/${yo.jid}/n`);
+      if (typeof n === 'string' && n && n !== yo.n) { escribir(KEY, { ...leerYo(storage), n }); avisar(); }
+    },
+
+    /** Quien entró antes de que se guardara el país (D-219) lo completa solo, una vez, sin esperar. */
+    async completarPais() {
+      const yo = api.yo();
+      if (!yo || esPais(yo.co)) return;
+      await quedar(yo.jid, yo.n);
+    },
+  };
+  return api;
+}
+
+/* ------------------------------------------------------------------ */
+/* El de la página                                                     */
+/* ------------------------------------------------------------------ */
+
+let unico = null;
+/**
+ * El jugador de la página, con el almacén que corresponde: Firebase en el sitio publicado; en
+ * pruebas (localhost, la red de la casa y Tailscale: `envOf`, D-138) y con `?test`, el de prueba, para que los guiones no escriban en los rankings de
+ * verdad. `?records=firebase` fuerza Firebase para mirarlo a mano.
+ */
+export function jugador() {
+  // La promesa, no el jugador: dos piezas que lo piden mientras carga reciben el mismo, y lo que
+  // una escucha (entrar, salir) le llega a la otra. Con dos, "Salir" no redibujaba nada.
+  return unico ||= crear().catch(e => { unico = null; throw e; });
+}
+
+async function crear() {
+  const q = new URLSearchParams(location.search);
+  const local = q.get('records') !== 'firebase' && (tiene('test', q) || envOf(location) === 'dev');
+  const almacen = local
+    ? (await import('./jugador-local.js')).crearAlmacenLocal()
+    : (await import('./jugador-firebase.js')).crearAlmacenFirebase();
+  const { SUELTOS } = await import('./games.js');
+  const pais = () => { try { return countryOf({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone, lang: navigator.language }); } catch (_) { return ''; } };
+  const J = crearJugador({ almacen, juegos: SUELTOS.filter(g => !g.labs).map(g => g.id), pais });
+  J.completarPais().catch(() => {});
+  J.refrescarNombre().catch(() => {});
+  // Games the network did not let save (`guardarPendiente`): sent now, and again when the signal is back
+  const subir = () => { J.subirPendientes().catch(() => {}); };
+  subir();
+  globalThis.addEventListener?.('online', subir);
+  return J;
+}

@@ -1,0 +1,157 @@
+/**
+ * Demos (D-110): una copa de ejemplo, ya en marcha, para mirar y tocar cada vista de La Copa
+ * —del jugador y del admin— como en producción, sin armar una copa ni esperar días. Las usan las
+ * pruebas de punta a punta y las capturas del README; el laboratorio ya no las ofrece (D-262). Solo en el modo de prueba (`?test&demo=<escena>`): siembra la copa en el almacén local,
+ * con una copa nueva cada vez, y deja la sesión del jugador que corresponde a la escena.
+ */
+import { nuevaMeta, fechaEn, sumarDias, codigoAlAzar, ZONA, CALENDARIOS } from './engine.js';
+
+const KEY = 'juegos-de-salon:copa:prueba';
+
+const JUGADORES = [
+  { pid: 'cata01', name: 'Cata' },
+  { pid: 'javi02', name: 'Javi' },
+  { pid: 'panc03', name: 'Pancho' },
+  { pid: 'vale04', name: 'Vale' },
+  { pid: 'nico05', name: 'Nico' },
+  // Los de la escena llena (10 jugadores): uno con nombre largo, para ver que cabe
+  { pid: 'sofi06', name: 'Sofi' },
+  { pid: 'maxi07', name: 'Maximiliano' },
+  { pid: 'tere08', name: 'Tere' },
+  { pid: 'rodr09', name: 'Rodrigo' },
+  { pid: 'isid10', name: 'Isidora' },
+];
+
+/** Días que alguien no jugó, para que la escena llena muestre "(-1J)" (D-126). */
+const FALTAS = { tere08: [4], isid10: [2, 5] };
+
+/** Puntajes creíbles por juego: `k` de 0 a 1 dice qué tan bien le fue. */
+const PUNTAJE = {
+  linea: k => { const s = Math.round((100 * Math.round(9 * k)) / 9); return { s, r: `${s}/100` }; },
+  numero: k => { const s = 100 - 10 * Math.round(9 * (1 - k)); return { s, r: `${s}/100` }; },
+  conexiones: k => { const s = Math.max(0, Math.round(20 * k) * 5); return { s, r: `${s}/100` }; },
+  reinas: k => { const s = Math.max(10, Math.round(100 * k)); return { s, r: `${s}/100` }; },
+  letras: k => { const s = Math.round(100 * k); return { s, r: `${s}/100` }; },
+  zip: k => { const s = 10 * Math.round(8 * k); return { s, r: `${s}/100` }; },
+  desenredo: k => { const s = 10 * Math.round(9 * k); return { s, r: `${s}/100` }; },
+  tango: k => { const s = Math.max(10, Math.round(100 * k)); return { s, r: `${s}/100` }; },
+  anio: k => { const s = Math.round(100 * k); return { s, r: `${s}/100` }; },
+  // ¿Dónde queda? (D-334): the places found, from 0 to 100; it was in the pool without demo scores (#855)
+  donde: k => { const s = Math.round(100 * k); return { s, r: `${s}/100` }; },
+  // The three that came from the lab (D-332): stages, boards and a painting, all from 0 to 100
+  rutas: k => { const s = 17 * Math.round(5 * k) + (k > 0.9 ? 12 : 0); return { s, r: `${s}/100` }; },
+  loteo: k => { const s = 12 * Math.round(5 * k) + (k > 0.9 ? 30 : 0); return { s, r: `${s}/100` }; },
+  pintaminas: k => { const s = Math.max(0, 100 - 15 * Math.round(4 * (1 - k))); return { s, r: `${s}/100` }; },
+  // Agentes (D-421): the agents found, minus a neutral now and then
+  agentes: k => { const s = Math.max(0, Math.round(100 * Math.round(11 * k) / 11) - (k < 0.5 ? 15 : 0)); return { s, r: `${s}/100` }; },
+  // Tren en Vilo (D-456): ten a stage crossed, plus savings, solidity and speed
+  puentes: k => { const s = Math.min(100, 10 * Math.round(5 * k) + Math.round(30 * k * k)); return { s, r: `${s}/100` }; },
+  // La final trae su tarjeta de rondas (⏳75 🔢85 …), que la tabla del día muestra (#259)
+  final: k => {
+    const rondas = [0.1, -0.2, 0.3, -0.1, -0.1].map(o => Math.max(0, Math.min(100, 5 * Math.round(20 * (k + o)))));
+    const s = Math.round(rondas.reduce((a, b) => a + b, 0) / 5);
+    return { s, r: `${s}/100`, t: ['⏳', '🔢', '👑', '🔤', '📅'].map((e, i) => `${e}${rondas[i]}`).join(' ') };
+  },
+};
+
+/** Un azar fijo por jugador y día, para que la demo se vea igual cada vez. */
+const azar = (pid, d) => { let h = 7; for (const c of `${pid}:${d}`) h = (h * 31 + c.charCodeAt(0)) >>> 0; return (h % 1000) / 1000; };
+
+/**
+ * Las escenas. `inicio` es cuántos días atrás partió (negativo: parte en el futuro); `jugaron`,
+ * cuántos días completos hay jugados; `yo`, quién mira (null: alguien que abre la invitación).
+ * El nombre es el de la URL (`&demo=podium`), en inglés (D-266); los de antes (`podio`) los traduce
+ * `parametros.js`.
+ */
+export const ESCENAS = {
+  new: { inicio: -1, jugadores: 1, jugaron: 0, yo: 'cata01', pantalla: 'admin', recien: true },
+  guest: { inicio: -1, jugadores: 3, jugaron: 0, yo: null, pantalla: 'entrar' },
+  waiting: { inicio: -1, jugadores: 4, jugaron: 0, yo: 'javi02', pantalla: 'tablero' },
+  'not-started': { inicio: 1, jugadores: 4, jugaron: 0, yo: 'cata01', pantalla: 'admin' },
+  player: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'javi02', pantalla: 'tablero' },
+  admin: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'cata01', pantalla: 'admin' },
+  final: { inicio: 6, jugadores: 5, jugaron: 6, yo: 'javi02', pantalla: 'tablero' },
+  // El último día, con gente que todavía no juega la final: el admin puede terminarla antes (D-161)
+  'final-admin': { inicio: 6, jugadores: 5, jugaron: 6, yo: 'cata01', pantalla: 'admin' },
+  podium: { inicio: 7, jugadores: 5, jugaron: 7, yo: 'javi02', pantalla: 'tablero' },
+  // La máxima densidad del gráfico y de la imagen que se comparte (D-141): 7 días, 10 jugadores
+  full: { inicio: 7, jugadores: 10, jugaron: 7, yo: 'javi02', pantalla: 'tablero', faltas: true },
+  // Out of the cup (D-347): whoever looks missed days 1 and 2; Tere missed day 3, one away from it
+  out: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'javi02', pantalla: 'tablero', faltas: { javi02: [1, 2] } },
+  // The warning (D-347): whoever looks missed day 2, and day 3 is in its grace day
+  risk: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'javi02', pantalla: 'tablero', faltas: { javi02: [2, 3] } },
+  // A day started 4 minutes ago on another phone, its save not on this one (D-433, the lab's card
+  // #seccion-copa-reloj): «Seguir jugando» goes on with the clock from the server's start
+  resumed: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'javi02', pantalla: 'tablero', enCurso: 4 },
+  // Day 6, the last before the final, not played yet and the wildcard unused: it applies today on its own (D-444)
+  'last-day': { inicio: 5, jugadores: 5, jugaron: 5, yo: 'javi02', pantalla: 'tablero' },
+  // The same in a 3-day cup without a final (D-438): its last day is the one the wildcard lands on
+  'last-day-three': { inicio: 2, jugadores: 5, jugaron: 2, yo: 'javi02', pantalla: 'tablero', cal: ['linea', 'numero', 'reinas'] },
+  // Whoever looks already played today's day: nothing left until tomorrow's opens
+  played: { inicio: 3, jugadores: 5, jugaron: 3, yo: 'javi02', pantalla: 'tablero', alDia: true },
+};
+
+/**
+ * `&demo=mine` (#seccion-copa-estado): one cup per state of the "Tus copas" status line,
+ * seeded together, and the home page with the list. Each is [scene, the cup's name].
+ */
+export const MIS_COPAS = [
+  // Names in no language, so the language tests read only the app's own text
+  ['player', 'Oficina 2026'], ['final', 'Familia 2026'], ['risk', 'Primos 2026'], ['resumed', 'Finde 2026'],
+  ['played', 'Piratotes 1983'], ['waiting', 'Noviembre 2026'], ['out', 'Barrio 2026'],
+];
+
+/**
+ * Siembra la escena en el almacén local y devuelve `{ code, pid, pantalla, recien }`. `uid` es el
+ * "celular" de esta pestaña: la sesión de quien mira queda sentada en él.
+ */
+export function sembrar(nombre, { now, uid, copa = null }) {
+  const x = escena(nombre, { now, uid });
+  if (!x) return null;
+  const { L, e, meta } = x;
+  if (copa) meta.name = copa;
+  try {
+    const db = JSON.parse(localStorage.getItem(KEY) || '{}');
+    let code = codigoAlAzar();
+    while (db[code]) code = codigoAlAzar();
+    db[code] = L;
+    localStorage.setItem(KEY, JSON.stringify(db));
+    return { code, pid: e.yo, pantalla: e.pantalla, recien: !!e.recien, nombre: e.yo ? L.players[e.yo].name : null, meta };
+  } catch (_) { return null; }
+}
+
+/**
+ * The scene's cup, built and not stored: `{ L, e, meta }`. sembrar stores it; the home page's
+ * recap window (`?recap=demo`) draws the podium scene from it without touching the test store.
+ */
+export function escena(nombre, { now, uid = 'demo' }) {
+  const e = ESCENAS[nombre];
+  if (!e) return null;
+  const hoy = fechaEn(now, ZONA);
+  const inicio = sumarDias(hoy, -e.inicio);
+  const meta = nuevaMeta({ nombre: 'Copa de la oficina', dias: e.cal ? e.cal.length : 7, inicio, tz: ZONA, admin: 'cata01', creada: now - (e.inicio + 1) * 86400000, lab: true, cal: e.cal || null });
+  const cal = e.cal || CALENDARIOS[7];
+  const jug = JUGADORES.slice(0, e.jugadores);
+  const L = { meta, players: {}, started: {}, results: {}, wild: {}, _keys: {}, _seats: {} };
+  jug.forEach((j, i) => {
+    L.players[j.pid] = { name: j.name, at: meta.createdAt + i * 60000 };
+    L._keys[j.pid] = 'demo';
+    L._seats[j.pid] = j.pid === e.yo ? { [uid]: true } : { [`otro-${j.pid}`]: true };
+  });
+  // Los días ya jugados: todos, menos quien mira el día de hoy (para que pueda jugarlo)
+  for (let d = 1; e.jugaron > 0 && d <= Math.min(e.jugaron + 1, meta.days); d++) {
+    for (const j of jug) {
+      const hoyEsEste = d === e.jugaron + 1;
+      if (hoyEsEste && (j.pid === e.yo ? !e.alDia : azar(j.pid, d) < 0.5)) continue;
+      if (e.faltas && (e.faltas === true ? FALTAS : e.faltas)[j.pid]?.includes(d)) continue;
+      const k = 0.35 + 0.6 * azar(j.pid, d);
+      const r = PUNTAJE[cal[d - 1]](k);
+      const at = Math.min(now - 3600000, meta.win[d].a + 3600000 * (8 + 10 * azar(j.pid, -d)));
+      (L.started[d] ||= {})[j.pid] = at - 120000;
+      (L.results[d] ||= {})[j.pid] = { s: r.s, ms: Math.round(40000 + 200000 * azar(j.pid, d + 9)), t: r.t || '', r: r.r, at };
+    }
+  }
+  if (e.jugaron >= 3) L.wild.panc03 = '2';
+  if (e.enCurso) (L.started[e.jugaron + 1] ||= {})[e.yo] = now - e.enCurso * 60000;
+  return { L, e, meta };
+}

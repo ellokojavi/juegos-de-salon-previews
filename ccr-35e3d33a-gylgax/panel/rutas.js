@@ -1,0 +1,90 @@
+/**
+ * Las direcciones del panel (D-207). Todo lo que se mira queda en el `#` de la URL, así que un
+ * enlace guardado, una recarga o el botón Atrás vuelven al mismo lugar:
+ *
+ *   #/summary                    the analyst's front page: each domain's headline, against the period before (D-348)
+ *   #/now                        lo que está pasando (part of Summary)
+ *   #/timeline                   the key events, one by one: games finished, cups, feedback (D-408)
+ *   #/feedback                   every player message in full, who sent it, its issue and the PRs that fix it
+ *   #/group                      group games: rooms, one phone, against the phone (D-348)
+ *   #/individual                 individual games: solo and their real difficulty (D-348)
+ *   #/cup                        La Copa: cifras, juegos y la lista de copas
+ *   #/daily                      Uno al día (D-348)
+ *   #/users                      active browsers, cohorts, frequency, where from and languages (D-348, D-349)
+ *   #/cup/OFICI                  la ficha de una copa
+ *   #/game/<juego>               la ficha de un juego, con su nombre en la URL (`hangman`; el id del registro también sirve)
+ *   #/room/ABCD                  la ficha de una sala; #/room/ABCD/20342 si es la de ese día
+ *   #/traffic                    visitas al sitio, de dónde llegan y cuántas terminan jugando (D-208)
+ *   (#/games and #/audience, from before D-348, open Group and Users)
+ *   #/campaigns                  the splash campaigns: on or off, their days and order (D-454)
+ *   #/campaigns/splash/<id>      that tab, with that campaign open and in view (the release notifications, D-504)
+ *   #/health                     lo que le falla a quien juega: no arrancó, errores, lentitud (D-251)
+ *
+ * En la URL van en inglés (C-18, D-266); por dentro las secciones siguen con su nombre de siempre
+ * (`torneo`, `sala`), y las direcciones de antes (`#/torneo/OFICI`, `#/juego/ahorcado`) se leen igual.
+ * El rango y el entorno van detrás, solo si no son los de siempre: `#/cup?r=30d&e=dev`.
+ * Puro y sin DOM, para probarlo con node (`node public/panel/rutas.test.mjs`).
+ */
+import { slugDe, idDeSlug } from '../assets/js/games.js';
+
+/** Las secciones, en el orden de la navegación. La primera es la que abre el panel. */
+export const SECCIONES = ['resumen', 'timeline', 'grupo', 'individuales', 'torneo', 'unoaldia', 'usuarios', 'trafico', 'salud', 'feedback', 'campanas'];
+
+/** A qué sección pertenece cada ficha: es la que queda marcada en la navegación. */
+const FICHAS = { juego: 'grupo', sala: 'grupo' };
+
+/** Views that are not in the navigation but open on their own: Now is part of Summary (D-348). */
+const SUELTAS = { ahora: 'resumen' };
+
+/** Cómo se escribe cada sección en la URL (D-266). */
+const EN_URL = {
+  resumen: 'summary', timeline: 'timeline', ahora: 'now', grupo: 'group', individuales: 'individual', torneo: 'cup', unoaldia: 'daily',
+  usuarios: 'users', trafico: 'traffic', salud: 'health', feedback: 'feedback', campanas: 'campaigns', juego: 'game', sala: 'room',
+};
+/** The sections before D-348 open the one that took their place. */
+const DE_URL = { ...Object.fromEntries(Object.entries(EN_URL).map(([es, en]) => [en, es])), games: 'grupo', juegos: 'grupo', audience: 'usuarios', audiencia: 'usuarios' };
+
+/** Las vistas de antes de D-207 (`#torneo`), para que un enlace guardado siga sirviendo. */
+const ANTES = { resumen: 'resumen', torneo: 'torneo', juegos: 'grupo' };
+
+/**
+ * `#/cup/OFICI?r=30d` → `{ sec: 'torneo', args: ['OFICI'], r: '30d', e: null }`. Lo que no se
+ * entiende cae en la primera sección: una dirección rota no deja el panel en blanco.
+ */
+export function leerRuta(hash = '') {
+  const [camino, consulta = ''] = String(hash).replace(/^#/, '').split('?');
+  const partes = camino.replace(/^\//, '').split('/').filter(Boolean).map(decodeURIComponent);
+  const q = new URLSearchParams(consulta);
+  const extra = { r: q.get('r') || null, e: q.get('e') || null };
+  let [sec, ...args] = partes;
+  if (!camino.startsWith('/') && ANTES[sec]) return { sec: ANTES[sec], args: [], ...extra };
+  if (Object.hasOwn(DE_URL, sec)) sec = DE_URL[sec];
+  if (sec === 'juego' && args.length) args = [idDeSlug(args[0]), ...args.slice(1)];
+  if (sec in FICHAS && args.length) return { sec, args, ...extra };
+  if (sec in SUELTAS) return { sec, args: [], ...extra };
+  if (!SECCIONES.includes(sec)) return { sec: SECCIONES[0], args: [], ...extra };
+  return { sec, args, ...extra };
+}
+
+/** La dirección de una vista, con el rango y el entorno solo si no son los de siempre. */
+export function rutaA(sec, args = [], { r = null, e = null, rDefecto = null, eDefecto = null } = {}) {
+  const q = new URLSearchParams();
+  if (r && r !== rDefecto) q.set('r', r);
+  if (e && e !== eDefecto) q.set('e', e);
+  const enUrl = sec === 'juego' ? args.map((a, i) => (i ? a : slugDe(a))) : args;
+  const camino = ['', EN_URL[sec] || sec, ...enUrl.map(a => encodeURIComponent(String(a)))].join('/');
+  return `#${camino}${q.toString() ? `?${q}` : ''}`;
+}
+
+/**
+ * Una dirección de antes, en inglés (`#/torneo/OFICI?r=30d` → `#/cup/OFICI?r=30d`), con el rango y
+ * el entorno tal como vienen: el panel la deja así en la barra al abrir (C-18, D-266). Vacía si no hay `#`.
+ */
+export function rutaEnIngles(hash = '') {
+  if (!String(hash).replace(/^#/, '')) return '';
+  const { sec, args, r, e } = leerRuta(hash);
+  return rutaA(sec, args, { r, e });
+}
+
+/** La sección que la navegación marca para una ruta: la ficha de un juego es parte de Juegos. */
+export const seccionDe = ruta => FICHAS[ruta.sec] || SUELTAS[ruta.sec] || ruta.sec;

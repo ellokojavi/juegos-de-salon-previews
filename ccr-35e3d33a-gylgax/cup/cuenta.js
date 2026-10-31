@@ -1,0 +1,82 @@
+/**
+ * Lo que La Copa recuerda en este celular: con qué jugador está sentado en cada copa y el
+ * intento del día a medio jugar (C-6).
+ *
+ * El intento no usa `createSessionStore` porque su caducidad de 12 horas no alcanza: un día
+ * se puede jugar hasta dos días después de abierto (el día de gracia). Se guarda por copa,
+ * día y jugador, y se borra solo cuando la copa termina.
+ *
+ * "Tus copas" junta las que recuerda este celular con las del jugador de los rankings, que viven
+ * en Firebase (`juntarCopas`, D-220).
+ */
+const PREFIJO = 'juegos-de-salon:copa:';
+// How many cups this phone remembers: the finished ones stay in "Tus copas", behind the switch (D-336)
+const RECORDADAS = 50;
+
+/**
+ * "Tus copas": las de este celular y, detrás, las del jugador que entró (D-220) que este celular
+ * no conoce, ya con `{ code, nombre, copa, fin }`. Una copa no se repite.
+ */
+export function juntarCopas(mias, delJugador) {
+  const ya = new Set(mias.map(c => c.code));
+  return [...mias, ...delJugador.filter(c => c && !ya.has(c.code))];
+}
+
+export function createCuenta({ prueba = false } = {}) {
+  // Las copas de prueba no se mezclan con las de verdad, y en ellas cada pestaña es un
+  // celular distinto (sessionStorage): así se juega una copa de varios en un solo computador.
+  const p = prueba ? 'prueba:' : '';
+  const donde = () => (prueba ? sessionStorage : localStorage);
+  const leer = k => { try { return JSON.parse(donde().getItem(PREFIJO + k) || 'null'); } catch (_) { return null; } };
+  const escribir = (k, v) => { try { donde().setItem(PREFIJO + k, JSON.stringify(v)); return true; } catch (_) { return false; } };
+  const borrar = k => { try { donde().removeItem(PREFIJO + k); } catch (_) { /* nada */ } };
+  return {
+    /** El jugador con que este celular está sentado en la copa, o null. */
+    quien: code => leer(`${p}sesion:${code}`)?.pid || null,
+    recordar(code, pid, { nombre, copa, fin } = {}) {
+      escribir(`${p}sesion:${code}`, { pid });
+      const mias = (leer(`${p}mias`) || []).filter(c => c.code !== code);
+      mias.unshift({ code, nombre, copa, fin });
+      escribir(`${p}mias`, mias.slice(0, RECORDADAS));
+    },
+    olvidar(code) {
+      borrar(`${p}sesion:${code}`);
+      borrar(`${p}avisos:${code}`);
+      borrar(`${p}lista:${code}`);
+      borrar(`${p}hoy:${code}`);
+      escribir(`${p}mias`, (leer(`${p}mias`) || []).filter(c => c.code !== code));
+    },
+    /** Las copas en que este celular participa, para ofrecerlas en la portada. */
+    mias() {
+      return leer(`${p}mias`) || [];
+    },
+    intento: {
+      leer: (code, dia, pid) => leer(`${p}intento:${code}:${dia}:${pid}`),
+      guardar: (code, dia, pid, datos) => escribir(`${p}intento:${code}:${dia}:${pid}`, datos),
+      borrar: (code, dia, pid) => borrar(`${p}intento:${code}:${dia}:${pid}`),
+    },
+    /**
+     * Los avisos de cada copa en este celular (D-223): `{ subId, dia, plazo }` si están activos, o
+     * `{ no: true }` si la persona dijo "Ahora no" (la tarjeta no vuelve a salir en esa copa).
+     */
+    avisos: {
+      leer: code => leer(`${p}avisos:${code}`),
+      guardar: (code, v) => escribir(`${p}avisos:${code}`, v),
+      borrar: code => borrar(`${p}avisos:${code}`),
+    },
+    /** Each cup's last read for the "Tus copas" line (`recorteLista`), to draw it before the network answers. */
+    lista: {
+      leer: code => leer(`${p}lista:${code}`),
+      guardar: (code, v) => (v ? escribir(`${p}lista:${code}`, v) : borrar(`${p}lista:${code}`)),
+    },
+    /** The days left to play in each cup (`porJugar`), read by the site's home page (`assets/js/cup-today.js`). */
+    porJugar: {
+      guardar: (code, v) => (v?.length ? escribir(`${p}hoy:${code}`, v) : borrar(`${p}hoy:${code}`)),
+    },
+    /** El último nombre que se usó, para no escribirlo de nuevo en la próxima copa. */
+    nombre: {
+      get: () => leer('nombre') || '',
+      set: n => escribir('nombre', n),
+    },
+  };
+}

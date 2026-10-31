@@ -1,0 +1,868 @@
+/**
+ * Toque y Fama — lógica de juego.
+ * Un solo reductor de mensajes sirve para los dos modos de dos jugadores:
+ *  - local:  ambos jugadores en este celular (transporte en memoria, roles A y B locales)
+ *  - online: este celular tiene un rol; el otro celular el opuesto (transporte Firebase)
+ * Cada dispositivo calcula automáticamente las respuestas para los intentos contra SU secreto.
+ *
+ * Jugar solo no pasa por el reductor: es el juego 🔢 de La Copa (D-142), con sus 10 intentos,
+ * su puntaje de 0 a 100 y su reloj (cup/games/number/ui.js montado con cup/games/solo.js).
+ */
+import { salidasFin } from '../assets/js/fin.js';
+import { $, $$, el, vibrate, sparkles, keepAwake, confetti } from '../assets/js/ui.js';
+import { botonInvitar, botonResultadoSolo } from '../assets/js/compartir.js';
+import { gameById } from '../assets/js/games.js';
+import { getLang, langToggle, applyStatic, COMMON, withLang, SITIO } from '../assets/js/i18n.js';
+import { param } from '../assets/js/parametros.js';
+import { SFX, soundToggle, initSound } from '../assets/js/sound.js';
+import { clearRoomError, tryRematch, tryRoom } from '../assets/js/transport/errors.js';
+import { score, isValid, sha256, randomNonce, verifyPlayer } from './engine.js';
+import { GAME_ID, DEFAULT_CONFIG, DIGIT_OPTIONS, LOCALES } from './rules.js';
+import { createChat } from '../assets/js/chat.js';
+import { teclado, CIFRAS } from '../assets/js/teclado.js';
+import { createLocalTransport } from '../assets/js/transport/local.js';
+import { trackStart, trackVisit, trackFinish } from '../assets/js/transport/stats.js';
+import { finDePartida, bloqueVictorias, bloqueTabla, avisoPartida } from '../assets/js/ranking.js';
+import { rankingsVisibles, leerYo } from '../assets/js/jugador.js';
+import { createSessionStore, createNameStore } from '../assets/js/session.js';
+import { codigoAlAzar } from '../cup/code.js';
+import * as numero from '../cup/games/number/engine.js';
+import * as uiNumero from '../cup/games/number/ui.js';
+import { jugarSolo, crearRecord, mmss } from '../cup/games/solo.js';
+import { renderQr } from '../assets/js/qr.js';
+import { mountHowToPlayFacts } from '../assets/js/how-to-play-facts.js';
+import { roomFlow } from '../assets/js/room-flow.js';
+
+// Cuenta la visita al abrir la página, aunque nadie llegue a jugar (D-208)
+trackVisit();
+
+const lang = getLang();
+const T = LOCALES[lang];
+const fmt = (s, vars = {}) => s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : `{${k}}`));
+const triesWord = n => (n === 1 ? T.tryOne : T.tryMany);
+const other = r => (r === 'A' ? 'B' : 'A');
+const store = createSessionStore(GAME_ID, { legacyKeys: ['juegos-de-salon:tyf:session'] });
+const names_ = createNameStore(GAME_ID);
+/** Récord de jugar solo: el mejor `{ s, ms }` (D-142). Clave nueva: el del solo viejo contaba intentos. */
+const record = crearRecord(`juegos-de-salon:${GAME_ID}:record-solo`);
+
+let S = null;   // sesión: modo, transporte, roles locales, secretos
+let chat = null; // chat de sala: solo en dos celulares (canon C-15)
+let M = null;   // partida: estado reconstruido desde los mensajes
+
+/* ------------------------------------------------------------------ */
+/* Estado de la partida (reductor)                                     */
+/* ------------------------------------------------------------------ */
+/**
+ * Quién parte es determinista (no hay sorteo): en la primera partida parte el invitado (B) y en la
+ * revancha parte quien perdió. Así el estado se reconstruye igual en ambos celulares y nadie puede manipularlo.
+ */
+function newMatch(config) {
+  return { config, names: {}, commits: {}, starter: config.starter === 'A' ? 'A' : 'B', guesses: [], reveals: {}, rematch: {}, presence: {}, verify: {}, seen: new Set() };
+}
+
+function apply(msg) {
+  if (msg.id && M.seen.has(msg.id)) return; if (msg.id) M.seen.add(msg.id);
+  const from = msg.from;
+  switch (msg.t) {
+    case 'hello': M.names[from] = msg.name; break;
+    case 'commit': if (!M.commits[from]) M.commits[from] = { hash: msg.hash }; break;
+    case 'guess': {
+      const v = view();
+      if (v.phase !== 'play') return;
+      if (v.parallel ? !v.canGuess[from] : (v.pending || v.expected !== from)) return;
+      // `n` numbers the guess within its player's own list: with both guessing at once, each phone
+      // may see the two guesses in a different order, so a reply names (of, n), not the position.
+      M.guesses.push({ from, value: msg.value, round: M.guesses.length, n: M.guesses.filter(g => g.from === from).length, famas: null, toques: null });
+      break;
+    }
+    case 'reply': {
+      const g = msg.of ? M.guesses.find(x => x.from === msg.of && x.n === msg.n) : M.guesses[msg.round];
+      if (!g || g.famas !== null || g.from === from) return;
+      g.famas = msg.famas; g.toques = msg.toques;
+      break;
+    }
+    case 'reveal': if (!M.reveals[from]) M.reveals[from] = { secret: msg.secret, salt: msg.salt }; break;
+    case 'rematch': if (!M.rematch[from]) M.rematch[from] = msg.code || true; break;
+    // El chat no es parte del estado: se dibuja y se olvida (canon C-15)
+    case 'chat': if (chat) chat.add(msg, { live: !!S?.live }); return 'chat';
+  }
+  return null;
+}
+
+/** Vista derivada del estado: fase, turno, resultado. */
+function view() {
+  const d = M.config.digits;
+  const both = M.names.A && M.names.B;
+  const committed = M.commits.A && M.commits.B;
+  const starter = M.starter;
+  const pending = M.guesses.find(g => g.famas === null) || null;
+  const pendings = M.guesses.filter(g => g.famas === null);
+  // Dos celulares a la vez (D-367): cada uno adivina a su ritmo, sin esperar al otro. Termina
+  // cuando los dos lo sacaron: gana quien usó menos intentos, y con los mismos es empate.
+  const parallel = !!M.config.parallel;
+  if (parallel) {
+    const solvedIn = {}, canGuess = {};
+    for (const r of ['A', 'B']) {
+      const mine = M.guesses.filter(g => g.from === r);
+      const hit = mine.findIndex(g => g.famas === d);
+      solvedIn[r] = hit >= 0 ? hit + 1 : null;
+      canGuess[r] = !solvedIn[r] && !mine.some(g => g.famas === null);
+    }
+    const done = !!(solvedIn.A && solvedIn.B);
+    const tie = done && solvedIn.A === solvedIn.B;
+    const winner = done && !tie ? (solvedIn.A < solvedIn.B ? 'A' : 'B') : null;
+    let phase;
+    if (!both) phase = 'lobby';
+    else if (!committed) phase = 'secret';
+    else if (!done) phase = 'play';
+    else if (!(M.reveals.A && M.reveals.B)) phase = 'reveal';
+    else phase = 'done';
+    return { phase, pending, pendings, expected: null, done, winner, tie, replicaFor: null, starter, parallel, solvedIn, canGuess };
+  }
+  const expected = starter ? (M.guesses.length % 2 === 0 ? starter : other(starter)) : null;
+  // Resultado
+  let done = false, winner = null, tie = false, replicaFor = null;
+  for (let i = 0; i < M.guesses.length; i++) {
+    const g = M.guesses[i];
+    if (g.famas !== d) continue;
+    if (g.from === starter && M.config.replica) {
+      const rep = M.guesses[i + 1];
+      if (!rep) { replicaFor = other(starter); break; }
+      if (rep.famas === null) { replicaFor = other(starter); break; }
+      done = true; if (rep.famas === d) tie = true; else winner = starter;
+    } else { done = true; winner = g.from; }
+    break;
+  }
+  let phase;
+  if (!both) phase = 'lobby';
+  else if (!committed) phase = 'secret';
+  else if (!done) phase = 'play';
+  else if (!(M.reveals.A && M.reveals.B)) phase = 'reveal';
+  else phase = 'done';
+  return { phase, pending, pendings, expected, done, winner, tie, replicaFor, starter, parallel: false };
+}
+
+/* ------------------------------------------------------------------ */
+/* Sesión y agentes                                                    */
+/* ------------------------------------------------------------------ */
+function startSession({ mode, transport, roles, config, names, code = null, role = null }) {
+  // Cambiar de sala (la revancha crea una nueva) es irse de la anterior para siempre: se
+  // despide en vez de solo soltar los oyentes, así no queda una sala muerta viéndose viva.
+  if (S?.transport) S.transport.dispose();
+  S = { mode, transport, roles, secrets: {}, notes: {}, code, role, repliedRounds: new Set(), lastShownRound: -1, uiRole: null, live: false };
+  M = newMatch(config);
+  setupChat(mode);
+  // Lo que llega en los primeros instantes es la historia de la sala al entrar: se dibuja sin ruido
+  const sess = S;
+  setTimeout(() => { if (S === sess) S.live = true; }, 1500);
+  Object.entries(names).forEach(([r, name]) => { if (name) transport.send({ t: 'hello', from: r, name }); });
+  transport.onMessage(m => { if (apply(m) === 'chat') return; onChange(); });
+  transport.onPresence(p => { M.presence = p; renderPresence(); });
+}
+
+// Los cambios se procesan en serie (act() es asíncrono: sorteo y verificación usan SHA-256).
+let chain = Promise.resolve();
+function onChange() {
+  chain = chain.then(async () => { await act(); render(); }).catch(e => console.error(e));
+}
+
+/** Acciones automáticas de los roles locales (comprometer, responder, revelar). */
+async function act() {
+  const v = view();
+  for (const r of S.roles) {
+    const sec = S.secrets[r];
+    if (!sec) continue;
+    if (v.phase === 'secret' && !M.commits[r]) { S.transport.send({ t: 'commit', from: r, hash: sec.hash }); }
+    if (v.phase === 'play') for (const g of v.pendings) {
+      const key = v.parallel ? `${g.from}${g.n}` : g.round;
+      if (g.from === r || S.repliedRounds.has(key)) continue;
+      S.repliedRounds.add(key);
+      const { famas, toques } = score(g.value, sec.secret);
+      S.transport.send(v.parallel ? { t: 'reply', from: r, of: g.from, n: g.n, famas, toques } : { t: 'reply', from: r, round: g.round, famas, toques });
+    }
+    if (v.phase === 'reveal' && !M.reveals[r]) { S.transport.send({ t: 'reveal', from: r, secret: sec.secret, salt: sec.salt }); }
+  }
+  if (v.phase === 'done' && !M.verify.A) { await verifyAll(); }
+  saveSession();
+}
+
+async function setSecret(role, secret) {
+  const salt = randomNonce(16);
+  const hash = await sha256(secret + salt);
+  S.secrets[role] = { secret, salt, hash };
+  saveSession();
+  onChange();
+}
+
+async function verifyAll() {
+  for (const r of ['A', 'B']) {
+    const rv = M.reveals[r];
+    const repliesGiven = M.guesses.filter(g => g.from !== r && g.famas !== null).map(g => ({ value: g.value, famas: g.famas, toques: g.toques }));
+    M.verify[r] = await verifyPlayer({ secret: rv.secret, salt: rv.salt, commit: M.commits[r].hash, repliesGiven });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Persistencia de la partida (todos los modos, canon C-6)             */
+/* ------------------------------------------------------------------ */
+function saveSession() {
+  if (!S || !M) return;
+  const done = view().phase === 'done';
+  const secrets = {};
+  for (const r of S.roles) if (S.secrets[r]) secrets[r] = S.secrets[r];
+  const notes = {};
+  for (const r of S.roles) if (S.notes[r]?.size) notes[r] = [...S.notes[r]];
+  if (S.mode === 'online') {
+    store.save({ mode: 'online', code: S.code, role: S.role, name: M.names[S.role], config: M.config, secret: S.secrets[S.role] || null, notes: notes[S.role] || [], done });
+  } else {
+    store.save({ mode: S.mode, config: M.config, messages: S.transport.messages || [], private: { secrets, notes }, done });
+  }
+}
+function loadSession() { return store.load(); }
+function clearSession() { store.clear(); }
+
+/** Retoma una partida de un celular reproduciendo sus mensajes. */
+function restoreLocal(saved) {
+  const transport = createLocalTransport({ seed: saved.messages || [] });
+  startSession({ mode: saved.mode, transport, roles: ['A', 'B'], config: saved.config, names: {} });
+  for (const [r, sec] of Object.entries(saved.private?.secrets || {})) S.secrets[r] = sec;
+  for (const [r, list] of Object.entries(saved.private?.notes || {})) S.notes[r] = new Set(list);
+  // No repetir las transiciones ya vistas ni volver a responder intentos ya respondidos
+  M.guesses.forEach(g => { if (g.famas !== null) { S.repliedRounds.add(g.round); S.lastShownRound = Math.max(S.lastShownRound, g.round); } });
+  S.uiRole = null; // fuerza la pantalla de pase / tapada al retomar
+  keepAwake();
+  onChange();
+}
+
+/* ------------------------------------------------------------------ */
+/* Navegación y componentes                                            */
+/* ------------------------------------------------------------------ */
+function showScreen(id) { $$('.screen').forEach(s => s.classList.toggle('active', s.id === id)); window.scrollTo({ top: 0, behavior: 'instant' }); }
+
+/** Teclado numérico con casillas. onSubmit(value). */
+/** El teclado, con notas (toque largo para tachar), sale de assets/js/teclado.js (D-102). */
+// Tocar una casilla elige dónde va la próxima cifra (#604, D-409: validada en el lab)
+function keypad({ digits, zeroFirst, onSubmit, hidden = false, submitLabel = T.guess, notes = null, onNotesChange = null }) {
+  const pad = teclado({
+    largo: digits, teclas: CIFRAS, submitLabel, hidden, notes, onNotesChange, onSubmit, elegir: true,
+    valido: v => isValid(v, digits, { zeroFirst }),
+    // `pos` es la casilla donde iría: el 0 no va primero (sin `elegir`, es lo ya escrito)
+    puede: (v, d, pos = v.length) => !v.includes(d) && v.length < digits && !(pos === 0 && d === '0' && !zeroFirst),
+  });
+  return pad;
+}
+
+/**
+ * Píldoras de pista. En los dos tableros lado a lado van abreviadas (3F 1T) para que quepan en
+ * una línea; en la pantalla de respuesta, con palabra completa.
+ */
+function clueChips(g, big = false, long = big) {
+  const d = M.config.digits;
+  const wrap = el('div', { class: big ? 'reply-clue' : 'clue' });
+  const F = n => long ? `${n} ${n === 1 ? T.fama : T.famas}` : `${n}${T.famaShort}`;
+  const Tq = n => long ? `${n} ${n === 1 ? T.toque : T.toques}` : `${n}${T.toqueShort}`;
+  if (g.famas === d) wrap.append(el('span', { class: 'f' }, `🎯 ${F(g.famas)}`));
+  else {
+    if (g.famas) wrap.append(el('span', { class: 'f' }, F(g.famas)));
+    if (g.toques) wrap.append(el('span', { class: 't' }, Tq(g.toques)));
+    if (!g.famas && !g.toques) wrap.append(el('span', { class: 'z' }, long ? T.none : '0'));
+  }
+  return wrap;
+}
+
+function showHandoff(stages, onDone) {
+  const box = $('#handoff');
+  box.hidden = false; box.className = 'handoff'; box.innerHTML = '';
+  let i = 0;
+  const next = () => {
+    if (i >= stages.length) { box.classList.add('leaving'); setTimeout(() => { box.hidden = true; box.innerHTML = ''; onDone && onDone(); }, 300); return; }
+    box.innerHTML = ''; box.append(stages[i++]); vibrate(15);
+  };
+  box.onclick = e => { if (!e.target.closest('button')) next(); };
+  next();
+  return next;
+}
+
+function passStage(name) {
+  let adv = null;
+  const stage = el('div', { class: 'stage pop' },
+    el('div', { class: 'phone' }, '📱'),
+    el('div', { class: 'hint', style: 'font-size:1.05rem' }, T.hoPass),
+    el('div', { class: 'next-name' }, name),
+    el('button', { class: 'btn btn--cyan', onClick: e => { e.stopPropagation(); SFX.pass(); adv && adv(); } }, T.hoReady),
+  );
+  stage.setAdvance = fn => { adv = fn; };
+  return stage;
+}
+
+function replyStage(g) {
+  return el('div', { class: 'stage pop' },
+    el('div', { class: 'hint' }, `${M.names[g.from]} · ${T.hoResult}`),
+    el('div', { class: 'reply-big' }, g.value),
+    clueChips(g, true),
+    el('div', { class: 'hint', style: 'margin-top:14px' }, T.hoContinue + ' ›'),
+  );
+}
+
+/** Respuesta al intento y, debajo, el pase del celular al siguiente jugador (una sola pantalla). */
+function replyAndPassStage(g, nextName) {
+  let adv = null;
+  const stage = el('div', { class: 'stage pop' },
+    el('div', { class: 'hint' }, `${M.names[g.from]} · ${T.hoResult}`),
+    el('div', { class: 'reply-big' }, g.value),
+    clueChips(g, true),
+    el('div', { class: 'pass-divider' }),
+    el('div', { class: 'phone', style: 'font-size:3rem' }, '📱'),
+    el('div', { class: 'hint', style: 'font-size:1.05rem' }, T.hoPass),
+    el('div', { class: 'next-name', style: 'font-size:clamp(2.4rem, 12vw, 3.6rem)' }, nextName),
+    el('button', { class: 'btn btn--cyan', onClick: e => { e.stopPropagation(); SFX.pass(); adv && adv(); } }, T.hoReady),
+  );
+  stage.setAdvance = fn => { adv = fn; };
+  return stage;
+}
+
+function showCover(name, onReveal) {
+  const c = $('#cover');
+  c.hidden = false; c.innerHTML = '';
+  c.append(el('div', {}, el('div', { class: 'eye' }, '🙈'), el('div', { class: 'hint', style: 'color:var(--muted);font-weight:800' }, T.hoPass), el('div', { class: 'big' }, name), el('button', { class: 'btn btn--cyan', style: 'margin-top:18px', onClick: () => { c.hidden = true; SFX.reveal(); onReveal && onReveal(); } }, T.tapToReveal)));
+}
+
+/* ------------------------------------------------------------------ */
+/* Render principal                                                    */
+/* ------------------------------------------------------------------ */
+function render() {
+  if (!M) return;
+  const v = view();
+  // El chat acompaña la sala, la partida y el resultado; muere con la sala (canon C-15, D-35)
+  if (chat) chat.show();
+  if (chat && v.phase === 'play' && (v.parallel ? v.canGuess[S.role] : v.expected === S.role && !v.pending)) chat.closeIfIdle();
+  switch (v.phase) {
+    case 'lobby': renderLobby(); break;
+    case 'secret': renderSecret(v); break;
+    case 'play': renderPlay(v); break;
+    case 'reveal': renderPlay(v); break;
+    case 'done': renderResult(v); break;
+  }
+}
+
+/** Crea (o bota) el chat de sala. Solo tiene sentido con un jugador por celular. */
+function setupChat(mode) {
+  if (chat) { chat.destroy(); chat = null; }
+  const mount = $('#chat');
+  if (!mount) return;
+  mount.hidden = true;
+  if (mode !== 'online') return;
+  chat = createChat({
+    mount, T,
+    nameOf: r => M.names[r] || '…',
+    isMine: r => r === S.role,
+    onSend: text => S.transport.send({ t: 'chat', from: S.role, text }),
+  });
+}
+
+function renderPresence() {
+  if (!S || S.mode !== 'online' || !M) return;
+  const v = view();
+  if (v.phase === 'lobby') renderLobby();
+  const o = other(S.role);
+  const p = M.presence[o];
+  if (v.phase === 'play' && p) $('#status-sub').textContent = p.online === false ? T.offline : statusSub(v);
+}
+
+/**
+ * Irse de la sala a propósito: este rol se despide y, si no queda nadie, la sala se borra
+ * en el acto en vez de quedar seis horas pareciendo viva (D-50). Cerrar la pestaña no pasa
+ * por acá: esa partida se puede retomar y la sala tiene que seguir esperando (C-6).
+ */
+async function leaveRoom(btn) {
+  SFX.tap();
+  if (btn) btn.disabled = true;
+  clearSession();
+  await S.transport.dispose();
+  location.href = location.pathname;
+}
+
+function renderLobby() {
+  showScreen('screen-lobby');
+  const box = $('#lobby-box');
+  box.innerHTML = '';
+  // Con el idioma pegado: quien reciba la invitación abre la app como quien la mandó (D-74)
+  const url = withLang(`${location.origin}${location.pathname}?room=${S.code}`);
+  const joined = M.names.A && M.names.B;
+  box.append(
+    el('div', { class: 'muted', style: 'font-weight:800' }, T.lobbyCode),
+    el('div', { class: 'code-big' }, S.code),
+    el('div', { class: 'qr', id: 'qr' }),
+    el('p', { class: 'muted' }, T.lobbyShare),
+    shareButton(url),
+    el('p', { class: 'waiting', style: 'margin-top:12px' }, joined ? fmt(T.lobbyJoined, { name: M.names[other(S.role)] }) : el('span', { class: 'dots' }, T.lobbyWaiting)),
+    el('button', { class: 'btn btn--ghost btn--sm', style: 'margin-top:10px', onClick: e => leaveRoom(e.currentTarget) }, S.role === 'A' ? T.lobbyCancel : T.lobbyLeave),
+  );
+  renderQr(url);
+}
+
+/**
+ * "🎲 *X* · Sala WFBN" y "👋 Javi te invita a jugar en juegosdesalon.cl." (D-165). Nombra a quien toca compartir,
+ * que es quien está invitando; el resto —de qué se trata el juego, para cuántos, cuánto dura—
+ * lo pone la tarjeta que el chat arma sola con el link (D-72).
+ */
+function textoInvitacion() {
+  return fmt(COMMON[lang].invite, { emoji: gameById(GAME_ID)?.emoji || '🎲', name: M.names[S.role] || '', game: T.title, code: S.code });
+}
+
+function shareButton(url) {
+  return botonInvitar({ T, titulo: T.title, url, texto: textoInvitacion, alTocar: () => SFX.tap() });
+}
+
+
+/** Fase de secreto: cada rol local sin secreto lo ingresa (en modo un celular, por turnos con pantalla tapada). */
+function renderSecret() {
+  const rolesNeeding = S.roles.filter(r => !S.secrets[r]);
+  showScreen('screen-secret');
+  const entry = $('#secret-entry');
+  if (!rolesNeeding.length) {
+    const waitingFor = ['A', 'B'].find(r => !M.commits[r]);
+    $('#secret-title').textContent = T.secretSaved;
+    $('#secret-hint').textContent = '';
+    entry.innerHTML = '';
+    $('#secret-status').innerHTML = '';
+    $('#secret-status').append(el('span', { class: 'dots' }, fmt(T.waitingSecret, { name: M.names[waitingFor] || '…' })));
+    return;
+  }
+  const r = rolesNeeding[0];
+  const name = M.names[r];
+  const build = () => {
+    $('#secret-title').textContent = S.mode === 'local' ? fmt(T.secretFor, { name }) : T.secretTitle;
+    $('#secret-hint').textContent = fmt(M.config.zeroFirst ? T.secretHint : T.secretHintNoZero, { n: M.config.digits });
+    $('#secret-status').textContent = '';
+    entry.innerHTML = '';
+    entry.append(keypad({ digits: M.config.digits, zeroFirst: M.config.zeroFirst, hidden: S.mode === 'local', submitLabel: T.confirm, onSubmit: async val => { SFX.reveal(); await setSecret(r, val); } }));
+  };
+  if (S.mode === 'local' && S.uiRole !== r) { S.uiRole = r; entry.innerHTML = ''; showCover(name, build); } else build();
+}
+
+/** Recordatorio del número propio. En modo un celular parte oculto (el celular pasa de mano). */
+function mySecretChip(role) {
+  const secret = S.secrets[role].secret;
+  let shown = S.mode !== 'local';
+  const num = el('span', { class: 'num' });
+  const hint = el('span', { class: 'hint' });
+  const refresh = () => { num.textContent = shown ? secret : '•'.repeat(secret.length); hint.textContent = shown ? T.tapToHide : T.tapToShow; chip.classList.toggle('shown', shown); };
+  const chip = el('button', { type: 'button', class: 'my-secret', onClick: () => { shown = !shown; vibrate(8); refresh(); } },
+    el('span', { class: 'label' }, `🔒 ${T.mySecret}`), num, hint);
+  refresh();
+  return chip;
+}
+
+function statusSub(v) {
+  if (v.replicaFor) return fmt(T.replicaNotice, { name: M.names[other(v.replicaFor)], other: M.names[v.replicaFor] });
+  if (v.pending) return T.waitingReply;
+  return fmt(T.round, { n: Math.floor(M.guesses.length / 2) + 1 });
+}
+
+function renderPlay(v) {
+  showScreen('screen-play');
+  $('#secret-entry').innerHTML = '';
+  const myTurnRole = v.parallel ? (v.canGuess[S.role] ? S.role : null) : S.roles.includes(v.expected) ? v.expected : null;
+  // Modo un celular: al completarse una respuesta, mostrar el resultado y pasar el celular
+  if (S.mode === 'local') {
+    const last = M.guesses[M.guesses.length - 1];
+    if (last && last.famas !== null && last.round > S.lastShownRound) {
+      S.lastShownRound = last.round;
+      // Si sigue el juego: respuesta + pase en una sola pantalla. Si terminó: solo la respuesta.
+      const passing = v.phase === 'play' && v.expected && v.expected !== S.uiRole;
+      const stage = passing ? replyAndPassStage(last, M.names[v.expected]) : replyStage(last);
+      const adv = showHandoff([stage], () => { S.uiRole = v.expected; renderPlay(view()); });
+      if (passing) { stage.setAdvance(adv); $('#handoff').onclick = null; } // solo el botón avanza
+      SFX.reveal();
+      return;
+    }
+    // Si ya hay una transición en pantalla (respuesta → pase), un re-dibujo no debe reemplazarla.
+    if (v.phase === 'play' && v.expected && S.uiRole !== v.expected && !v.pending && $('#handoff').hidden) {
+      const ps = passStage(M.names[v.expected]);
+      const adv = showHandoff([ps], () => { S.uiRole = v.expected; renderPlay(view()); });
+      ps.setAdvance(adv);
+      return;
+    }
+  }
+  // Estado
+  const who = $('#status-who'), sub = $('#status-sub');
+  if (v.phase === 'reveal') { who.textContent = '…'; sub.textContent = T.waitingReply; }
+  else if (v.parallel) {
+    const mine = M.guesses.filter(g => g.from === S.role);
+    const solved = v.solvedIn[S.role];
+    who.textContent = solved ? fmt(T.solvedIn, { n: solved, word: triesWord(solved) }) : fmt(T.turnYou, { name: M.names[other(S.role)] });
+    sub.textContent = solved ? fmt(T.waitingFinish, { name: M.names[other(S.role)] }) : mine.some(g => g.famas === null) ? T.waitingReply : fmt(T.round, { n: mine.length + 1 });
+  }
+  else if (myTurnRole) { who.textContent = fmt(T.turnYou, { name: M.names[other(myTurnRole)] }); sub.textContent = statusSub(v); }
+  else { who.textContent = fmt(T.turnOther, { name: M.names[v.expected] }); sub.textContent = statusSub(v); }
+  // Entrada (con recordatorio del número propio)
+  const entry = $('#play-entry');
+  entry.innerHTML = '';
+  const reminderRole = S.mode === 'online' ? S.role : myTurnRole;
+  if (reminderRole && S.secrets[reminderRole] && v.phase === 'play') entry.append(mySecretChip(reminderRole));
+  if (myTurnRole && (v.parallel || !v.pending) && v.phase === 'play') {
+    S.notes[myTurnRole] = S.notes[myTurnRole] || new Set();
+    entry.append(
+      keypad({ digits: M.config.digits, zeroFirst: M.config.zeroFirst, notes: S.notes[myTurnRole], onNotesChange: saveSession, onSubmit: val => { S.transport.send({ t: 'guess', from: myTurnRole, value: val }); } }),
+      el('p', { class: 'block-hint' }, T.blockHint),
+    );
+  }
+  // Tableros
+  const boards = $('#boards');
+  boards.innerHTML = '';
+  for (const r of boardOrder()) boards.append(boardEl(r, v.phase === 'play' && (v.parallel ? v.canGuess[r] : v.expected === r)));
+  // Auto-scroll a la última fila
+  const lastLi = boards.querySelector('li:last-child'); if (lastLi && M.guesses.length > 3) lastLi.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function boardOrder() { return S.mode === 'online' ? [S.role, other(S.role)] : ['A', 'B']; }
+
+/** Tablero de intentos de un jugador (se usa en el juego y en el resultado). */
+function boardEl(r, isTurn = false) {
+  const mine = M.guesses.filter(g => g.from === r);
+  const list = el('ol', {}, ...mine.map(g => el('li', { class: g.famas === M.config.digits ? 'hit' : '' }, el('span', { class: 'val' }, g.value), g.famas === null ? el('span', { class: 'clue' }, el('span', { class: 'z' }, '…')) : clueChips(g, false))));
+  return el('div', { class: 'board' + (isTurn ? ' turn' : '') },
+    el('h3', {}, fmt(T.boardOf, { name: M.names[r] })),
+    el('div', { class: 'count' }, mine.length ? fmt(T.tries, { n: mine.length, word: triesWord(mine.length) }) : T.noGuesses),
+    mine.length ? list : el('div', { class: 'empty' }, '—'),
+  );
+}
+
+function renderResult(v) {
+  const already = $('#screen-result').classList.contains('active');
+  if (!already) showScreen('screen-result');
+  // Quién ganó, para la lista de salas del panel del dueño (D-79). Solo en sala, y una sola
+  // vez: al volver a dibujar la misma pantalla no se repite. Mejor esfuerzo, como todo lo
+  // que va al panel: si no sale, la partida no se entera.
+  if (!already && S.mode === 'online') {
+    S.transport?.noteWinner?.(v.tie ? {} : { role: v.winner, name: M.names[v.winner] });
+  }
+  // Los rankings (D-212): la partida del jugador de este celular y, si ganó, su victoria. Una vez.
+  if (!already) finDePartida({ juego: GAME_ID, modo: S.mode, rol: S.mode === 'online' ? S.role : S.mode === 'cpu' ? 'A' : null, ganadores: v.tie ? [] : [v.winner], nombres: M.names });
+  // Sin red, cómo terminó, para el panel (D-210)
+  if (!already && S.mode !== 'online') trackFinish(v.tie ? { empate: true } : { ganador: M.names[v.winner], detalle: `${M.guesses.filter(g => g.from === v.winner).length} intentos` });
+  const meRole = S.mode === 'online' ? S.role : null;
+  const title = $('#result-title'), sub = $('#result-sub'), trophy = $('#result-trophy');
+  if (v.tie) { title.textContent = T.tieTitle; trophy.textContent = '🤝'; sub.textContent = ''; }
+  else {
+    title.textContent = fmt(T.winTitle, { name: M.names[v.winner] });
+    const tries = M.guesses.filter(g => g.from === v.winner).length;
+    sub.textContent = (meRole ? (meRole === v.winner ? T.youWin + ' ' : T.youLose + ' ') : '') + fmt(T.inTries, { n: tries, word: triesWord(tries) });
+    // A la vez gana quien usó menos intentos: se ven los de los dos (D-367)
+    if (v.parallel) sub.textContent = (meRole === v.winner ? T.youWin : T.youLose) + ' ' + ['A', 'B'].map(r => `${M.names[r]}: ${fmt(T.tries, { n: v.solvedIn[r], word: triesWord(v.solvedIn[r]) })}`).join(' · ');
+    trophy.textContent = meRole && meRole !== v.winner ? '😵' : '🏆';
+  }
+  const secrets = $('#result-secrets'); secrets.innerHTML = '';
+  for (const r of ['A', 'B']) {
+    const ver = M.verify[r];
+    // La verificación solo tiene sentido cuando el rival está en otro celular
+    const verText = S.mode === 'online' && ver ? (ver.ok ? T.verified : T.notVerified) : '';
+    secrets.append(el('div', { class: 's' }, el('small', {}, M.names[r]), el('div', { class: 'n' }, M.reveals[r].secret), el('small', {}, verText)));
+  }
+  // Repaso de la partida: colapsado por defecto para que los botones queden a la vista
+  const replay = $('#result-replay');
+  if (!already) replay.open = false;
+  const rb = $('#result-boards'); rb.innerHTML = '';
+  for (const r of boardOrder()) rb.append(boardEl(r));
+  if (!already) { if (!meRole || meRole === v.winner || v.tie) { confetti({ count: 220, duration: 3500 }); SFX.win(); } else SFX.timeUp(); }
+  renderResultActions(v);
+}
+
+function renderResultActions() {
+  const box = $('#result-actions'); box.innerHTML = '';
+  const o = S.mode === 'online' ? other(S.role) : null;
+  const waiting = S.mode === 'online' && M.rematch[S.role] && !M.rematch[o];
+  box.append(
+    waiting ? el('p', { class: 'waiting' }, el('span', { class: 'dots' }, fmt(T.rematchWaiting, { name: M.names[o] }))) : el('button', { class: 'btn btn--yellow', onClick: e => tryRematch(e.currentTarget, rematch, { T, busy: COMMON[lang].opening, reset: () => { S.switching = false; } }) }, T.rematch),
+    el('button', { class: 'btn btn--ghost', onClick: e => leaveRoom(e.currentTarget) }, T.changeMode),
+    salidasFin('suelto', { lang }),
+  );
+  // Revancha propuesta por el rival (online): me uno a su sala nueva
+  if (S.mode === 'online') {
+    const code = M.rematch[o];
+    if (typeof code === 'string' && code !== S.code && !S.switching) { S.switching = true; joinOnline(code, M.names[S.role]).catch(e => { console.error(e); S.switching = false; }); }
+  }
+}
+
+/** En la revancha parte quien perdió (en empate, el que no partió). */
+function nextStarterFor(roleMap) {
+  const v = view();
+  const loser = v.tie ? other(M.starter) : other(v.winner);
+  return roleMap(loser);
+}
+
+async function rematch() {
+  SFX.tap();
+  if (S.mode === 'online') {
+    if (M.rematch[S.role]) return;
+    const o = other(S.role);
+    if (typeof M.rematch[o] === 'string') { S.switching = true; return joinOnline(M.rematch[o], M.names[S.role]); }
+    // Yo propongo: creo la sala nueva (seré A) y aviso. El rival entra como B.
+    const { createFirebaseTransport } = await import('../assets/js/transport/firebase.js');
+    const t = createFirebaseTransport({ game: GAME_ID });
+    const config = { ...M.config, parallel: true, replica: false, starter: nextStarterFor(loser => (loser === S.role ? 'A' : 'B')) };
+    S.switching = true;
+    const code = await t.create({ config, name: M.names[S.role] });
+    S.transport.send({ t: 'rematch', from: S.role, code });
+    M.rematch[S.role] = code;
+    renderResultActions(view());
+    setTimeout(() => startOnline(t, code, 'A', M.names[S.role], config), 600);
+  } else {
+    const names = { ...M.names }, mode = S.mode;
+    const config = { ...M.config, starter: nextStarterFor(loser => loser) };
+    startLocalMode(mode, names, config);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Modos                                                               */
+/* ------------------------------------------------------------------ */
+function startLocalMode(mode, names, config) {
+  clearSession();
+  const transport = createLocalTransport();
+  startSession({ mode, transport, roles: ['A', 'B'], config, names });
+  keepAwake();
+  trackStart({ game: GAME_ID, mode, players: 2, nombres: mode === 'cpu' ? [names.A] : Object.values(names || {}) }); // señal de uso (D-44, D-210)
+}
+
+async function startOnline(transport, code, role, name, config) {
+  startSession({ mode: 'online', transport, roles: [role], config, names: { [role]: name }, code, role });
+  history.replaceState(null, '', `${location.pathname}?room=${code}`);
+  keepAwake();
+  saveSession();
+  render();
+}
+
+const room = () => roomFlow({ game: GAME_ID, defaultConfig: DEFAULT_CONFIG, start: startOnline });
+async function createOnline(name, config) {
+  config = { ...config, parallel: true, replica: false }; // dos celulares: a la vez, sin réplica (D-367)
+  await room().create(name, config);
+}
+
+async function joinOnline(code, name, previousRole = null, savedSecret = null, savedNotes = null) {
+  const role = await room().join(code, name, previousRole);
+  if (savedNotes) S.notes[role] = new Set(savedNotes);
+  if (savedSecret) { S.secrets[role] = savedSecret; onChange(); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Jugar solo: el juego 🔢 de La Copa (D-142)                      */
+/* ------------------------------------------------------------------ */
+/**
+ * Las mismas reglas, el mismo puntaje y la misma pantalla que en la copa: 4 cifras distintas
+ * (puede empezar con cero), 10 intentos, de 0 a 100 puntos y reloj de tiempo activo. El número
+ * sale de un código de 5 letras al azar, así la partida guardada es solo `{ codigo, jugadas, ms }`.
+ */
+let soltarSolo = null;
+/** ui-numero usa las claves de la copa; la ayuda del teclado es la del juego (la corta, sin "si crees que no está"). */
+const TN = { ...T, blockHintDigits: T.blockHint };
+const recordTexto = r => fmt(T.prevRecord, { s: r.s, t: mmss(r.ms) });
+
+function soloIntro() {
+  showScreen('screen-solo-intro');
+  const box = $('#solo-intro'); box.innerHTML = '';
+  const antes = record.get();
+  box.append(
+    el('h2', { class: 'display display--lg center', style: 'margin:4px 0 0' }, T.modeSolo),
+    el('div', { class: 'panel' },
+      el('p', { class: 'lead', style: 'margin-bottom:6px' }, T.howTitle),
+      el('ol', { class: 'como' }, ...T.soloHow.map(x => el('li', {}, x))),
+      el('p', { class: 'lead', style: 'margin:12px 0 4px' }, T.scoringTitle),
+      el('p', { class: 'muted', style: 'margin:0' }, T.soloScoring),
+      antes ? el('p', { class: 'muted', style: 'margin:8px 0 0;font-weight:900' }, recordTexto(antes)) : null),
+    el('button', { class: 'btn btn--yellow', id: 'btn-solo-empezar', onClick: () => { SFX.tap(); soloNueva(); } }, T.soloStart),
+    // El ranking de jugar solo (D-212), debajo de Empezar
+    bloqueTabla({ tabla: TABLA_SOLO, titulo: fmt(COMMON[lang].rk.titleOf, { game: T.title }), alTocar: () => SFX.tap() }),
+  );
+}
+
+/** La tabla de jugar solo en los rankings (D-212): `toque-y-fama_solo`. */
+const TABLA_SOLO = `${GAME_ID}_solo`;
+
+/** Partida nueva: borra la guardada y avisa al panel (al retomar no, C-7). */
+function soloNueva() {
+  clearSession();
+  const partida = { mode: 'solo', codigo: codigoAlAzar(), jugadas: null, ms: 0, done: false };
+  store.save(partida);
+  trackStart({ game: GAME_ID, mode: 'solo', players: 1 }); // señal de uso para el panel (D-44)
+  soloJugar(partida);
+}
+
+/** Monta el juego con lo guardado (o de cero) y guarda cada jugada (C-6). */
+function soloJugar(partida) {
+  const { codigo } = partida;
+  soltarSolo?.();
+  showScreen('screen-solo');
+  keepAwake();
+  const p = numero.generar(codigo, 1);
+  const cron = $('#solo-cron');
+  soltarSolo = jugarSolo($('#solo-body'), {
+    mod: uiNumero, p, lang, T: TN, fmt, el, SFX, vibrate,
+    jugadas: partida.jugadas ?? undefined, ms: partida.ms || 0,
+    guardar: ({ jugadas, ms }) => store.save({ mode: 'solo', codigo, jugadas, ms, done: false }),
+    cron: t => { cron.textContent = fmt(T.soloTimer, { t }); },
+    alTerminar: r => { soltarSolo = null; soloFin(codigo, p, r); },
+  });
+}
+
+function soloFin(codigo, p, { s, t, ms, estado }) {
+  store.save({ mode: 'solo', codigo, jugadas: { i: estado.filas.map(f => f.v), n: [] }, ms, done: true });
+  // Cómo salió, para el panel (D-210)
+  trackFinish({ detalle: `${s}/100 · ${estado.usados} intentos · ${mmss(ms)}` });
+  // El récord solo se anota con puntos: un 0 no es un récord que valga la pena celebrar
+  const antes = record.get();
+  const { nuevo } = s > 0 ? record.anotar('', { s, ms }) : { nuevo: false };
+  showScreen('screen-solo-result');
+  const conRanking = rankingsVisibles() && !!leerYo();
+  // La tabla del final se arma antes del aviso: al guardar la partida, el aviso la recarga
+  const tablaFin = bloqueTabla({ tabla: TABLA_SOLO, titulo: fmt(COMMON[lang].rk.titleOf, { game: T.title }), alTocar: () => SFX.tap(), entrar: false });
+  const box = $('#solo-result'); box.innerHTML = '';
+  const n = estado.usados;
+  box.append(
+    el('div', { class: 'result-hero' },
+      el('span', { class: 'trophy' }, estado.resuelto ? '🏆' : '😵'),
+      el('h2', { class: 'display display--lg' }, estado.resuelto ? T.soloWin : T.soloLose),
+      el('p', { class: 'muted' }, T.yourScore),
+      el('div', { class: 'score-big', id: 'solo-puntaje' }, `${s}/100`),
+      el('p', { class: 'muted' }, fmt(T.soloSummary, { n, word: triesWord(n), t: mmss(ms) })),
+      // Con jugador, el aviso de los rankings reemplaza al récord del celular (D-212)
+      conRanking ? avisoPartida({ juego: GAME_ID, variante: 'solo', s, ms, alAnotar: () => tablaFin.recargar() })
+        : nuevo ? el('p', { class: 'lead', style: 'margin:4px 0 0' }, T.newRecord) : antes ? el('p', { class: 'muted', style: 'font-weight:900' }, recordTexto(antes)) : null),
+    el('div', { class: 'panel solo-fin' },
+      el('div', {}, el('small', {}, T.soloSecretWas), el('div', { class: 'n' }, p.secreto)),
+      el('div', { class: 'tarjeta' + (n > 5 ? ' tarjeta--2' : ''), 'aria-hidden': 'true' }, ...t.split('\n').map(fila => el('span', {}, fila)))),
+    // El repaso va colapsado para que los botones queden a la vista (C-8)
+    el('details', { class: 'panel replay', 'data-tablero': 'repaso' }, el('summary', {}, T.replayTitle),
+      // The ruled-out guesses carry ⚠️, which is what the score counts (D-453)
+      uiNumero.tableroFin(el, estado, { largo: p.cifras, titulo: T.yourGuesses, lang, valor: f => el('span', { class: 'val' }, f.v) })),
+    el('div', { class: 'stack', id: 'solo-actions' },
+      // El mismo resultado que el juego de La Copa, con su imagen (D-165)
+      botonResultadoSolo({ C: COMMON[lang], emoji: gameById(GAME_ID)?.emoji || '🔢', juego: T.title, puntaje: `${s}/100`, tiempo: mmss(ms), tarjeta: t, url: withLang(`${SITIO}bulls-and-cows/`), alTocar: () => SFX.tap() }),
+      el('button', { class: 'btn btn--yellow', onClick: () => { SFX.tap(); soloNueva(); } }, T.playAgain),
+      el('button', { class: 'btn btn--ghost', onClick: () => { SFX.tap(); clearSession(); location.href = location.pathname; } }, T.changeMode),
+      salidasFin('suelto', { lang })),
+    // Sin jugador abierto, "¿quieres que esta partida cuente?" en su propio bloque, después de los
+    // botones para que sigan a la vista (C-8, D-274); y la tabla
+    !conRanking && rankingsVisibles() ? avisoPartida({ juego: GAME_ID, variante: 'solo', s, ms, alAnotar: () => tablaFin.recargar(), alTocar: () => SFX.tap() }) : null,
+    tablaFin,
+  );
+  if (estado.resuelto) { confetti({ count: 220, duration: 3500 }); SFX.win(); vibrate([30, 50, 30]); } else { SFX.timeUp(); vibrate(60); }
+}
+
+/* ------------------------------------------------------------------ */
+/* Pantallas de inicio                                                 */
+/* ------------------------------------------------------------------ */
+function renderModes() {
+  const box = $('#modes'); box.innerHTML = '';
+  const modes = [['local', T.modeLocal, T.modeLocalHint], ['online', T.modeOnline, T.modeOnlineHint], ['solo', T.modeSolo, T.modeSoloHint]];
+  for (const [m, label, hint] of modes) box.append(el('button', { class: 'mode', onClick: () => { SFX.tap(); if (m === 'solo') soloIntro(); else renderSetup(m); } }, el('span', {}, el('b', {}, label), el('small', {}, hint)), el('span', { class: 'go' }, '›')));
+  // 🔢 Número or 🔤 Palabra, like a game's variants (D-331): one home card for both (#767)
+  $('#variant-slot').replaceChildren(el('div', { class: 'opciones dos variantes', id: 'selector-variante' },
+    el('button', { type: 'button', class: 'opcion on', 'aria-pressed': 'true' }, el('b', {}, T.variantNumber)),
+    el('button', { type: 'button', class: 'opcion', 'aria-pressed': 'false', onClick: () => { SFX.tap(); location.href = '../word/'; } }, el('b', {}, T.variantWord))));
+}
+
+function renderResumeSlot() {
+  const slot = $('#resume-slot'); slot.innerHTML = '';
+  const saved = loadSession();
+  if (!saved || saved.done) return;
+  if (saved.mode === 'online' && !saved.code) return;
+  // Las partidas del antiguo modo contra el celular (D-129) no se pueden retomar como solo, ni las
+  // del solo con bot (D-142): esas guardaban mensajes y no el código del juego
+  if (!['online', 'local', 'solo'].includes(saved.mode)) return;
+  if (saved.mode === 'solo' && typeof saved.codigo !== 'string') return;
+  const label = saved.mode === 'online' ? `${T.lobbyCode}: ${saved.code}` : { local: T.modeLocal, solo: T.modeSolo }[saved.mode];
+  const resume = async () => {
+    if (saved.mode === 'online') { try { await joinOnline(saved.code, saved.name, saved.role, saved.secret, saved.notes); } catch (e) { clearSession(); renderResumeSlot(); } }
+    else if (saved.mode === 'solo') { SFX.tap(); soloJugar(saved); }
+    else restoreLocal(saved);
+  };
+  slot.append(el('div', { class: 'panel pop' },
+    el('p', { class: 'lead', style: 'margin-bottom:4px' }, T.resumeTitle),
+    el('p', { class: 'muted' }, label),
+    el('div', { class: 'btn-row' },
+      el('button', { class: 'btn btn--cyan btn--sm', onClick: resume }, T.resume),
+      el('button', { class: 'btn btn--ghost btn--sm', onClick: () => { clearSession(); renderResumeSlot(); } }, T.delete),
+    ),
+  ));
+}
+
+function renderSetup(mode, prefillCode = '') {
+  showScreen('screen-setup');
+  // Quien llega por un enlace no viene a configurar nada: viene invitado
+  $('#screen-setup h2').textContent = prefillCode ? T.invitedTitle : T.setupTitle;
+  const config = { ...DEFAULT_CONFIG };
+  const savedName = names_.get();
+  const form = $('#setup-form'); form.innerHTML = '';
+  const err = $('#setup-error'); clearRoomError(err);
+  const inputs = {};
+  const nameField = (key, label, value = '') => { inputs[key] = el('input', { type: 'text', maxlength: 14, placeholder: label, value, autocomplete: 'off' }); return el('div', { class: 'field' }, el('label', {}, label), inputs[key]); };
+  if (mode === 'local') form.append(nameField('A', T.p1), nameField('B', T.p2));
+  else form.append(nameField('A', T.yourName, savedName));
+  // Config (el que se une a una sala usa la config del anfitrión)
+  const seg = el('div', { class: 'seg' }, ...DIGIT_OPTIONS.map(d => el('button', { type: 'button', class: d === config.digits ? 'on' : '', onClick: e => { config.digits = d; $$('button', seg).forEach(b => b.classList.toggle('on', b === e.currentTarget)); SFX.tap(); } }, d)));
+  const sw = (key, label, hint) => { const b = el('button', { type: 'button', class: 'switch' + (config[key] ? ' on' : ''), onClick: () => { config[key] = !config[key]; b.classList.toggle('on', config[key]); SFX.tap(); } }); return el('div', { class: 'toggle-row' }, el('div', {}, el('b', {}, label), hint ? el('small', {}, hint) : null), b); };
+  // Quien llega invitado no configura nada: la partida ya viene armada por el anfitrión.
+  if (!prefillCode) form.append(el('div', { class: 'field' }, el('label', {}, T.digits), seg), mode === 'local' ? sw('replica', T.replica, T.replicaHint) : null, sw('zeroFirst', T.zeroFirst));
+  const actions = $('#setup-actions'); actions.innerHTML = '';
+  const fail = (msg) => { clearRoomError(err); err.textContent = msg; err.classList.remove('shake'); void err.offsetWidth; err.classList.add('shake'); SFX.error(); vibrate([30, 30, 30]); };
+  const getName = k => inputs[k].value.trim();
+  const remember = n => names_.set(n);
+  if (mode === 'local') {
+    actions.append(el('button', { class: 'btn btn--yellow', onClick: () => { const a = getName('A'), b = getName('B'); if (!a || !b || a.toLowerCase() === b.toLowerCase()) return fail(T.errNames); SFX.tap(); startLocalMode('local', { A: a, B: b }, config); } }, T.start));
+  } else {
+    const codeInput = el('input', { type: 'text', class: 'code', maxlength: 4, placeholder: T.codePlaceholder, value: prefillCode, autocapitalize: 'characters', autocomplete: 'off' });
+    const C = COMMON[lang];
+    const roomOpts = { err, fail, T, local: () => { SFX.tap(); renderSetup('local'); }, localLabel: C.playOnePhone };
+    const createBtn = el('button', { class: 'btn btn--yellow', onClick: async () => { const a = getName('A'); if (!a) return fail(T.errName); remember(a); SFX.tap(); await tryRoom(createBtn, () => createOnline(a, config), { busy: C.opening, ...roomOpts }); } }, T.create);
+    const joinBtn = el('button', { class: 'btn btn--cyan', onClick: async () => {
+      const a = getName('A'); const code = codeInput.value.trim().toUpperCase();
+      if (!a) return fail(T.errName); if (!/^[A-Z]{4}$/.test(code)) return fail(T.errCode);
+      remember(a); SFX.tap();
+      await tryRoom(joinBtn, () => joinOnline(code, a), { busy: C.joining, ...roomOpts });
+    } }, T.join);
+    // Con un enlace de sala solo se puede entrar a ESA sala: crear otra desde aquí confunde.
+    const joinPanel = extra => el('div', { class: 'panel' }, extra, el('div', { class: 'field' }, codeInput), joinBtn);
+    if (prefillCode) {
+      codeInput.readOnly = true;
+      actions.append(joinPanel(el('div', {},
+        el('p', { class: 'lead', style: 'margin-bottom:2px' }, fmt(T.invited, { code: prefillCode })),
+        el('p', { class: 'muted', style: 'margin:0 0 8px' }, T.invitedHint),
+      )));
+    } else {
+      actions.append(createBtn, el('div', { class: 'or' }, `— ${COMMON[lang].or} —`), joinPanel(el('p', { class: 'lead', style: 'margin-bottom:8px' }, T.joinTitle)));
+    }
+    if (prefillCode) setTimeout(() => inputs.A.focus(), 100);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Arranque                                                            */
+/* ------------------------------------------------------------------ */
+function init() {
+  document.documentElement.lang = lang;
+  document.title = T.docTitle;
+  applyStatic(T);
+  $('#lang-slot').append(langToggle());
+  $('#sound-slot').append(soundToggle());
+  initSound();
+  sparkles(12);
+  renderModes();
+  mountHowToPlayFacts(GAME_ID, T, lang);
+  // Los mejores puntajes jugando solo, que es como más se juega (D-274), y las victorias y entrar con nombre y PIN (D-212)
+  $('#rk-slot')?.append(
+    bloqueTabla({ tabla: TABLA_SOLO, titulo: `🧍 ${COMMON[lang].rk.soloOf}`, alTocar: () => SFX.tap(), entrar: false }),
+    bloqueVictorias({ juego: GAME_ID, nombre: T.title, alTocar: () => SFX.tap() }));
+  renderResumeSlot();
+  const code = param('room');
+  if (code && /^[A-Z]{4}$/i.test(code)) {
+    const saved = loadSession();
+    if (saved && saved.code === code.toUpperCase() && !saved.done) { joinOnline(saved.code, saved.name, saved.role, saved.secret, saved.notes).catch(() => { clearSession(); renderSetup('online', code.toUpperCase()); }); }
+    else renderSetup('online', code.toUpperCase());
+  }
+}
+init();
+// Gancho de depuración (solo lectura) para pruebas automatizadas.
+window.__tyf = { view: () => (M ? view() : null), match: () => M, session: () => S, guardada: () => store.load() };
