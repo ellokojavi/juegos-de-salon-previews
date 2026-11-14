@@ -1,0 +1,227 @@
+/* ==========================================================
+   El Ahorcado — estilos propios
+   The pilot of the design system (D-533, phase 4 of #1188): the screens, the cover's hero, the
+   modes, the form fields, the segmented control, the player rows, the toggle and its switch, the
+   room (code, QR, players, "or", waiting) and the result's hero come from base.css; this file
+   keeps what is the game's own (the gallows, the word, the keyboard, the verdict), on the tokens.
+   ========================================================== */
+
+/* ---------- Configuración: what is Ahorcado's own on top of the shell ---------- */
+#screen-setup > h2, #screen-lobby > h2, #screen-word > h2 { margin-bottom: var(--s-12); }
+.field--name { margin-bottom: var(--s-16); }
+.field--name label { text-align: center; }
+/* De dónde sale la palabra, lado a lado: emoji arriba y nombre completo debajo (D-52) */
+.seg--src button { display: grid; align-content: center; gap: var(--s-2); padding: var(--s-8) var(--s-2); font-size: var(--fs-85); line-height: 1.15; text-wrap: balance; }
+.seg--src .em { font-size: var(--fs-140); line-height: 1; }
+/* The lives: «Normal · 6» on one line like its neighbours; at 320 px it was the only one to break after the dot */
+.seg--lives button { white-space: nowrap; }
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-8); }
+.theme-card { display: grid; gap: var(--s-2); justify-items: center; text-align: center; padding: var(--s-12) var(--s-8); border-radius: var(--r-16); background: var(--well-deep); border: 2px solid transparent; color: var(--ink); cursor: pointer; font-family: var(--font-body); }
+.theme-card .em { font-size: 1.8rem; }
+.theme-card b { font-size: var(--fs-100); }
+.theme-card small { color: var(--muted); font-size: var(--fs-75); font-weight: 700; }
+.theme-card.on { border-color: var(--yellow); background: rgb(var(--yellow-rgb) / 0.15); }
+
+/* ---------- Escribir la palabra ---------- */
+#word-sub { margin-bottom: var(--s-10); font-size: var(--fs-90); }
+.field input.word-in { font: 900 var(--fs-140) var(--font-body); text-align: center; letter-spacing: 0.06em; text-transform: uppercase; }
+#word-status { font-weight: 800; min-height: 1.4em; }
+/* Sugerencias de la temática: tocar una llena el formulario y después se puede editar (D-62) */
+.suggest { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-6); }
+/* El emoji arriba y la palabra debajo, como las tarjetas de temática: al lado, la más larga
+   de los mazos (CORDILHEIRA, 11 letras) se partía a la mitad a 320 px. */
+.suggest .sug {
+  display: grid; gap: var(--s-2); justify-items: center; text-align: center;
+  background: var(--well-deep); border: 2px solid transparent; border-radius: var(--r-14);
+  padding: var(--s-8) var(--s-6); min-height: 48px; color: var(--ink); cursor: pointer; font-family: var(--font-body);
+}
+.suggest .sug .em { font-size: var(--fs-120); line-height: 1; }
+.suggest .sug b { font-size: var(--fs-90); letter-spacing: 0.01em; line-height: 1.15; overflow-wrap: anywhere; }
+.suggest .sug.on { border-color: var(--yellow); background: rgb(var(--yellow-rgb) / 0.15); }
+.suggest .sug:active { transform: scale(0.97); }
+
+/* ---------- Partida ---------- */
+/* Cartel breve de acierto o error: se infla, se lee y se va solo, sin pedir un toque (D-63).
+   Va sobre el dibujo, que es donde sobra espacio: encima de la palabra o del teclado taparía
+   justo lo que el jugador necesita mirar. */
+.flash {
+  position: absolute; inset: -4px -6px; z-index: 6; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; gap: var(--s-10);
+  background: rgb(var(--bg1-rgb) / 0.86); border-radius: var(--r-16);
+  backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  animation: flashPop 1s ease-out both;
+}
+.flash b { font-family: var(--font-display); font-size: clamp(1.3rem, 6vw, 1.8rem); letter-spacing: 0.04em; }
+.flash span { font-family: var(--font-display); font-size: clamp(2.2rem, 11vw, 3rem); line-height: 1; }
+.flash.hit b, .flash.hit span { color: var(--cyan); text-shadow: 0 4px 0 rgb(var(--bg1-rgb) / 0.4), 0 0 28px rgb(var(--cyan-rgb) / 0.75); }
+.flash.miss b, .flash.miss span { color: var(--pink); text-shadow: 0 4px 0 rgb(var(--bg1-rgb) / 0.4), 0 0 28px rgb(var(--pink-rgb) / 0.75); }
+.flash.buy b, .flash.buy span { color: var(--yellow); text-shadow: 0 4px 0 rgb(var(--bg1-rgb) / 0.4), 0 0 28px rgb(var(--yellow-rgb) / 0.75); }
+@keyframes flashPop {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* Lo que se infla es el texto, no el velo: el velo solo aparece y se va */
+.flash b, .flash span { animation: flashText 1s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+@keyframes flashText {
+  0%  { transform: scale(0.6); }
+  22% { transform: scale(1.1); }
+  38% { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+/* Sin animación, el cartel igual aparece y se va: es información, no adorno */
+@media (prefers-reduced-motion: reduce) {
+  .flash { animation: flashFade 1s linear both; }
+  .flash b, .flash span { animation: none; }
+  @keyframes flashFade { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+}
+
+.board { position: relative; display: grid; grid-template-columns: 124px 1fr; gap: var(--s-10); align-items: start; margin: var(--s-2) 0 0; }
+.gallows svg { display: block; width: 100%; height: auto; max-height: 140px; }
+/* La horca está desde el principio, apagada; el monito se dibuja con cada error */
+.gallows .frame { stroke: rgb(var(--ink-rgb) / 0.28); }
+.gallows path { fill: none; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.gallows .part { stroke: var(--pink); filter: drop-shadow(0 0 6px rgb(var(--pink-rgb) / 0.7)); stroke-dasharray: 1; stroke-dashoffset: 0; }
+.gallows .part.draw { animation: drawPart 0.45s ease-out both; }
+@keyframes drawPart { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* Con un solo error de margen, la soga queda latiendo */
+.gallows.last .rope { stroke: var(--yellow); animation: ropePulse 1.4s ease-in-out infinite; }
+@keyframes ropePulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+.side { display: grid; gap: var(--s-8); }
+.lives { display: flex; flex-wrap: wrap; gap: var(--s-4); align-items: center; }
+.lives .dot { width: 15px; height: 15px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 8px rgb(var(--lime-rgb) / 0.6); }
+.lives .dot.gone { background: var(--glass-border); box-shadow: none; }
+.lives .n { font: 900 var(--fs-85) var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); margin-left: var(--s-4); }
+.lives.danger .n { color: var(--yellow); }
+.hint { background: var(--well-deep); border-radius: var(--r-12); padding: var(--s-8) var(--s-10); font-size: var(--fs-85); font-weight: 700; line-height: 1.3; }
+.hint b { color: var(--yellow); text-transform: uppercase; font-size: var(--fs-75); letter-spacing: 0.08em; display: block; }
+
+/* La palabra: Bangers, y si es larga baja de tamaño y parte en dos líneas (C-8) */
+/* Sin margen automático: el sobrante lo toma el teclado. Repartirlo también acá dejaba la palabra
+   pegada al pie en los turnos de espera, cuando el teclado no está para absorberlo. */
+.word { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-6) var(--s-8); margin: var(--s-4) 0 var(--s-10); min-height: 56px; }
+.word .ch {
+  width: 30px; min-height: 46px; display: grid; place-items: center; border-bottom: 4px solid var(--glass-border);
+  font-family: var(--font-display); font-size: 2.5rem; line-height: 1; letter-spacing: 0; color: transparent;
+}
+.word .ch.on { color: var(--cyan); border-bottom-color: var(--cyan); text-shadow: 0 3px 0 rgb(var(--bg1-rgb) / 0.35), 0 0 18px rgb(var(--cyan-rgb) / 0.6); animation: pop 0.35s cubic-bezier(0.2,0.9,0.3,1.4) both; }
+.word .ch.miss { color: var(--pink); border-bottom-color: rgb(var(--pink-rgb) / 0.6); text-shadow: 0 3px 0 rgb(var(--bg1-rgb) / 0.35), 0 0 18px rgb(var(--pink-rgb) / 0.6); }
+.word .ch.bought { color: var(--yellow); border-bottom-color: var(--yellow); text-shadow: 0 3px 0 rgb(var(--bg1-rgb) / 0.35), 0 0 18px rgb(var(--yellow-rgb) / 0.6); }
+.word .sp { width: 14px; border: 0; }
+.word.long .ch { width: 21px; min-height: 36px; font-size: 1.8rem; border-bottom-width: 3px; }
+.word.shake { animation: shake 0.5s both; }
+
+/* Los demás: vidas y cuánto llevan, nunca qué letras (D-55) */
+.rivals { display: flex; flex-wrap: wrap; gap: var(--s-6); justify-content: center; margin-bottom: var(--s-6); }
+.rivals .r { display: grid; gap: var(--s-2); min-width: 78px; padding: var(--s-6) var(--s-10); border-radius: var(--r-12); background: var(--well); }
+.rivals .r .who { font-weight: 900; font-size: var(--fs-75); display: flex; justify-content: space-between; gap: var(--s-6); }
+.rivals .r .who .lv { font: 900 var(--fs-75) var(--font-num); font-variant-numeric: tabular-nums; color: var(--lime); }
+.rivals .r .bar { height: 5px; border-radius: var(--r-pill); background: var(--glass-border); overflow: hidden; }
+.rivals .r .bar i { display: block; height: 100%; background: var(--cyan); border-radius: var(--r-pill); transition: width 0.3s; }
+.rivals .r.me { background: rgb(var(--cyan-rgb) / 0.16); }
+/* A quién le toca: con turnos es lo que hay que poder mirar de un vistazo (D-66) */
+.rivals .r.turn { box-shadow: 0 0 0 2px var(--yellow), 0 0 14px rgb(var(--yellow-rgb) / 0.45); }
+.rivals .r.turn .who { color: var(--yellow); }
+.rivals .r.dead { opacity: 0.5; }
+.rivals .r.dead .who .lv { color: var(--pink); }
+.rivals .r.won .bar i { background: var(--lime); }
+.rivals .r.off { opacity: 0.45; }
+
+/* Teclado: 44 px y cifras legibles. En Bangers, a esta densidad, la I y la L son el mismo palito */
+/* El teclado y sus botones son un solo bloque y van al pie: el margen de arriba se come todo lo
+   que sobre de pantalla, así el hueco queda antes del teclado y no partiendo el bloque en dos.
+   Los 14 de abajo son el aire con los botones de acción: pegados, se tocaba comprar queriendo la Z. */
+.keyboard { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s-4); margin: auto 0 var(--s-14); }
+.keyboard[hidden] { display: none; }
+/* En pantallas cortas el teclado se compacta hasta el mínimo del canon —44 px— para que el
+   tablero entre entero sin desplazar. Por debajo de eso no baja. */
+@media (max-height: 780px) {
+  .keyboard { gap: var(--s-4); margin-bottom: var(--s-10); }
+  .keyboard button { min-height: 44px; font-size: var(--fs-120); }
+  .gallows svg { max-height: 110px; }
+  .word .ch { min-height: 40px; font-size: 2.1rem; }
+  .confirm .btn { min-height: 52px; font-size: var(--fs-120); }
+}
+.keyboard button {
+  min-height: 45px; border-radius: var(--r-12); border: 2px solid var(--glass-border); background: var(--glass);
+  color: var(--ink); font: 900 var(--fs-120) var(--font-num); cursor: pointer; transition: transform 0.08s, background 0.15s, border-color 0.15s;
+}
+.keyboard button:active { transform: scale(0.94); }
+.keyboard button.sel { background: var(--yellow); color: var(--ink-on-yellow); border-color: var(--yellow); transform: scale(1.06); }
+.keyboard button.hit { background: rgb(var(--cyan-rgb) / 0.22); border-color: var(--cyan); color: var(--cyan); }
+.keyboard button.miss { opacity: 0.35; text-decoration: line-through; }
+.keyboard button:disabled { cursor: not-allowed; }
+.keyboard button.hit:disabled, .keyboard button.miss:disabled { opacity: 0.35; }
+
+/* Confirmar: nada se preselecciona y el botón dice sobre qué actúa (C-8, D-38) */
+.confirm {
+  /* Nada de sticky: pegada al fondo del viewport flotaba sobre el teclado en cuanto la pantalla
+     quedaba corta —bastaban 16 px de más— y se comía la última fila de teclas. Va en el flujo,
+     al pie, que es donde el margen automático del teclado la deja cuando sobra pantalla. */
+  z-index: 7; display: grid; gap: var(--s-6);
+  /* De borde a borde y hasta el fondo: el fondo tiene que leerse como la barra de abajo y no como
+     un rectángulo oscuro suelto alrededor de los botones. Los márgenes negativos se comen el
+     padding de .app (18 px a los lados, 32 px abajo), que si no dejaba una franja por debajo. */
+  margin: 0 calc(-1 * var(--s-18)) calc(-1 * var(--s-32)); padding: var(--s-12) var(--s-18) calc(var(--s-32) + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgb(var(--bg1-rgb) / 0.94) 45%, rgb(var(--bg1-rgb) / 0.72) 75%, rgb(var(--bg1-rgb) / 0));
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+}
+.confirm:empty { display: none; }
+/* En una línea: partido en dos, el pie se come una fila del teclado */
+.confirm .buy { display: flex; align-items: center; justify-content: center; gap: var(--s-8); font-size: var(--fs-110); min-height: 46px; }
+.btn-row--ask .btn { font-size: var(--fs-120); }
+.confirm .buy small { font: 800 var(--fs-75) var(--font-body); text-transform: none; letter-spacing: 0; opacity: 0.85; }
+
+/* ---------- Veredicto de la ronda ---------- */
+.verdict { display: grid; gap: var(--s-8); justify-items: center; }
+.verdict .big { font-family: var(--font-display); font-size: clamp(2.4rem, 13vw, 3.4rem); letter-spacing: 0.04em; }
+.verdict .big.ok { color: var(--lime); text-shadow: 0 4px 0 rgb(var(--bg1-rgb) / 0.35), 0 0 30px rgb(var(--lime-rgb) / 0.5); }
+.verdict .big.no { color: var(--pink); text-shadow: 0 4px 0 rgb(var(--bg1-rgb) / 0.35), 0 0 30px rgb(var(--pink-rgb) / 0.5); }
+.verdict .word-big {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-4); background: var(--card); color: var(--card-ink);
+  border-radius: var(--r-16); padding: var(--s-12) var(--s-16); box-shadow: var(--shadow-panel); max-width: 340px;
+}
+.verdict .word-big span { font-family: var(--font-display); font-size: 1.9rem; line-height: 1; }
+.verdict .word-big span.late { color: var(--red); animation: pop 0.3s cubic-bezier(0.2,0.9,0.3,1.4) both; }
+/* En el veredicto de una letra, los huecos que faltan se ven pero no pesan */
+.verdict .word-big span.hole { color: rgb(var(--card-ink-rgb) / 0.28); }
+.verdict .lives { justify-content: center; }
+.verdict .word-big span.sp { width: 10px; }
+.verdict .note { color: var(--muted); font-weight: 800; font-size: var(--fs-90); text-align: center; }
+.handoff.bad { background: radial-gradient(700px 500px at 50% 25%, rgb(var(--pink-rgb) / 0.55), transparent 65%), radial-gradient(600px 500px at 50% 110%, rgb(var(--pink-rgb) / 0.25), transparent 60%), linear-gradient(160deg, var(--bg1), var(--bg2) 60%, var(--bg3)); }
+.handoff.bad .word-big { animation: shake 0.6s both; }
+
+/* ---------- Resultado ---------- */
+.ranking { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s-6); }
+/* Dos filas: el detalle es largo y, en una sola línea, se comía el nombre del jugador */
+.ranking li { display: grid; grid-template-columns: 32px 1fr; gap: var(--s-2) var(--s-8); align-items: baseline; background: var(--well); border-radius: var(--r-12); padding: var(--s-8) var(--s-12); font-weight: 800; }
+.ranking li .pos { grid-row: span 2; font-family: var(--font-display); font-size: var(--fs-160); color: var(--yellow); align-self: center; }
+.ranking li .name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ranking li .info { color: var(--cyan); font-size: var(--fs-75); }
+.ranking li .info .time { color: var(--muted); font: 900 var(--fs-75) var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ranking li.top { background: linear-gradient(90deg, rgb(var(--yellow-rgb) / 0.28), rgb(var(--pink-rgb) / 0.28)); }
+.words { display: grid; gap: var(--s-6); }
+.words .w { display: grid; grid-template-columns: 1fr auto; gap: var(--s-8); align-items: baseline; background: var(--well); border-radius: var(--r-12); padding: var(--s-8) var(--s-12); }
+.words .w .t { font-family: var(--font-display); font-size: var(--fs-140); letter-spacing: 0.06em; color: var(--yellow); }
+.words .w .who { color: var(--muted); font-size: var(--fs-75); font-weight: 800; display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+.words .w .ver { font-size: var(--fs-75); font-weight: 800; color: var(--lime); white-space: nowrap; }
+.words .w .ver.bad { color: var(--pink); }
+/* El aire con lo de arriba lo da el repaso o el panel marcado con data-tablero (D-309) */
+#screen-result #result-actions { margin-top: 0; }
+
+/* ---------- Sala: the shell's room pieces (code, QR, players, "or", waiting) come from base.css ---------- */
+
+/* Con el chat en pantalla, la burbuja flota abajo a la derecha: que no tape los botones */
+/* La burbuja del chat y la barra de acciones se peleaban por la esquina de abajo a la derecha:
+   la burbuja va en z-index 20 y subir la barra taparía el panel abierto, y dejarle su hueco
+   dejaba los botones cortos con el texto partido. Se mueve la burbuja, que es lo que sobra:
+   se va al vacío que deja el dibujo mientras hay teclado abajo. Esperando el turno no hay
+   teclado ni botones, así que vuelve a su esquina de siempre. */
+/* #chat cuelga del body y no de .app, así que no es hermano de las pantallas: se pregunta por
+   la que está activa. Si un navegador no entiende :has(), la burbuja se queda abajo como siempre. */
+body:has(#screen-play.active #keyboard:not([hidden])) .chat-fab { bottom: auto; top: 32%; }
+
+/* La barra de confirmar ya separa 12 px (padding-top): el resto del aire lo pone el tablero (D-309) */
+#keyboard { --aire-ya: 12px; }

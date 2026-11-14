@@ -1,0 +1,163 @@
+/* Julepe — estilos propios. Lo compartido vive en assets/css/base.css: las pantallas, la portada,
+   los modos, los campos, las filas de jugador, la fila con interruptor, la sala, el turno y el
+   héroe del resultado son la carcasa (DESIGN.md §2, D-533); aquí solo lo que el juego agrega. */
+
+/* ---------- Intro ---------- */
+.rules-list { margin: var(--s-10) 0 0; padding-left: var(--s-20); display: grid; gap: var(--s-8); }
+.rules-list li { color: var(--muted); font-weight: 700; line-height: 1.35; }
+.rules-list li b { color: var(--ink); }
+
+/* ---------- Configuración ---------- */
+#screen-setup > h2 { margin-bottom: var(--s-6); }
+.setup-hint { color: var(--muted); font-weight: 700; text-align: center; margin: 0 0 var(--s-12); font-size: var(--fs-90); }
+/* The shell's toggle row holds the game-length picker here, below the player rows: it needs the
+   air above that the rows give each other with their margin-bottom (a modifier, not a copy). */
+#setup-form .toggle-row { margin-top: var(--s-8); }
+
+/* ---------- Sala (varios celulares) ---------- */
+#screen-lobby > h2 { margin-bottom: var(--s-12); }
+/* El sello de que nadie cambió sus dados al destaparlos (C-10) */
+.handoff .sello { font-weight: 900; font-size: var(--fs-85); color: var(--lime); }
+.handoff .sello.mal { color: var(--pink); }
+
+/* ---------- La carta ---------- */
+/* Naipe claro sobre mesa oscura, como en la mesa de verdad. El número va en var(--font-num):
+   es una cifra que el jugador compara (C-1). Sus tamaños de letra son del naipe, no de la escala
+   de texto: están en docs/design-allowlist.json (DESIGN.md §4). */
+.pcard {
+  position: relative; flex: 0 0 auto;
+  /* Cinco naipes tienen que caber en una sola fila hasta en 320 px de ancho: en dos filas la
+     mano deja de leerse como una mano. Descontando lo que se llevan .app y .mine, en 320 px
+     quedan 272 para las cinco: 15vw con 4 px de hueco son 256 (C-8). */
+  width: clamp(38px, 15vw, 58px); aspect-ratio: 5 / 7;
+  border-radius: var(--r-8); border: 0; padding: var(--s-4) 0;
+  background: var(--card); color: var(--card-ink);
+  display: grid; align-content: center; justify-items: center; gap: 0;
+  box-shadow: 0 3px 0 var(--well-deep), 0 4px 10px var(--well-deep);
+  font-family: var(--font-body); cursor: default; transition: transform 0.12s, box-shadow 0.12s, opacity 0.12s;
+}
+.pcard .r { font: 900 1.35rem var(--font-num); font-variant-numeric: tabular-nums; line-height: 1; }
+.pcard .s { font-size: 1.15rem; line-height: 1.1; }
+.pcard.red { color: var(--red); }
+.pcard--sm { width: clamp(34px, 13vw, 44px); }
+.pcard--sm .r { font-size: var(--fs-100); }
+.pcard--sm .s { font-size: var(--fs-85); }
+.pcard--xs { width: 28px; }
+.pcard--xs .r { font-size: 0.8rem; }
+.pcard--xs .s { font-size: 0.7rem; }
+/* Apagada: no se puede tirar (asistir, montar o fallar). Se ve, pero no se toca. */
+.pcard.off { opacity: 0.34; filter: grayscale(0.6); }
+.pcard.pick { cursor: pointer; }
+.pcard.pick:active { transform: translateY(2px); }
+.pcard.sel { transform: translateY(-12px); box-shadow: 0 0 0 3px var(--cyan), 0 8px 0 var(--well-deep), 0 10px 18px var(--well-deep); }
+/* La que se cambia se marca con una cruz, no solo con el borde: en una mesa con seis cartas
+   iguales el borde solo no dice qué va a pasar con ella. */
+.pcard.drop { transform: translateY(6px) rotate(-4deg); opacity: 0.75; box-shadow: 0 0 0 3px var(--pink), 0 4px 10px var(--well-deep); }
+.pcard.drop::after { content: '✕'; position: absolute; inset: 0; display: grid; place-items: center; font: 900 var(--fs-160) var(--font-body); color: var(--pink); }
+.pcard.win { box-shadow: 0 0 0 3px var(--lime), 0 3px 0 var(--well-deep), 0 0 18px rgb(var(--lime-rgb) / 0.5); }
+.pcard.back { background: linear-gradient(135deg, var(--purple), var(--pink-deep)); color: rgb(var(--ink-rgb) / 0.85); }
+.pcard.back .s { font-size: var(--fs-140); }
+.cards-row { display: flex; flex-wrap: wrap; gap: var(--s-4); justify-content: center; }
+
+/* ---------- La mesa ---------- */
+.table-top { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--s-8); margin-bottom: var(--s-8); }
+.pot { display: grid; justify-items: center; gap: 0; background: var(--well-deep); border: 2px solid rgb(var(--yellow-rgb) / 0.35); border-radius: var(--r-16); padding: var(--s-6) var(--s-12); }
+.pot .n { font: 900 var(--fs-200) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); line-height: 1; }
+.pot .l { font-size: var(--fs-75); font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.pot.grande { animation: potPulse 1.8s ease-in-out infinite; }
+@keyframes potPulse { 0%, 100% { box-shadow: 0 0 0 rgb(var(--yellow-rgb) / 0); } 50% { box-shadow: 0 0 22px rgb(var(--yellow-rgb) / 0.55); } }
+.table-mid { text-align: center; }
+.table-mid .hand-n { font-weight: 900; font-size: var(--fs-85); color: var(--muted); }
+.table-mid .dealer { font-size: var(--fs-75); color: var(--muted); font-weight: 700; }
+.trump { display: grid; justify-items: center; gap: var(--s-2); }
+.trump .l { font-size: var(--fs-75); font-weight: 900; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+/* Los asientos: quién va, quién se pasó y cuántas bazas lleva cada uno */
+.seats { display: flex; flex-wrap: wrap; gap: var(--s-4); justify-content: center; align-items: stretch; margin-bottom: var(--s-4); }
+.seat { display: grid; gap: var(--s-2); justify-items: center; min-width: 68px; padding: var(--s-4) var(--s-8); border-radius: var(--r-12); background: var(--well); }
+.seat .n { font-weight: 900; font-size: var(--fs-75); max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seat .d { font-size: var(--fs-75); font-weight: 800; color: var(--muted); }
+.seat .b { font: 900 var(--fs-75) var(--font-num); color: var(--lime); letter-spacing: 0.08em; }
+.seat.turn { box-shadow: 0 0 0 2px var(--yellow), 0 0 14px rgb(var(--yellow-rgb) / 0.45); }
+.seat.turn .n { color: var(--yellow); }
+.seat.fuera { opacity: 0.45; }
+.seat.va .d { color: var(--cyan); }
+.seat.obligado .d { color: var(--pink); }
+.seat .tragos { font-size: var(--fs-75); font-weight: 800; color: var(--muted); }
+
+/* La baza en juego: las cartas que ya están sobre la mesa */
+.trick { margin: var(--s-8) 0 auto; display: grid; gap: var(--s-6); justify-items: center; }
+.trick-cards { display: flex; flex-wrap: wrap; gap: var(--s-8); justify-content: center; }
+.trick-one { display: grid; justify-items: center; gap: var(--s-2); animation: pop 0.35s cubic-bezier(0.2,0.9,0.3,1.4) both; }
+.trick-one .who { font-size: var(--fs-75); font-weight: 900; color: var(--muted); max-width: 9ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trick-empty { color: var(--muted); font-weight: 700; font-size: var(--fs-85); text-align: center; }
+
+.mine { margin-top: auto; background: var(--well); border-radius: var(--r-16); padding: var(--s-10) var(--s-6); display: grid; gap: var(--s-8); justify-items: center; }
+.mine-label { font-weight: 900; font-size: var(--fs-85); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.why { color: var(--muted); font-weight: 700; font-size: var(--fs-75); text-align: center; line-height: 1.3; }
+
+/* La botonera va pegada abajo: la mano puede crecer y los botones no pueden quedar bajo el pliegue (C-8) */
+.actions-bar { position: sticky; bottom: 0; margin-top: var(--s-10); padding: var(--s-10) 0 calc(var(--s-6) + var(--safe-bottom)); display: grid; gap: var(--s-8); background: linear-gradient(180deg, transparent, var(--bg1) 45%); }
+.pick-label { text-align: center; color: var(--muted); font-weight: 800; font-size: var(--fs-85); margin: 0; }
+
+/* ---------- Repartir los tragos ---------- */
+.give-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-10); background: var(--well); border-radius: var(--r-14); padding: var(--s-8) var(--s-12); }
+.give-row .n { font-weight: 900; font-size: var(--fs-100); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.give-row .c { font: 900 var(--fs-120) var(--font-num); color: var(--yellow); min-width: 2ch; text-align: center; }
+.give-pm { display: flex; gap: var(--s-8); align-items: center; }
+.give-pm button { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--glass-border); background: var(--well-deep); color: var(--ink); font: 900 var(--fs-140) var(--font-body); cursor: pointer; }
+.give-pm button:disabled { opacity: 0.3; }
+
+/* ---------- Cierre de la mano ---------- */
+.handoff .julepe { font-family: var(--font-display); font-size: clamp(2.4rem, 13vw, 3.8rem); color: var(--pink); letter-spacing: 0.04em; text-shadow: 0 4px 0 var(--well-deep), 0 0 30px rgb(var(--pink-rgb) / 0.6); line-height: 1; }
+.handoff .safe { font-family: var(--font-display); font-size: clamp(1.8rem, 9vw, 2.6rem); color: var(--lime); letter-spacing: 0.04em; }
+.handoff .sips { font: 900 clamp(2rem, 11vw, 3rem) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); line-height: 1; }
+.handoff .who-line { font-weight: 800; line-height: 1.35; }
+.hand-table { display: grid; gap: var(--s-4); width: 100%; }
+.hand-row { display: grid; grid-template-columns: 1fr auto; gap: var(--s-8); align-items: center; background: var(--well-deep); border-radius: var(--r-12); padding: var(--s-6) var(--s-10); }
+.hand-row .n { font-weight: 900; font-size: var(--fs-85); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hand-row .v { font-weight: 800; font-size: var(--fs-75); color: var(--muted); white-space: nowrap; }
+.hand-row.perdio { box-shadow: inset 0 0 0 2px rgb(var(--pink-rgb) / 0.5); }
+.hand-row.perdio .v { color: var(--pink); }
+.hand-row.salvado .v { color: var(--lime); }
+.handoff .cards-row { gap: var(--s-4); }
+.destape { display: grid; gap: var(--s-6); width: 100%; }
+.destape .fila { display: grid; gap: var(--s-2); justify-items: start; }
+.destape .fila .n { font-weight: 900; font-size: var(--fs-75); color: var(--muted); }
+
+/* ---------- Final ---------- */
+.board { display: grid; gap: var(--s-6); }
+.board-row { display: grid; grid-template-columns: 24px 1fr auto; gap: var(--s-8); align-items: center; background: var(--well); border-radius: var(--r-12); padding: var(--s-8) var(--s-10); }
+.board-row .p { font: 900 var(--fs-90) var(--font-num); color: var(--muted); text-align: center; }
+.board-row .n { font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board-row .s { font: 900 var(--fs-110) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); }
+.board-row .j { font-size: var(--fs-75); font-weight: 800; color: var(--pink); white-space: nowrap; }
+.board-row.top { box-shadow: inset 0 0 0 2px rgb(var(--lime-rgb) / 0.6); }
+.board-row.top .s { color: var(--lime); }
+.replay { margin-top: var(--s-10); padding: var(--s-12) var(--s-16); }
+.replay summary { font-size: var(--fs-100); }
+.hist { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--s-4); }
+.hist li { display: grid; grid-template-columns: 24px 1fr auto; gap: var(--s-8); align-items: baseline; background: var(--well); border-radius: var(--r-10); padding: var(--s-6) var(--s-10); font-size: var(--fs-85); font-weight: 700; }
+.hist .r { font: 900 var(--fs-85) var(--font-num); color: var(--muted); }
+.hist .q { color: var(--muted); }
+.hist .down { color: var(--pink); font-weight: 900; white-space: nowrap; }
+.hist .up { color: var(--lime); font-weight: 900; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pot.grande { animation: none; }
+  .trick-one { animation: none; }
+}
+
+/* Cuántas manos dura la partida */
+/* Columnas que se achican solas: con cinco opciones y "rivales" adentro, un grid de columnas
+   iguales se pasaba del ancho de la pantalla (C-8). */
+.largos { display: grid; grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); gap: var(--s-6); margin-top: var(--s-8); }
+.largos button { min-height: 48px; padding: var(--s-6) var(--s-4); border-radius: var(--r-12); border: 2px solid transparent; background: var(--well); color: var(--ink); font: 900 var(--fs-120) var(--font-num); font-variant-numeric: tabular-nums; cursor: pointer; }
+.largos button.on { border-color: var(--cyan); background: rgb(var(--cyan-rgb) / 0.18); color: var(--cyan); }
+
+/* With the chat on, the bubble has the bottom strip to itself (base.css): the sticky bar stops
+   above it instead of floating over it (C-15, C-8). */
+body.chat-on .actions-bar { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+
+/* La barra de acciones ya separa 20 px (margin y padding): el resto del aire lo pone la mano (D-309) */
+#mine { --aire-ya: 20px; }

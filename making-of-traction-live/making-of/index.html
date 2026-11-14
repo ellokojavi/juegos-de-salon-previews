@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta name="robots" content="noindex">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#150726">
+  <meta name="robots" content="noindex, nofollow">
+  <title>The making of Parlor Games</title>
+  <meta name="description" content="How one product lead and a team of AI agents built and run Parlor Games (Juegos de Salón), and what it taught about adopting AI.">
+  <link rel="icon" href="../assets/icons/icon-192.png">
+  <script src="../assets/js/vigia.js?h=02c723ef"></script>
+  <link rel="preload" href="../assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../assets/fonts/bangers-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <meta name="release" content="1.12.27-6477a20">
+  <script type="importmap" id="importmap">{"imports": {"../assets/js/arrastre.js": "../assets/js/arrastre.js?h=b9425a6d", "../assets/js/azar.js": "../assets/js/azar.js?h=7697e38b", "../assets/js/back-guard.js": "../assets/js/back-guard.js?h=02fdd3d6", "../assets/js/buzon-form.js": "../assets/js/buzon-form.js?h=a3576664", "../assets/js/buzon.js": "../assets/js/buzon.js?h=212b6320", "../assets/js/chat.js": "../assets/js/chat.js?h=66123346", "../assets/js/compartir-portada.js": "../assets/js/compartir-portada.js?h=b6a4b9c4", "../assets/js/compartir.js": "../assets/js/compartir.js?h=35f10256", "../assets/js/connection.js": "../assets/js/connection.js?h=da923663", "../assets/js/controls.js": "../assets/js/controls.js?h=2e4c2f9a", "../assets/js/cover-share.js": "../assets/js/cover-share.js?h=2292954f", "../assets/js/cuenta-regresiva.js": "../assets/js/cuenta-regresiva.js?h=6960f6ae", "../assets/js/cup-outbox.js": "../assets/js/cup-outbox.js?h=3cdce283", "../assets/js/cup-today.js": "../assets/js/cup-today.js?h=43a5ad04", "../assets/js/dado3d.js": "../assets/js/dado3d.js?h=e8bdcb08", "../assets/js/daily-points.js": "../assets/js/daily-points.js?h=8cb06b46", "../assets/js/daily-recap.js": "../assets/js/daily-recap.js?h=6579b6b0", "../assets/js/dato.js": "../assets/js/dato.js?h=92313f30", "../assets/js/favoritos.js": "../assets/js/favoritos.js?h=6c9afb09", "../assets/js/fin.js": "../assets/js/fin.js?h=65925e37", "../assets/js/firebase-config.js": "../assets/js/firebase-config.js?h=5d3c31ee", "../assets/js/flag-list.js": "../assets/js/flag-list.js?h=4c7a3e90", "../assets/js/flags.js": "../assets/js/flags.js?h=43e4b03c", "../assets/js/frases.js": "../assets/js/frases.js?h=7b82bf50", "../assets/js/game-icon.js": "../assets/js/game-icon.js?h=5c326990", "../assets/js/game-manifest.js": "../assets/js/game-manifest.js?h=a2daefc7", "../assets/js/game-swipe.js": "../assets/js/game-swipe.js?h=2f94752d", "../assets/js/games.js": "../assets/js/games.js?h=8be6803a", "../assets/js/handoff.js": "../assets/js/handoff.js?h=f12a6232", "../assets/js/hidden-match.js": "../assets/js/hidden-match.js?h=2e6cb328", "../assets/js/home-windows.js": "../assets/js/home-windows.js?h=433daa02", "../assets/js/how-to-play-facts.js": "../assets/js/how-to-play-facts.js?h=34d8ea51", "../assets/js/i18n.js": "../assets/js/i18n.js?h=ca8c5e86", "../assets/js/instalable.js": "../assets/js/instalable.js?h=ed65c36b", "../assets/js/instalar.js": "../assets/js/instalar.js?h=2dfd05ee", "../assets/js/jugador-firebase.js": "../assets/js/jugador-firebase.js?h=2cecad64", "../assets/js/jugador-local.js": "../assets/js/jugador-local.js?h=d7495e49", "../assets/js/jugador.js": "../assets/js/jugador.js?h=ddf4f679", "../assets/js/keyboard.js": "../assets/js/keyboard.js?h=e27a429c", "../assets/js/lab-access.js": "../assets/js/lab-access.js?h=6d60f915", "../assets/js/lab-usage.js": "../assets/js/lab-usage.js?h=17f36809", "../assets/js/labs-idioma.js": "../assets/js/labs-idioma.js?h=302da30f", "../assets/js/labs-puerta.js": "../assets/js/labs-puerta.js?h=ae4ae8ca", "../assets/js/llegada.js": "../assets/js/llegada.js?h=d42edc11", "../assets/js/load-css.js": "../assets/js/load-css.js?h=4bf0403a", "../assets/js/manifests/battleship.js": "../assets/js/manifests/battleship.js?h=d2963482", "../assets/js/manifests/bulls-and-cows.js": "../assets/js/manifests/bulls-and-cows.js?h=2fd3c0ad", "../assets/js/manifests/cup.js": "../assets/js/manifests/cup.js?h=4afe9d14", "../assets/js/manifests/generala.js": "../assets/js/manifests/generala.js?h=8f4f0055", "../assets/js/manifests/hangman.js": "../assets/js/manifests/hangman.js?h=6638e78d", "../assets/js/manifests/labs/fourth-king.js": "../assets/js/manifests/labs/fourth-king.js?h=e524575d", "../assets/js/manifests/labs/julep.js": "../assets/js/manifests/labs/julep.js?h=6b71237b", "../assets/js/manifests/labs/transfer.js": "../assets/js/manifests/labs/transfer.js?h=40cdb867", "../assets/js/manifests/liars-dice.js": "../assets/js/manifests/liars-dice.js?h=070bbec7", "../assets/js/manifests/timeline.js": "../assets/js/manifests/timeline.js?h=7b2e9b98", "../assets/js/month-end.js": "../assets/js/month-end.js?h=819f353b", "../assets/js/music.js": "../assets/js/music.js?h=32d37cd8", "../assets/js/name-guard.js": "../assets/js/name-guard.js?h=0b2c585b", "../assets/js/notification-sheets.js": "../assets/js/notification-sheets.js?h=011aed6f", "../assets/js/offline-cut.js": "../assets/js/offline-cut.js?h=bd05f823", "../assets/js/offline-ready.js": "../assets/js/offline-ready.js?h=8e8b9b2d", "../assets/js/offline-sheet.js": "../assets/js/offline-sheet.js?h=d6bf3e04", "../assets/js/offline-ui.js": "../assets/js/offline-ui.js?h=fa4e6479", "../assets/js/on-screen.js": "../assets/js/on-screen.js?h=0504b6bf", "../assets/js/parametros.js": "../assets/js/parametros.js?h=73c2bf4a", "../assets/js/push.js": "../assets/js/push.js?h=c6703034", "../assets/js/qr.js": "../assets/js/qr.js?h=e21987b2", "../assets/js/ranking.js": "../assets/js/ranking.js?h=c3b89437", "../assets/js/recap.js": "../assets/js/recap.js?h=a4cd7233", "../assets/js/records.js": "../assets/js/records.js?h=11ce237e", "../assets/js/region-patterns.js": "../assets/js/region-patterns.js?h=20d295c4", "../assets/js/rng.js": "../assets/js/rng.js?h=ba7e5a86", "../assets/js/room-flow.js": "../assets/js/room-flow.js?h=3be116ea", "../assets/js/room-state.js": "../assets/js/room-state.js?h=3f7f3b38", "../assets/js/search.js": "../assets/js/search.js?h=59d11b17", "../assets/js/season.js": "../assets/js/season.js?h=3a99c2a6", "../assets/js/session.js": "../assets/js/session.js?h=bd684e40", "../assets/js/share-grid.js": "../assets/js/share-grid.js?h=f8a42662", "../assets/js/site-footer.js": "../assets/js/site-footer.js?h=62f831cc", "../assets/js/sobre.js": "../assets/js/sobre.js?h=de580b39", "../assets/js/sound.js": "../assets/js/sound.js?h=00325dd0", "../assets/js/splash.js": "../assets/js/splash.js?h=23b86df3", "../assets/js/support.js": "../assets/js/support.js?h=832f8adc", "../assets/js/teclado.js": "../assets/js/teclado.js?h=0905b503", "../assets/js/tester-badge.js": "../assets/js/tester-badge.js?h=9645ed45", "../assets/js/tester-boot.js": "../assets/js/tester-boot.js?h=14f26e3a", "../assets/js/tester-ribbon.js": "../assets/js/tester-ribbon.js?h=51140833", "../assets/js/time-format.js": "../assets/js/time-format.js?h=1921e1e4", "../assets/js/transport/best-effort.js": "../assets/js/transport/best-effort.js?h=b8f82884", "../assets/js/transport/cleanup.js": "../assets/js/transport/cleanup.js?h=8706857e", "../assets/js/transport/dispose.js": "../assets/js/transport/dispose.js?h=24e516c5", "../assets/js/transport/errors.js": "../assets/js/transport/errors.js?h=65f7809c", "../assets/js/transport/firebase.js": "../assets/js/transport/firebase.js?h=338d28ce", "../assets/js/transport/local.js": "../assets/js/transport/local.js?h=338088fa", "../assets/js/transport/ratelimit.js": "../assets/js/transport/ratelimit.js?h=026e11fc", "../assets/js/transport/seat.js": "../assets/js/transport/seat.js?h=72ee2f56", "../assets/js/transport/stats.js": "../assets/js/transport/stats.js?h=3cb5d33d", "../assets/js/uad-days.js": "../assets/js/uad-days.js?h=dec58d63", "../assets/js/uad-place.js": "../assets/js/uad-place.js?h=368dd032", "../assets/js/ui.js": "../assets/js/ui.js?h=f4332760", "../assets/js/uno-al-dia-avisos.js": "../assets/js/uno-al-dia-avisos.js?h=a9865afb", "../assets/js/uno-al-dia-red.js": "../assets/js/uno-al-dia-red.js?h=0881eaf7", "../assets/js/uno-al-dia-ui.js": "../assets/js/uno-al-dia-ui.js?h=99132077", "../assets/js/uno-al-dia.js": "../assets/js/uno-al-dia.js?h=428bf95a", "../assets/js/vapid.js": "../assets/js/vapid.js?h=74c138b9", "../assets/js/vendor/qrcode.js": "../assets/js/vendor/qrcode.js?h=18ae399f", "../assets/js/vigia.js": "../assets/js/vigia.js?h=02c723ef", "../assets/js/waiting.js": "../assets/js/waiting.js?h=eb18c4b2", "../assets/season/templates.js": "../assets/season/templates.js?h=30550765", "../battleship/engine.js": "../battleship/engine.js?h=b9fdd30a", "../battleship/flota.js": "../battleship/flota.js?h=379777c5", "../battleship/game.js": "../battleship/game.js?h=63dece07", "../battleship/rules.js": "../battleship/rules.js?h=e1e1dd1c", "../bulls-and-cows/engine.js": "../bulls-and-cows/engine.js?h=2a478102", "../bulls-and-cows/game.js": "../bulls-and-cows/game.js?h=dda06f8c", "../bulls-and-cows/rules.js": "../bulls-and-cows/rules.js?h=ba013afc", "../cup/admin.js": "../cup/admin.js?h=71d1df78", "../cup/avisos.js": "../cup/avisos.js?h=f9a41b4e", "../cup/clock.js": "../cup/clock.js?h=1e53e7d2", "../cup/code.js": "../cup/code.js?h=06f0e1c6", "../cup/create.js": "../cup/create.js?h=39d6d58c", "../cup/cuenta.js": "../cup/cuenta.js?h=52feeb0f", "../cup/demo.js": "../cup/demo.js?h=2f3405bf", "../cup/desglose.js": "../cup/desglose.js?h=0d91dcbb", "../cup/engine.js": "../cup/engine.js?h=a8752830", "../cup/game.js": "../cup/game.js?h=08e4e501", "../cup/games/agents/clues-en.js": "../cup/games/agents/clues-en.js?h=7fbffb8c", "../cup/games/agents/clues-pt.js": "../cup/games/agents/clues-pt.js?h=e05323cc", "../cup/games/agents/clues.js": "../cup/games/agents/clues.js?h=2e8e7706", "../cup/games/agents/engine.js": "../cup/games/agents/engine.js?h=9d44fea2", "../cup/games/agents/numbers.js": "../cup/games/agents/numbers.js?h=81d095cf", "../cup/games/agents/texts.js": "../cup/games/agents/texts.js?h=ccb45212", "../cup/games/agents/ui.js": "../cup/games/agents/ui.js?h=d461185d", "../cup/games/audiencia.js": "../cup/games/audiencia.js?h=3938fe5f", "../cup/games/bridges/engine.js": "../cup/games/bridges/engine.js?h=3b44eef9", "../cup/games/bridges/neon-visitors.js": "../cup/games/bridges/neon-visitors.js?h=4110a7a9", "../cup/games/bridges/neon.js": "../cup/games/bridges/neon.js?h=20c67986", "../cup/games/bridges/physics.js": "../cup/games/bridges/physics.js?h=13ce59f3", "../cup/games/bridges/pixel.js": "../cup/games/bridges/pixel.js?h=585ab3d1", "../cup/games/bridges/scene.js": "../cup/games/bridges/scene.js?h=30d5de83", "../cup/games/bridges/texts.js": "../cup/games/bridges/texts.js?h=970971f6", "../cup/games/bridges/trains.js": "../cup/games/bridges/trains.js?h=bd7f14cb", "../cup/games/bridges/ui.js": "../cup/games/bridges/ui.js?h=d3ad61ec", "../cup/games/bridges/visitors.js": "../cup/games/bridges/visitors.js?h=b0f575fa", "../cup/games/case/engine.js": "../cup/games/case/engine.js?h=ef61f182", "../cup/games/case/ui.js": "../cup/games/case/ui.js?h=95246a5b", "../cup/games/connections/engine.js": "../cup/games/connections/engine.js?h=004cabe9", "../cup/games/connections/grillas-en.js": "../cup/games/connections/grillas-en.js?h=6b4d1c8f", "../cup/games/connections/grillas-pt.js": "../cup/games/connections/grillas-pt.js?h=bcea9e47", "../cup/games/connections/grillas.js": "../cup/games/connections/grillas.js?h=25c7e0d1", "../cup/games/connections/ui.js": "../cup/games/connections/ui.js?h=34482d6e", "../cup/games/deshacer.js": "../cup/games/deshacer.js?h=6d8e7e32", "../cup/games/final/engine.js": "../cup/games/final/engine.js?h=c2147166", "../cup/games/final/ui.js": "../cup/games/final/ui.js?h=345485ed", "../cup/games/flap/engine.js": "../cup/games/flap/engine.js?h=01f65501", "../cup/games/flap/scene.js": "../cup/games/flap/scene.js?h=a1714717", "../cup/games/flap/texts.js": "../cup/games/flap/texts.js?h=ce423ad4", "../cup/games/flap/ui.js": "../cup/games/flap/ui.js?h=ebce1f9e", "../cup/games/index.js": "../cup/games/index.js?h=64c18212", "../cup/games/mazos.js": "../cup/games/mazos.js?h=44c8fd92", "../cup/games/number/engine.js": "../cup/games/number/engine.js?h=8b9ea39b", "../cup/games/number/ui.js": "../cup/games/number/ui.js?h=d0639fa7", "../cup/games/paint-mines/dibujos.js": "../cup/games/paint-mines/dibujos.js?h=0c7752b9", "../cup/games/paint-mines/engine.js": "../cup/games/paint-mines/engine.js?h=43481356", "../cup/games/paint-mines/texts.js": "../cup/games/paint-mines/texts.js?h=51af36dc", "../cup/games/paint-mines/ui.js": "../cup/games/paint-mines/ui.js?h=d539b2ea", "../cup/games/plots/engine.js": "../cup/games/plots/engine.js?h=2aee6dbb", "../cup/games/plots/texts.js": "../cup/games/plots/texts.js?h=15f42df2", "../cup/games/plots/ui.js": "../cup/games/plots/ui.js?h=d5272707", "../cup/games/queens/engine.js": "../cup/games/queens/engine.js?h=cfe894bd", "../cup/games/queens/ui.js": "../cup/games/queens/ui.js?h=d8729803", "../cup/games/routes/engine.js": "../cup/games/routes/engine.js?h=ddc20a85", "../cup/games/routes/texts.js": "../cup/games/routes/texts.js?h=e338a7c1", "../cup/games/routes/ui.js": "../cup/games/routes/ui.js?h=cdb5ab96", "../cup/games/semilla.js": "../cup/games/semilla.js?h=85160e6c", "../cup/games/solo.js": "../cup/games/solo.js?h=f218475c", "../cup/games/stack/engine.js": "../cup/games/stack/engine.js?h=a4d15a7f", "../cup/games/stack/scene.js": "../cup/games/stack/scene.js?h=9689042a", "../cup/games/stack/texts.js": "../cup/games/stack/texts.js?h=3a251697", "../cup/games/stack/ui.js": "../cup/games/stack/ui.js?h=bf7424e8", "../cup/games/stick/engine.js": "../cup/games/stick/engine.js?h=7c052714", "../cup/games/stick/scene.js": "../cup/games/stick/scene.js?h=bfff8210", "../cup/games/stick/texts.js": "../cup/games/stick/texts.js?h=ad880609", "../cup/games/stick/ui.js": "../cup/games/stick/ui.js?h=03145b0e", "../cup/games/sudoku/engine.js": "../cup/games/sudoku/engine.js?h=0177af9d", "../cup/games/sudoku/texts.js": "../cup/games/sudoku/texts.js?h=21ec2082", "../cup/games/sudoku/ui.js": "../cup/games/sudoku/ui.js?h=d2e3144a", "../cup/games/tango/engine.js": "../cup/games/tango/engine.js?h=3164e192", "../cup/games/tango/ui.js": "../cup/games/tango/ui.js?h=56fece00", "../cup/games/timeline/engine.js": "../cup/games/timeline/engine.js?h=6ef6c2d4", "../cup/games/timeline/ui.js": "../cup/games/timeline/ui.js?h=aab888c9", "../cup/games/untangle/engine.js": "../cup/games/untangle/engine.js?h=f0485091", "../cup/games/untangle/ui.js": "../cup/games/untangle/ui.js?h=73ecc340", "../cup/games/where/ciudades.js": "../cup/games/where/ciudades.js?h=6f2f63cd", "../cup/games/where/engine.js": "../cup/games/where/engine.js?h=bb4d3f44", "../cup/games/where/globo.js": "../cup/games/where/globo.js?h=4cfa832e", "../cup/games/where/mapa.js": "../cup/games/where/mapa.js?h=78f414aa", "../cup/games/where/nombres.js": "../cup/games/where/nombres.js?h=10b9dfdc", "../cup/games/where/ui.js": "../cup/games/where/ui.js?h=ee8d1fc7", "../cup/games/word/engine.js": "../cup/games/word/engine.js?h=598eb701", "../cup/games/word/palabras.js": "../cup/games/word/palabras.js?h=80be5ef2", "../cup/games/word/ui.js": "../cup/games/word/ui.js?h=dcdb2a34", "../cup/games/year/engine.js": "../cup/games/year/engine.js?h=9e052cca", "../cup/games/year/ui.js": "../cup/games/year/ui.js?h=fe5a7713", "../cup/games/zip/engine.js": "../cup/games/zip/engine.js?h=444881b2", "../cup/games/zip/ui.js": "../cup/games/zip/ui.js?h=a52c736f", "../cup/join.js": "../cup/join.js?h=5ef8c970", "../cup/planilla.js": "../cup/planilla.js?h=bcdb129f", "../cup/recap.js": "../cup/recap.js?h=3610e666", "../cup/reportes.js": "../cup/reportes.js?h=1604dfa6", "../cup/result.js": "../cup/result.js?h=865e9f59", "../cup/rules.js": "../cup/rules.js?h=939d8d33", "../cup/screens.js": "../cup/screens.js?h=5f0b7ebd", "../cup/store-firebase.js": "../cup/store-firebase.js?h=a95382f3", "../cup/store-local.js": "../cup/store-local.js?h=9a60888f", "../cup/store-offline.js": "../cup/store-offline.js?h=5ccbcfaf", "../cup/table-image.js": "../cup/table-image.js?h=85646475", "../generala/engine.js": "../generala/engine.js?h=4fe1f3fc", "../generala/game.js": "../generala/game.js?h=a37112a2", "../generala/rules.js": "../generala/rules.js?h=1f7016dd", "../hangman/decks/animales.js": "../hangman/decks/animales.js?h=681eff68", "../hangman/decks/chile.js": "../hangman/decks/chile.js?h=4c565470", "../hangman/decks/cine.js": "../hangman/decks/cine.js?h=38dd21ad", "../hangman/decks/comida.js": "../hangman/decks/comida.js?h=f3139966", "../hangman/decks/deportes.js": "../hangman/decks/deportes.js?h=194ec9b7", "../hangman/decks/index.js": "../hangman/decks/index.js?h=f0c8c0b5", "../hangman/engine.js": "../hangman/engine.js?h=3ea7070a", "../hangman/game.js": "../hangman/game.js?h=e12cfe74", "../hangman/rules.js": "../hangman/rules.js?h=11e45dad", "../labs/artifacts/engine.js": "../labs/artifacts/engine.js?h=380c31ac", "../labs/artifacts/game.js": "../labs/artifacts/game.js?h=bb248198", "../labs/artifacts/levels.js": "../labs/artifacts/levels.js?h=e776d05d", "../labs/artifacts/scene.js": "../labs/artifacts/scene.js?h=94a6d881", "../labs/bodega.js": "../labs/bodega.js?h=1f4cde03", "../labs/bridges/trains/sheet.js": "../labs/bridges/trains/sheet.js?h=e61ce596", "../labs/bridges/visitors/sheet.js": "../labs/bridges/visitors/sheet.js?h=df537ffa", "../labs/chameleon/engine.js": "../labs/chameleon/engine.js?h=d0138ecd", "../labs/chameleon/game.js": "../labs/chameleon/game.js?h=3e2ecd57", "../labs/chameleon/rules.js": "../labs/chameleon/rules.js?h=23971a54", "../labs/code/engine-palabra.js": "../labs/code/engine-palabra.js?h=4ea17011", "../labs/code/engine.js": "../labs/code/engine.js?h=9c6a100c", "../labs/code/game.js": "../labs/code/game.js?h=3ec35900", "../labs/dominorama/engine.js": "../labs/dominorama/engine.js?h=39cea63e", "../labs/dominorama/game.js": "../labs/dominorama/game.js?h=3b584ef4", "../labs/exploding-numbers/engine.js": "../labs/exploding-numbers/engine.js?h=680b00f7", "../labs/exploding-numbers/game.js": "../labs/exploding-numbers/game.js?h=c07efd3b", "../labs/flap/engine.js": "../labs/flap/engine.js?h=927df9e5", "../labs/flap/game.js": "../labs/flap/game.js?h=9c4fcd15", "../labs/flap/scene.js": "../labs/flap/scene.js?h=6ccfd0f0", "../labs/fourth-king/engine.js": "../labs/fourth-king/engine.js?h=44f9f09f", "../labs/fourth-king/game.js": "../labs/fourth-king/game.js?h=79167638", "../labs/fourth-king/rules.js": "../labs/fourth-king/rules.js?h=44dc9e19", "../labs/home/experiments.js": "../labs/home/experiments.js?h=c3089b12", "../labs/index-nav.js": "../labs/index-nav.js?h=d56b1b47", "../labs/julep/engine.js": "../labs/julep/engine.js?h=8ff80af4", "../labs/julep/game.js": "../labs/julep/game.js?h=6468e3e7", "../labs/julep/rules.js": "../labs/julep/rules.js?h=b60ca2cc", "../labs/launched.js": "../labs/launched.js?h=b88b526f", "../labs/memory/engine.js": "../labs/memory/engine.js?h=5ff90ecb", "../labs/memory/game.js": "../labs/memory/game.js?h=c25e59ee", "../labs/memory/rules.js": "../labs/memory/rules.js?h=ca8582b2", "../labs/memory/sprites.js": "../labs/memory/sprites.js?h=a74108f8", "../labs/microgames/engine.js": "../labs/microgames/engine.js?h=83b72c30", "../labs/microgames/game.js": "../labs/microgames/game.js?h=4d15512d", "../labs/microgames/rules.js": "../labs/microgames/rules.js?h=62eb347e", "../labs/publish.js": "../labs/publish.js?h=d8aa8025", "../labs/stack/engine.js": "../labs/stack/engine.js?h=47b96079", "../labs/stack/game.js": "../labs/stack/game.js?h=741c9d29", "../labs/stack/scene.js": "../labs/stack/scene.js?h=9295e673", "../labs/sudoku/engine.js": "../labs/sudoku/engine.js?h=bc1491ff", "../labs/sudoku/game.js": "../labs/sudoku/game.js?h=2f5940f4", "../labs/sudoku/rules.js": "../labs/sudoku/rules.js?h=f44a6909", "../labs/transfer/engine.js": "../labs/transfer/engine.js?h=a56ed9dd", "../labs/transfer/game.js": "../labs/transfer/game.js?h=444b51e8", "../labs/transfer/rules.js": "../labs/transfer/rules.js?h=b56405ad", "../liars-dice/engine.js": "../liars-dice/engine.js?h=949789e4", "../liars-dice/game.js": "../liars-dice/game.js?h=f09b5cd0", "../liars-dice/rules.js": "../liars-dice/rules.js?h=21d4b1ea", "../panel/aggregate.js": "../panel/aggregate.js?h=81c280b1", "../panel/campaigns.js": "../panel/campaigns.js?h=311e9d7b", "../panel/copas.js": "../panel/copas.js?h=33fa58c9", "../panel/dominios.js": "../panel/dominios.js?h=423f8c9d", "../panel/feedback.js": "../panel/feedback.js?h=3d7943a9", "../panel/lab-keys.js": "../panel/lab-keys.js?h=49a23a0f", "../panel/panel.js": "../panel/panel.js?h=4d0b45a0", "../panel/release-push.js": "../panel/release-push.js?h=e77f31af", "../panel/rooms-watch.js": "../panel/rooms-watch.js?h=6a525722", "../panel/rutas.js": "../panel/rutas.js?h=fa3d7d61", "../panel/timeline.js": "../panel/timeline.js?h=8fc907bd", "../privacy/texts.js": "../privacy/texts.js?h=30b1d59f", "../sw.js": "../sw.js?h=e0d27314", "../timeline/decks/brasil.js": "../timeline/decks/brasil.js?h=231eae24", "../timeline/decks/chile.js": "../timeline/decks/chile.js?h=a8cc1127", "../timeline/decks/futbol.js": "../timeline/decks/futbol.js?h=31b8f32e", "../timeline/decks/historia.js": "../timeline/decks/historia.js?h=a239a7dc", "../timeline/decks/index.js": "../timeline/decks/index.js?h=ab999761", "../timeline/decks/musica.js": "../timeline/decks/musica.js?h=4b5db315", "../timeline/decks/pop.js": "../timeline/decks/pop.js?h=98a53476", "../timeline/engine.js": "../timeline/engine.js?h=5d408db9", "../timeline/game.js": "../timeline/game.js?h=56a3897e", "../timeline/rules.js": "../timeline/rules.js?h=7e763516"}}</script>
+  <link rel="stylesheet" href="../assets/css/base.css?h=c7438d9a">
+  <link rel="stylesheet" href="style.css?h=fda1932d">
+</head>
+<body>
+  <!-- The owner's presentation of the project for an executive audience, projected from a laptop.
+       English only and unlisted (noindex, no link from the site): it is not a player page. -->
+  <nav class="mo-nav" aria-label="Sections">
+    <a href="#top" class="mo-brand">🎲 Parlor Games</a>
+    <a href="#product">The product</a>
+    <a href="#play">See it played</a>
+    <a href="#traction">Traction</a>
+    <a href="#factory">How it's built</a>
+    <a href="#setup">The setup</a>
+    <a href="#team">The agents</a>
+    <a href="#weeks">How it grew</a>
+    <a href="#learnings">Learnings</a>
+  </nav>
+
+  <main>
+    <section id="top" class="mo-section mo-hero">
+      <p class="mo-kicker">A side project · since September 2026</p>
+      <h1 class="display display--xl"><span class="rainbow">Parlor Games</span> <span aria-hidden="true">🎲</span></h1>
+      <p class="mo-aka">(Juegos de Salón)</p>
+      <p class="mo-lead">A party-games site for friends, built and run by <strong>one product lead</strong> and a
+        <strong>team of AI agents</strong>. I don't write the code: I set the direction, make the calls and
+        design the system that builds, tests and ships it.</p>
+      <div class="mo-stats">
+        <div><b data-stat="games">20+</b><span>games, in 3 languages</span></div>
+        <div><b data-stat="weeks">9</b><span>weeks from first commit</span></div>
+        <div><b data-stat="prs">1,100+</b><span>changes merged (PRs)</span></div>
+        <div><b data-stat="decisions">550+</b><span>written decisions</span></div>
+        <div><b data-stat="tests">200+</b><span>test files, plus browser scripts</span></div>
+        <div><b>Free</b><span>for players: no ads, no accounts</span></div>
+      </div>
+      <a class="mo-next" href="#product">Next: The product <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="product" class="mo-section">
+      <p class="mo-kicker">The product</p>
+      <h2 class="display display--lg">Open it on a phone, play with friends</h2>
+      <div class="mo-split">
+        <ul class="mo-points">
+          <li><b>🏆 The Cup.</b> A week-long tournament for a group of friends: one short game a day, the same for
+            everyone, a live leaderboard and a podium on Sunday.</li>
+          <li><b>📅 One a Day.</b> A surprise challenge every day, with streaks and a monthly season.</li>
+          <li><b>🎲 Classic table games.</b> Liar's Dice, Generala, Battleship, Hangman… one phone passed around,
+            or each player on their own.</li>
+          <li><b>🌎 Spanish, English, Portuguese.</b> Adapted, not translated. Works offline, installs like an app.</li>
+        </ul>
+        <div class="mo-shots">
+          <img src="img/home.jpg" alt="The home page with the list of games" loading="lazy">
+          <img src="img/cup-board.jpg" alt="The Cup's weekly board" loading="lazy">
+          <img src="img/cup-podium.jpg" alt="The Cup's podium at the end of the week" loading="lazy">
+        </div>
+      </div>
+      <a class="mo-next" href="#play">Next: See it played <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="play" class="mo-section">
+      <p class="mo-kicker">See it played</p>
+      <h2 class="display display--lg"><span data-stat="games">20+</span> games. Four of them, in play</h2>
+      <p class="mo-sub">Every game plays on any phone, in the browser. These four were recorded straight from the site.</p>
+      <div class="mo-play">
+        <figure class="mo-clip mo-clip--tall">
+          <video src="clips/where.mp4" poster="clips/where.jpg" autoplay muted loop playsinline aria-label="Where Is It?: the globe spins to the city, a pin drops, the distance is scored"></video>
+          <figcaption><b>📍 Where Is It?</b><span>Spin the globe, drop a pin on the city. The closer, the more points.</span></figcaption>
+        </figure>
+        <figure class="mo-clip mo-clip--tall">
+          <video src="clips/liars-dice.mp4" poster="clips/liars-dice.jpg" autoplay muted loop playsinline aria-label="Liar's Dice against the phone: bids, a call of liar, the dice revealed"></video>
+          <figcaption><b>🎲 Liar's Dice</b><span>Everyone sees only their own dice. Bid how many of a face are on the whole table, or call "Liar!". Here, against the phone.</span></figcaption>
+        </figure>
+        <div class="mo-play-wide">
+          <figure class="mo-clip">
+            <video src="clips/shinobi.mp4" poster="clips/shinobi.jpg" autoplay muted loop playsinline aria-label="Shinobi: the ninja's stick stretches to reach the next pillar"></video>
+            <figcaption><b>🥷 Shinobi</b><span>Hold to stretch the stick, let go to drop it across the gap. If it reaches the next pillar, the ninja crosses.</span></figcaption>
+          </figure>
+          <figure class="mo-clip">
+            <video src="clips/babel.mp4" poster="clips/babel.jpg" autoplay muted loop playsinline aria-label="Babel: each sliding block is cut to what overlaps the tower"></video>
+            <figcaption><b>🗼 Babel</b><span>Tap to drop the block sliding over the tower. Whatever hangs over the edge is cut off, and the next block is smaller.</span></figcaption>
+          </figure>
+        </div>
+      </div>
+      <a class="mo-next" href="#traction">Next: Traction <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="traction" class="mo-section">
+      <p class="mo-kicker">Traction</p>
+      <h2 class="display display--lg">No ads. It spreads by word of mouth</h2>
+      <p class="mo-lead">Not one cent on paid marketing: people arrive because a friend sent them the link.</p>
+      <div class="mo-stats">
+        <div><b data-traction="total">2,000+</b><span>games finished since September</span></div>
+        <div><b data-traction="bestWeek">600+</b><span>games finished in the best week so far</span></div>
+        <div><b data-traction="best">126</b><span>games finished on the best day so far</span></div>
+        <div><b data-traction="peak7">250+</b><span>different phones in the best week</span></div>
+        <div><b data-traction="peak30">650+</b><span>different phones in the best 30 days</span></div>
+        <div><b>$0</b><span>spent on ads</span></div>
+      </div>
+      <p class="mo-sub mo-small">Counted by the site itself every day, up to <span data-traction="asOf">13 November 2026</span>. The best day, week and 30 days are records to date, not the latest figures. A phone is one browser. Games played on a single phone, without an online room, are counted only since 18 October, so the real total is higher.</p>
+      <a class="mo-next" href="#factory">Next: How it's built <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="factory" class="mo-section">
+      <p class="mo-kicker">How it's built</p>
+      <h2 class="display display--lg">I run the factory, not the keyboard</h2>
+      <ol class="mo-flow">
+        <li><span>💡</span><b>I decide</b><small>An idea, a player's report or an agent's proposal becomes a written decision. Agents ask me with one-tap choices on my phone.</small></li>
+        <li><span>🤖</span><b>Sessions build</b><small>Several Claude Code sessions work in parallel, each in its own copy of the code.</small></li>
+        <li><span>🧪</span><b>Checks gate</b><small>Every change runs the tests and real-browser scripts. Red never merges.</small></li>
+        <li><span>👀</span><b>Agents review</b><small>Usability and documentation agents review each change, sized by its risk.</small></li>
+        <li><span>🚀</span><b>It ships</b><small>Low-risk changes merge on their own. New features sit behind a switch until I flip it.</small></li>
+      </ol>
+      <a class="mo-next" href="#setup">Next: The setup <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="setup" class="mo-section">
+      <p class="mo-kicker">The setup</p>
+      <h2 class="display display--lg">Who does what, and where</h2>
+      <div class="mo-diagram">
+        <svg class="mo-diagram-svg" viewBox="0 0 1200 822" role="img" aria-labelledby="dg-title"><title id="dg-title">The setup: the owner and a contributor work through Claude Code and GitHub; agents run on a Mac mini; the owner watches /panel/ and flips features live in /labs/; the site on GitHub Pages and Firebase serves players.</title><defs><marker id="dg-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dg-head" d="M0,0 L10,5 L0,10 z"/></marker></defs><rect class="dg-lane" x="10" y="8" width="220" height="800" rx="18"/><text class="dg-lane-t" x="26" y="30">PEOPLE</text><rect class="dg-lane" x="330" y="8" width="400" height="800" rx="18"/><text class="dg-lane-t" x="346" y="30">THE FACTORY</text><rect class="dg-lane" x="830" y="8" width="362" height="800" rx="18"/><text class="dg-lane-t" x="846" y="30">THE PRODUCT</text><g class="dg-box dg-me"><rect x="26" y="104" width="188" height="112" rx="14"/><text class="dg-t1" x="42" y="134">👤 Me, the owner</text><text class="dg-t2" x="42" y="159">laptop and phone</text><text class="dg-t2" x="42" y="180">direction · decisions</text><text class="dg-t2" x="42" y="201">approvals</text></g><g class="dg-box "><rect x="26" y="344" width="188" height="92" rx="14"/><text class="dg-t1" x="42" y="374">🤝 A contributor</text><text class="dg-t2" x="42" y="399">a fork or an invite</text><text class="dg-t2" x="42" y="420">opens pull requests</text></g><g class="dg-box "><rect x="346" y="104" width="368" height="92" rx="14"/><text class="dg-t1" x="362" y="134">💬 Claude Code</text><text class="dg-t2" x="362" y="159">in the Claude app: desktop, web, phone</text><text class="dg-t2" x="362" y="180">several sessions, each in its own copy</text></g><g class="dg-box "><rect x="346" y="276" width="368" height="136" rx="14"/><text class="dg-t1" x="362" y="306">🐙 GitHub</text><text class="dg-t2" x="362" y="331">the code · every change is a pull request</text><text class="dg-t2" x="362" y="352">checks: tests, browser scripts, risk lane</text><text class="dg-t2" x="362" y="373">issues: my one-tap decisions</text><text class="dg-t2" x="362" y="394">9 scheduled jobs · publishing</text></g><g class="dg-box dg-agents"><rect x="346" y="514" width="150" height="132" rx="14"/><text class="dg-t1" x="362" y="544">🤖 5 agents</text><text class="dg-t2" x="362" y="569">processes</text><text class="dg-t2" x="362" y="590">usability · docs</text><text class="dg-t2" x="362" y="611">ideas · support</text></g><g class="dg-box "><rect x="560" y="514" width="154" height="132" rx="14"/><text class="dg-t1" x="576" y="544">🖥 Mac mini</text><text class="dg-t2" x="576" y="569">7 scheduled jobs</text><text class="dg-t2" x="576" y="590">the 4:30 am round</text><text class="dg-t2" x="576" y="611">watches the inbox</text></g><g class="dg-box dg-me"><rect x="846" y="104" width="118" height="116" rx="14"/><text class="dg-t1" x="858" y="134">🧪 /labs/</text><text class="dg-t2" x="858" y="159">new work</text><text class="dg-t2" x="858" y="180">live switches</text><text class="dg-t2" x="858" y="201">lab keys</text></g><g class="dg-box dg-me"><rect x="976" y="104" width="118" height="116" rx="14"/><text class="dg-t1" x="988" y="134">📊 /panel/</text><text class="dg-t2" x="988" y="159">usage · Cups</text><text class="dg-t2" x="988" y="180">feedback</text><text class="dg-t2" x="988" y="201">health</text></g><g class="dg-box dg-site"><rect x="846" y="282" width="248" height="90" rx="14"/><text class="dg-t1" x="862" y="312">🌐 The site</text><text class="dg-t2" x="862" y="337">HTML, CSS, JS · GitHub Pages</text><text class="dg-t2" x="862" y="358">parlorgames.app</text></g><g class="dg-box "><rect x="846" y="434" width="248" height="90" rx="14"/><text class="dg-t1" x="862" y="464">🔥 Firebase</text><text class="dg-t2" x="862" y="489">live rooms, Cups, rankings</text><text class="dg-t2" x="862" y="510">switches, feedback, usage</text></g><g class="dg-box "><rect x="846" y="580" width="248" height="68" rx="14"/><text class="dg-t1" x="862" y="610">✉️ hola@ inbox</text><text class="dg-t2" x="862" y="635">a Cloudflare Worker</text></g><g class="dg-box dg-players"><rect x="846" y="708" width="248" height="90" rx="14"/><text class="dg-t1" x="862" y="738">🎮 Players</text><text class="dg-t2" x="862" y="763">any phone, no account</text><text class="dg-t2" x="862" y="784">Spanish · English · Portuguese</text></g><path class="dg-arrow " d="M214,150 L344,150" marker-end="url(#dg-head)"/><text class="dg-lbl" x="279" y="140" text-anchor="middle">asks</text><path class="dg-arrow dg-back" d="M346,344 C276,344 276,204 216,204" marker-end="url(#dg-head)"/><text class="dg-lbl" x="282" y="280" text-anchor="middle">decides</text><path class="dg-arrow " d="M214,390 L344,390" marker-end="url(#dg-head)"/><text class="dg-lbl" x="279" y="380" text-anchor="middle">PRs</text><path class="dg-arrow " d="M530,196 L530,274" marker-end="url(#dg-head)"/><text class="dg-lbl" x="542" y="240" text-anchor="start">PRs</text><path class="dg-arrow " d="M430,514 L430,414" marker-end="url(#dg-head)"/><text class="dg-lbl" x="442" y="468" text-anchor="start">review</text><path class="dg-arrow " d="M560,580 L498,580" marker-end="url(#dg-head)"/><text class="dg-lbl" x="529" y="568" text-anchor="middle">runs</text><path class="dg-arrow " d="M714,344 C760,344 760,327 800,327 L844,327" marker-end="url(#dg-head)"/><text class="dg-lbl" x="779" y="370" text-anchor="middle">merge = live</text><path class="dg-arrow dg-back" d="M120,104 L120,46 L1035,46 L1035,102" marker-end="url(#dg-head)"/><text class="dg-lbl" x="600" y="40" text-anchor="middle">watches · flips live</text><path class="dg-arrow dg-back" d="M905,46 L905,102" marker-end="url(#dg-head)"/><path class="dg-arrow dg-back" d="M846,156 L716,156" marker-end="url(#dg-head)"/><text class="dg-lbl" x="781" y="144" text-anchor="middle">🚀 publish</text><path class="dg-arrow " d="M905,220 L905,280" marker-end="url(#dg-head)"/><text class="dg-lbl" x="917" y="254" text-anchor="start">go live</text><path class="dg-arrow " d="M970,372 L970,432" marker-end="url(#dg-head)"/><text class="dg-lbl" x="982" y="406" text-anchor="start">real time</text><path class="dg-arrow " d="M1094,479 C1150,479 1150,162 1130,162 L1096,162" marker-end="url(#dg-head)"/><text class="dg-lbl" x="1146" y="320" text-anchor="middle">usage</text><path class="dg-arrow " d="M1094,753 C1186,753 1186,327 1132,327 L1096,327" marker-end="url(#dg-head)"/><text class="dg-lbl" x="1172" y="544" text-anchor="middle">play</text><path class="dg-arrow " d="M940,708 L940,650" marker-end="url(#dg-head)"/><text class="dg-lbl" x="952" y="684" text-anchor="start">feedback</text><path class="dg-arrow " d="M846,614 L716,614" marker-end="url(#dg-head)"/><text class="dg-lbl" x="781" y="602" text-anchor="middle">emails</text></svg>
+      </div>
+      <a class="mo-next" href="#team">Next: The agents <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="team" class="mo-section">
+      <p class="mo-kicker">The agents</p>
+      <h2 class="display display--lg">A team with job descriptions</h2>
+      <p class="mo-sub">Each agent is a written role: when it works, what it owns, what it hands me, and what it may not do.</p>
+      <div class="mo-owner"><b>👤 Me, the owner</b><span>Set the direction · answer one-tap decisions · approve anything risky (privacy, stored data, emails) · flip features live</span></div>
+      <div class="mo-team">
+        <article class="mo-boss">
+          <header><span>🧭</span><div><b>Processes</b><small>The chief of staff</small></div></header>
+          <p class="mo-when">Every day at 4:30 am, on its own, on a Mac mini</p>
+          <ul>
+            <li>Launches the other agents and checks their work</li>
+            <li>Handles players' 🐞 reports, and emails them back once the fix is live</li>
+            <li>Closes stuck changes and old issues</li>
+            <li>Turns a failure seen twice into a test</li>
+          </ul>
+          <p class="mo-hands">Hands me: one list of Yes/No checkboxes</p>
+          <p class="mo-limit">Limit: touches game code only to fix what players reported</p>
+        </article>
+        <article>
+          <header><span>🎨</span><div><b>Usability</b><small>The player's advocate</small></div></header>
+          <p class="mo-when">On every change to the site, and daily</p>
+          <ul>
+            <li>Reads every text, button and timer as a player would</li>
+            <li>Owns the design system and its automatic check</li>
+          </ul>
+          <p class="mo-hands">Hands me: the dilemmas, as issues to decide</p>
+          <p class="mo-limit">Limit: fixes only the obvious; taste is my call</p>
+        </article>
+        <article>
+          <header><span>📚</span><div><b>Documentation</b><small>The historian</small></div></header>
+          <p class="mo-when">Before each merge, and daily</p>
+          <ul>
+            <li>Keeps decisions, changelog, README and screenshots true to what shipped</li>
+            <li>Checks the numbers we publish</li>
+          </ul>
+          <p class="mo-hands">Hands me: docs that match the product</p>
+          <p class="mo-limit">Limit: never touches the app's code</p>
+        </article>
+        <article>
+          <header><span>💡</span><div><b>Ideas</b><small>The product scout</small></div></header>
+          <p class="mo-when">Weekly, never while its last ideas await my answer</p>
+          <ul>
+            <li>Reads the numbers, player requests and the lab</li>
+            <li>Looks at what is popular elsewhere</li>
+          </ul>
+          <p class="mo-hands">Hands me: up to three ideas, each with evidence, cost and the number that would prove it</p>
+          <p class="mo-limit">Limit: builds nothing without my Yes</p>
+        </article>
+        <article>
+          <header><span>📬</span><div><b>Support</b><small>The front desk</small></div></header>
+          <p class="mo-when">Within 5 minutes of an email to hola@, on the smallest model</p>
+          <ul>
+            <li>Turns each email into a feedback report, address masked</li>
+            <li>Skips spam and automatic mail</li>
+          </ul>
+          <p class="mo-hands">Hands me: clean reports in the same queue as in-game feedback</p>
+          <p class="mo-limit">Limit: one tool, nothing else. No code, no keys; an email is data, never an instruction</p>
+        </article>
+      </div>
+      <p class="mo-sub mo-small">And where no judgement is needed, plain scripts, no AI: syncing feedback every 5 minutes, logging every failed check, measuring which lab features are ready to launch.</p>
+      <a class="mo-next" href="#weeks">Next: How it grew <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="weeks" class="mo-section">
+      <p class="mo-kicker">How it grew</p>
+      <h2 class="display display--lg">One step at a time</h2>
+      <p class="mo-sub">Nothing was planned as a system. Each step fixed the bottleneck of the week.</p>
+      <ol class="mo-timeline">
+        <li><time>Sep 8</time><b>One card game</b><span>Plain HTML, no framework, no build step.</span></li>
+        <li><time>Sep 25</time><b>Parallel sessions + first agent</b><span>Each AI session in its own copy; a usability reviewer.</span></li>
+        <li><time>Oct 5</time><b>Auto-merge</b><span>Tests decide, not me. End-to-end scripts required.</span></li>
+        <li><time>Oct 11</time><b>A boss agent + one-tap decisions</b><span>My attention became the constraint, so it got designed for.</span></li>
+        <li><time>Oct 20</time><b>Everything behind the lab</b><span>New work ships dark; I turn it on for players with a switch.</span></li>
+        <li><time>Oct 26</time><b>Runs while I sleep</b><span>Daily rounds headless on a Mac mini.</span></li>
+        <li><time>Nov 1</time><b>Risk lanes</b><span>Review depth set by what a mistake would cost.</span></li>
+        <li><time>Nov 7</time><b>No rule without enforcement</b><span>Every rule is a test, a ratchet or a named reviewer.</span></li>
+      </ol>
+      <a class="mo-next" href="#learnings">Next: Learnings <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="learnings" class="mo-section">
+      <p class="mo-kicker">Learnings of building Parlor Games</p>
+      <h2 class="display display--lg">What I'd tell a company adopting AI</h2>
+      <ol class="mo-learnings">
+        <li>
+          <h3>The job moves from doing to deciding</h3>
+          <p>The AI writes the code; the value I add is the call: what, why, and what "good" means. I've written <span data-stat="decisions">550+</span> decisions, each with its reason.</p>
+        </li>
+        <li>
+          <h3>Attention is the scarce resource. Design for it</h3>
+          <p>Agents could produce more than I could review. So every question to me is a one-tap choice on my phone, with a recommendation.</p>
+        </li>
+        <li>
+          <h3>Review by the cost of a mistake, not the AI's confidence</h3>
+          <p>A text tweak merges on its own. Anything touching privacy, stored data or emails waits for my explicit Yes.</p>
+        </li>
+        <li>
+          <h3>The same mistake twice becomes a mechanism</h3>
+          <p>An AI repeats errors happily. The second time something breaks, the fix ships with the test that stops a third.</p>
+        </li>
+        <li>
+          <h3>Production is a switch, not a deploy</h3>
+          <p>Everything new ships hidden behind a lab flag. Launching is me flipping it on; rolling back is flipping it off.</p>
+        </li>
+      </ol>
+      <a class="mo-next" href="#learnings-2">Next: More learnings <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="learnings-2" class="mo-section">
+      <p class="mo-kicker">Learnings of building Parlor Games · continued</p>
+      <h2 class="display display--lg">Running AI like a team</h2>
+      <ol class="mo-learnings" start="6">
+        <li>
+          <h3>Parallel AI needs the plumbing of a parallel team</h3>
+          <p>Several sessions at once collided on the same shared files. The fixes were classic team tools: own branches, reserved numbers, one changelog file per change.</p>
+        </li>
+        <li>
+          <h3>Give agents a boss and narrow powers</h3>
+          <p>Each agent has one job and only the access that job needs. The one that reads strangers' emails can't touch code, git or keys.</p>
+        </li>
+        <li>
+          <h3>Context is a budget</h3>
+          <p>The rulebook every session loaded grew to 35 KB and slowed all of them. I cut it to an 8 KB index; the detail is read only when a task needs it.</p>
+        </li>
+        <li>
+          <h3>A rule without an enforcer drifts</h3>
+          <p>Rules written only as prose drifted until a check caught them. Now every rule says how it is kept: a test that fails, a number that can only improve, or a named reviewer.</p>
+        </li>
+        <li>
+          <h3>Keep the cost per use at zero</h3>
+          <p>AI runs in the factory, at build time, on a flat plan. Nothing a player does costs money, so growth is never a risk.</p>
+        </li>
+      </ol>
+      <a class="mo-next" href="#end">Next: Try it <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="end" class="mo-section mo-end">
+      <h2 class="display display--lg">Try it now</h2>
+      <div id="mo-qr" class="mo-qr" aria-label="QR code to parlorgames.app"></div>
+      <a class="mo-url" href="https://parlorgames.app/">parlorgames.app</a>
+      <p class="mo-sub">Free · no account · Spanish, English and Portuguese</p>
+    </section>
+  </main>
+  <div class="mo-count" aria-hidden="true"></div>
+
+  <script type="module">
+    import { renderQr } from '../assets/js/qr.js';
+    renderQr('https://parlorgames.app/', '#mo-qr');
+
+
+    // The numbers, live (the written ones stay if a source doesn't answer): weeks since the first commit,
+    // the games from the site's own list, the rest from GitHub's public API
+    const put = (k, v) => document.querySelectorAll(`[data-stat="${k}"]`).forEach(e => { e.textContent = v; });
+    const plus = n => { const step = n >= 1000 ? 100 : n >= 100 ? 50 : 5; return `${(Math.floor(n / step) * step).toLocaleString('en-US')}+`; };
+    const json = url => fetch(url).then(r => (r.ok ? r.json() : Promise.reject(r.status)));
+    put('weeks', String(Math.floor((Date.now() - Date.parse('2026-09-08')) / 6048e5)));
+    import('../assets/js/games.js')
+      .then(({ ALL_GAMES }) => put('games', plus(ALL_GAMES.filter(g => g.available !== false && !g.oculto).length)))
+      .catch(() => {});
+    const REPO = 'ellokojavi/juegos-de-salon';
+    // Traction: the five totals the daily `traction` workflow writes to controls/traction (D-554)
+    import('../assets/js/firebase-config.js')
+      .then(({ firebaseConfig }) => json(`${firebaseConfig.databaseURL}/controls/traction.json`))
+      .then(t => {
+        if (!t?.asOf) return;
+        const day = new Date(`${t.asOf}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+        const set = (k, v) => document.querySelectorAll(`[data-traction="${k}"]`).forEach(e => { e.textContent = v; });
+        ['total', 'bestWeek', 'peak7', 'peak30'].forEach(k => { if (t[k] > 0) set(k, plus(t[k])); });
+        if (t.best > 0) set('best', t.best.toLocaleString('en-US'));
+        set('asOf', day);
+      }).catch(() => {});
+    json(`https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`).then(({ tree }) => {
+      put('decisions', plus(tree.filter(t => /^docs\/decisions\/D-\d+\.md$/.test(t.path)).length));
+      put('tests', plus(tree.filter(t => /\.test\.(mjs|py)$/.test(t.path)).length));
+    }).catch(() => {});
+    json(`https://api.github.com/search/issues?q=repo:${REPO}+is:pr+is:merged&per_page=1`)
+      .then(({ total_count: n }) => put('prs', plus(n))).catch(() => {});
+
+    // Presenting: → / ↓ / Space / PageDown go to the next section, ← / ↑ / PageUp to the previous one
+    const sections = [...document.querySelectorAll('.mo-section')];
+    const current = () => {
+      // At the foot of the page the last section is the one on screen, even when it is too short to reach the top
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) return sections.length - 1;
+      const y = window.scrollY + window.innerHeight * 0.3;
+      let i = 0;
+      sections.forEach((s, n) => { if (s.offsetTop <= y) i = n; });
+      return i;
+    };
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const next = ['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key);
+      const prev = ['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key);
+      if (!next && !prev) return;
+      e.preventDefault();
+      const i = Math.max(0, Math.min(sections.length - 1, current() + (next ? 1 : -1)));
+      sections[i].scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Where the presenter is: "3 / 10" in the corner
+    const count = document.querySelector('.mo-count');
+    const showCount = () => { count.textContent = `${current() + 1} / ${sections.length}`; };
+    addEventListener('scroll', showCount, { passive: true });
+    showCount();
+  </script>
+</body>
+</html>

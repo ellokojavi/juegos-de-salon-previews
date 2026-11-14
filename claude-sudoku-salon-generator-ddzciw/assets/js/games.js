@@ -1,0 +1,681 @@
+/**
+ * Registro central de juegos.
+ * Para agregar un juego nuevo: crear su carpeta public/<carpeta>/ con su index.html y agregar una
+ * entrada aquí. Los textos van por idioma ({ es, en, pt }). El menú principal se genera desde esta lista.
+ *
+ * El `id` y la carpeta son dos cosas (D-192): el id es un dato —lo guardan las salas de Firebase, el
+ * panel y el localStorage— y no cambia nunca; la carpeta es la URL (`path`) y va en inglés. Los
+ * juegos de antes conservan su id en español ('ahorcado' vive en /hangman/) y su ruta vieja
+ * (/<id>/) queda como página puente, que genera `node tools/release/og.mjs cards`.
+ *
+ * This file is the games manifest (#855): each entry is meant to hold everything about its game, so a
+ * new game is its folder plus one entry here. The other registries move in one at a time, each with a
+ * test that fails when they disagree (manifest.test.mjs). Moved in so far: `keywords` (the 🔎 search's
+ * words in es, en and pt, D-404; search.js derives KEYWORDS from them).
+ */
+import { cachedFlags, stateOf } from './flags.js';
+import { SAVED_KEY } from './lab-access.js';
+import { catalogEntry } from './game-manifest.js';
+import hangmanManifest from './manifests/hangman.js';
+import liarsDiceManifest from './manifests/liars-dice.js';
+import timelineManifest from './manifests/timeline.js';
+import bullsAndCowsManifest from './manifests/bulls-and-cows.js';
+import battleshipManifest from './manifests/battleship.js';
+import generalaManifest from './manifests/generala.js';
+import julepManifest from './manifests/labs/julep.js';
+import fourthKingManifest from './manifests/labs/fourth-king.js';
+import cupManifest from './manifests/cup.js';
+
+/**
+ * Whether a game launched by a flag (`lanza`, D-517) is out for this visitor, read at once from what
+ * this phone last saw of `flags/` (flags.js keeps it; the home page and the game's page refresh it):
+ * 🚀 everyone, or 🧪 lab with a lab key saved here. In node (the tools, the tests) nothing is saved,
+ * so the game counts as not launched. Never used for Uno al día's deck, which goes by date.
+ */
+export function lanzado(id, { flags = cachedFlags(), store = globalThis.localStorage } = {}) {
+  const state = stateOf(flags, id);
+  if (state === 'all') return true;
+  if (state === 'off') return false;
+  try { return !!store?.getItem(SAVED_KEY); } catch (_) { return false; }
+}
+
+export const GAMES = [
+  // copa: from public/cup/game.json
+  // No dura minutos sino días. Va en los tres idiomas (D-170): la copa elige el de sus palabras
+  // Cómo se juega, para la tabla del README: una copa no tiene modos de un celular o de sala.
+  // Un torneo no es una partida: cada día manda su señal con `players: 1` y no pesa en MAX_PLAYERS.
+  // Offline, only a pending day of a cup this phone kept a copy of, uploaded before the day closes (D-544)
+  // Tiene de todo: aparece con cualquier tipo que se elija en los filtros de la portada
+  // Salió del laboratorio (D-175): se abre desde el menú. /labs/ sigue para probar (la Copa de 3
+  // días, la práctica con semilla y las demos).
+  catalogEntry(cupManifest),
+  // linea-de-tiempo: from public/timeline/game.json
+  // What it plays of La Copa's games, for the end-to-end scope (tools/e2e/affected.mjs, #855)
+  catalogEntry(timelineManifest),
+  // toque-y-fama: from public/bulls-and-cows/game.json
+  // Its card also holds 🔤 Palabra (#767), so the tagline names both
+  // What it plays of La Copa's games, for the end-to-end scope (tools/e2e/affected.mjs, #855)
+  catalogEntry(bullsAndCowsManifest),
+  // From their manifests (public/<folder>/game.json, #1249 step 7): edit the JSON, then run
+  // node tools/generators/manifests.mjs
+  catalogEntry(hangmanManifest),
+  catalogEntry(liarsDiceManifest),
+  // generala: from public/generala/game.json
+  // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+  // Announced as "Próximamente" first (D-248), opened on the owner's request (D-405): it joins
+  // Uno al día with the deck shuffled on 2026-10-23 (DESDE_GENERALA in uno-al-dia.js)
+  catalogEntry(generalaManifest),
+  // batalla-naval: from public/battleship/game.json
+  // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+  catalogEntry(battleshipManifest),
+  // julepe: from public/labs/julep/game.json
+  // In La Bodega since D-434 (the owner's request, after D-88 had paused it): off the home page,
+  // behind the lab's door at /labs/julep/; /julep/ and /julepe/ are bridges there
+  // Its name in URLs and its docs/games/ and docs/screenshots/ folders, without the lab (C-18)
+  catalogEntry(julepManifest),
+  // cuarto-rey: from public/labs/fourth-king/game.json
+  // In La Bodega since D-420 (the owner's request): off the home page, behind the lab's door at
+  // /labs/fourth-king/; /fourth-king/ and /cuarto-rey/ are bridges there
+  // Its name in URLs and its docs/games/ and docs/screenshots/ folders, without the lab (C-18)
+  catalogEntry(fourthKingManifest),
+];
+
+/**
+ * Los juegos de La Copa, que también se juegan desde la portada (D-142), de a uno y sin copa: son
+ * juegos como los demás (D-198) y abren `<slug>/` (D-149, D-162, D-192), la pantalla de práctica de
+ * La Copa con un link que no dice "copa": no cuenta para ninguna copa y, si hay jugador, va a los rankings (D-212). Van aparte
+ * de GAMES solo por cómo están hechos: no son una carpeta con su `rules.js` (su motor y su pantalla
+ * viven en cup/games/), así que el README y las pruebas de idioma de los juegos no los recorren. Su
+ * página y su tarjeta social las genera `node tools/release/og.mjs cards` a partir de cup/suelto/index.html.
+ *
+ * Uno con `labs: true` todavía no va en la portada, pero su link ya se comparte: tiene página y
+ * tarjeta igual (como La Copa, D-101).
+ *
+ * Línea Relámpago y Toque y Fama: Número no están: son el modo solo de Línea de Tiempo
+ * y de Toque y Fama. La Gran Final tampoco: repite los otros y es el cierre de la copa.
+ *
+ * Se juegan en el idioma de quien juega, con contenido propio de cada idioma (D-170).
+ */
+export const SUELTOS = [
+  {
+    // In La Bodega since D-421, the owner's request: Agentes took its place on the home page, in La Copa
+    // and in Uno al día. Its page /connections/ still opens (old links, the lab's Bodega card) and the
+    // cups created before keep playing it; `bodega` leaves it off the home page and the search
+    id: 'conexiones',
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 2, desde: '2026-10-06', hasta: '2026-10-24' },
+    slug: 'connections',
+    emoji: '🔗',
+    name: { es: 'Conexiones', en: 'Connections', pt: 'Conexões' },
+    tagline: { es: 'Arma cuatro grupos de cuatro palabras que tienen algo en común.', en: 'Sort sixteen words into four groups of four that share something.', pt: 'Monte quatro grupos de quatro palavras que têm algo em comum.' },
+    tipos: ['words', 'trivia'],
+    duration: '3–8',
+    bodega: true,
+  },
+  {
+    id: 'letras',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 4 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 3, desde: '2026-10-06' },
+    slug: 'word',
+    emoji: '🔤',
+    name: { es: 'Toque y Fama: Palabra', en: 'Bulls and Cows: Word', pt: 'Toque e Fama: Palavra' },
+    tagline: { es: 'Adivina la palabra secreta de cinco letras con toques y famas.', en: 'Crack the five-letter secret word with bulls and cows.', pt: 'Descubra a palavra secreta de cinco letras com toques e famas.' },
+    keywords: {
+      es: ['palabra', 'letras', 'adivinar', 'wordle', 'toque', 'fama', 'vocabulario'],
+      en: ['word', 'letters', 'guess', 'wordle', 'bulls', 'cows', 'vocabulary'],
+      pt: ['palavra', 'letras', 'adivinhar', 'wordle', 'vocabulário'],
+    },
+    tipos: ['words', 'logic'],
+    duration: '3–8',
+  },
+  {
+    id: 'anio',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 5 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 4, desde: '2026-10-06' },
+    slug: 'year',
+    emoji: '📅',
+    name: { es: '¿En qué año?', en: 'What Year?', pt: 'Em que ano?' },
+    tagline: { es: 'Adivina en qué año pasó cada hito. Mientras más cerca, más puntos.', en: 'Guess the year each milestone happened. The closer you get, the more points.', pt: 'Adivinhe em que ano aconteceu cada marco. Quanto mais perto, mais pontos.' },
+    keywords: {
+      es: ['año', 'fechas', 'historia', 'adivinar', 'cultura', 'preguntas'],
+      en: ['year', 'dates', 'history', 'guess', 'trivia', 'quiz'],
+      pt: ['ano', 'datas', 'história', 'adivinhar', 'cultura', 'perguntas', 'quiz'],
+    },
+    tipos: ['trivia'],
+    duration: '2–5',
+  },
+  {
+    id: 'reinas',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 3 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 5, desde: '2026-10-06' },
+    slug: 'queens',
+    emoji: '👑',
+    name: { es: 'Reinas', en: 'Queens', pt: 'Rainhas' },
+    tagline: { es: 'Pon una reina en cada fila, columna y zona de color, sin que se toquen.', en: 'Place one queen in every row, column and color zone, with none touching.', pt: 'Coloque uma rainha em cada linha, coluna e zona de cor, sem que se toquem.' },
+    keywords: {
+      es: ['reina', 'ajedrez', 'colores', 'zonas', 'grilla', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['queens', 'queen', 'chess', 'colors', 'regions', 'grid', 'puzzle', 'logic'],
+      pt: ['rainha', 'xadrez', 'cores', 'zonas', 'grade', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '2–5',
+  },
+  {
+    id: 'tango',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 7 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 14, desde: '2026-10-16' },
+    slug: 'tango',
+    emoji: '☀️',
+    name: { es: 'Tango', en: 'Tango', pt: 'Tango' },
+    tagline: { es: 'Llena la grilla con soles y lunas sin poner tres iguales seguidos.', en: 'Fill the grid with suns and moons without ever putting three in a row.', pt: 'Preencha a grade com sóis e luas sem colocar três iguais seguidos.' },
+    keywords: {
+      es: ['soles', 'lunas', 'sol', 'luna', 'binario', 'grilla', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['suns', 'moons', 'sun', 'moon', 'binary', 'grid', 'puzzle', 'logic'],
+      pt: ['sóis', 'luas', 'sol', 'lua', 'binário', 'grade', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '3–8',
+  },
+  {
+    id: 'zip',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 6 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 13, desde: '2026-10-16' },
+    slug: 'zip',
+    emoji: '〰️',
+    name: { es: 'Zip', en: 'Zip', pt: 'Zip' },
+    tagline: { es: 'Une los números en orden con un solo trazo que pase por todas las casillas.', en: 'Connect the numbers in order with a single line that fills every square.', pt: 'Ligue os números em ordem com um só traço que passe por todas as casas.' },
+    keywords: {
+      es: ['trazo', 'camino', 'linea', 'numeros', 'unir', 'recorrido', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['path', 'line', 'trail', 'numbers', 'connect', 'route', 'puzzle', 'logic'],
+      pt: ['traço', 'caminho', 'linha', 'números', 'unir', 'percurso', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '3',
+  },
+  {
+    id: 'desenredo',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 9 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 6, desde: '2026-10-06' },
+    slug: 'untangle',
+    emoji: '🧶',
+    name: { es: 'Desenredo', en: 'Untangle', pt: 'Desenrola' },
+    tagline: { es: 'Arrastra los nudos hasta que ningún hilo se cruce.', en: 'Drag the knots until no threads cross.', pt: 'Arraste os nós até que nenhum fio se cruze.' },
+    keywords: {
+      es: ['nudos', 'hilos', 'cruces', 'enredo', 'desenredar', 'arrastrar', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['untangle', 'tangle', 'knots', 'threads', 'crossings', 'drag', 'puzzle', 'logic'],
+      pt: ['nós', 'fios', 'cruzamentos', 'emaranhado', 'desembaraçar', 'arrastar', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '4',
+  },
+  {
+    id: 'donde',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 8 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 15, desde: '2026-10-16' },
+    slug: 'where',
+    emoji: '📍',
+    name: { es: '¿Dónde queda?', en: 'Where Is It?', pt: 'Onde fica?' },
+    tagline: { es: 'Ubica cinco ciudades en el globo. Mientras más cerca, más puntos.', en: 'Find five cities on the globe. The closer your pin, the more points.', pt: 'Encontre cinco cidades no globo. Quanto mais perto o alfinete, mais pontos.' },
+    keywords: {
+      es: ['mapa', 'geografia', 'ciudades', 'paises', 'globo', 'mundo', 'viajes', 'cultura'],
+      en: ['map', 'geography', 'cities', 'countries', 'globe', 'world', 'travel', 'trivia', 'where'],
+      pt: ['mapa', 'geografia', 'cidades', 'países', 'globo', 'mundo', 'viagens', 'cultura'],
+    },
+    tipos: ['trivia'],
+    duration: '2–5',
+  },
+  {
+    // En el laboratorio (D-257): tiene página y tarjeta, pero no sale en la portada. Su página es
+    // /labs/case/ (D-267); `diario`: sin semilla en el link se juega el caso del día, el mismo para
+    // todos, y al recargar sigue donde iba
+    id: 'caso',
+    slug: 'case',
+    emoji: '🔍',
+    name: { es: 'El caso', en: 'The Case', pt: 'O Caso' },
+    tagline: { es: 'Descubre quién es criminal entre 20 sospechosos. Las pistas nunca mienten.', en: 'Find out who the criminals are among 20 suspects. The clues never lie.', pt: 'Descubra quem é criminoso entre 20 suspeitos. As pistas nunca mentem.' },
+    tipos: ['logic'],
+    duration: '5–10',
+    labs: true,
+    diario: true,
+  },
+  {
+    // Out of the lab since D-332, with Loteo and Pintaminas: their page was /labs/<slug>/, now a bridge (`deLabs`)
+    id: 'rutas',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 10 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 10, desde: '2026-10-16' },
+    slug: 'routes',
+    emoji: '🚇',
+    name: { es: 'Rutas rotas', en: 'Broken Routes', pt: 'Rotas Quebradas' },
+    tagline: { es: 'Une todas las líneas del metro girando partes del tablero.', en: 'Join every subway line by flipping parts of the board.', pt: 'Ligue todas as linhas do metrô girando partes do tabuleiro.' },
+    keywords: {
+      es: ['metro', 'lineas', 'tren', 'girar', 'rotar', 'conectar', 'caminos', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['subway', 'metro', 'lines', 'train', 'rotate', 'turn', 'connect', 'pipes', 'routes', 'puzzle', 'logic'],
+      pt: ['metrô', 'linhas', 'trem', 'girar', 'rodar', 'conectar', 'caminhos', 'canos', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '7',
+    deLabs: true,
+    nuevoDesde: '2026-10-15',
+  },
+  {
+    // Two variants (D-331): 🔢 Numbers and ⚡💧 Utilities, picked in the waiting room
+    id: 'loteo',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 11 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 11, desde: '2026-10-16' },
+    slug: 'plots',
+    emoji: '📐',
+    name: { es: 'Loteo', en: 'Plots', pt: 'Loteamento' },
+    tagline: { es: 'Divide el tablero en lotes: cada número dice cuántas casillas tiene el suyo.', en: 'Split the board into plots: each number says how many squares its plot has.', pt: 'Divida o tabuleiro em lotes: cada número diz quantas casas tem o seu.' },
+    keywords: {
+      es: ['lotes', 'dividir', 'numeros', 'casillas', 'rectangulos', 'grilla', 'shikaku', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['plots', 'divide', 'split', 'numbers', 'cells', 'rectangles', 'grid', 'shikaku', 'puzzle', 'logic'],
+      pt: ['lotes', 'dividir', 'números', 'casas', 'retângulos', 'grade', 'shikaku', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '5–15',
+    deLabs: true,
+    nuevoDesde: '2026-10-15',
+  },
+  {
+    // Two variants (D-331): easy (one color) and hard (two colors), picked in the waiting room
+    id: 'pintaminas',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 12 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 12, desde: '2026-10-16' },
+    slug: 'paint-mines',
+    emoji: '🖌️',
+    name: { es: 'Pintaminas', en: 'Paint Mines', pt: 'Pinta-Minas' },
+    tagline: { es: 'Pinta la grilla y descubre el dibujo escondido.', en: 'Paint the grid and uncover the hidden picture.', pt: 'Pinte a grade e descubra o desenho escondido.' },
+    keywords: {
+      es: ['pintar', 'dibujo', 'imagen', 'grilla', 'nonograma', 'picross', 'casillas', 'puzzle', 'rompecabezas', 'logica'],
+      en: ['paint', 'picture', 'drawing', 'image', 'grid', 'nonogram', 'picross', 'cells', 'puzzle', 'logic'],
+      pt: ['pintar', 'desenho', 'imagem', 'grade', 'nonograma', 'picross', 'casas', 'quebra-cabeça', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '3–6',
+    deLabs: true,
+    nuevoDesde: '2026-10-15',
+  },
+  {
+    // Out of the lab in D-421, in Conexiones' place (the owner's request): its page was /labs/agents/, now a bridge (`deLabs`)
+    id: 'agentes',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 2 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 17, desde: '2026-10-24' },
+    slug: 'agents',
+    emoji: '🕵️',
+    name: { es: 'Agentes', en: 'Agents', pt: 'Agentes' },
+    tagline: { es: 'Encuentra a tus espías con las pistas, sin tocar al asesino.', en: 'Find your spies from the clues, without touching the assassin.', pt: 'Encontre seus espiões com as pistas, sem tocar no assassino.' },
+    keywords: {
+      es: ['codenames', 'espias', 'pistas', 'palabras', 'asociar', 'asesino', 'agente', 'secreto'],
+      en: ['agents', 'codenames', 'spies', 'clues', 'words', 'associate', 'assassin', 'spy', 'secret'],
+      pt: ['codenames', 'espiões', 'pistas', 'palavras', 'associar', 'assassino', 'agente', 'segredo'],
+    },
+    tipos: ['words'],
+    duration: '3–6',
+    deLabs: true,
+    nuevoDesde: '2026-10-21', // launched 2026-10-22; the owner retired its "New" a day early (D-507)
+  },
+  {
+    // Out of the lab in D-456: its page was /labs/bridges/, now a bridge (`deLabs`); its id is La Copa's
+    id: 'puentes',
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 13 },
+    // Uno al día: its place in the deck order (never reorder: the shuffle depends on it) and since when it comes out (#855)
+    unoAlDia: { orden: 18, desde: '2026-10-27' },
+    slug: 'bridges',
+    emoji: '🚅',
+    name: { es: 'Tren en Vilo', en: 'Train on the Edge', pt: 'Trem no Vão' },
+    tagline: { es: 'Arma un puente que aguante el tren.', en: 'Build a bridge that holds the train.', pt: 'Monte uma ponte que aguente o trem.' },
+    keywords: {
+      es: ['puente', 'puentes', 'tren', 'vigas', 'construir', 'fisica', 'ingenieria', 'poly bridge', 'logica'],
+      en: ['bridge', 'bridges', 'train', 'beams', 'build', 'physics', 'engineering', 'poly bridge', 'logic'],
+      pt: ['ponte', 'pontes', 'trem', 'vigas', 'construir', 'física', 'engenharia', 'poly bridge', 'lógica'],
+    },
+    tipos: ['logic'],
+    duration: '5–7',
+    deLabs: true,
+    nuevoDesde: '2026-10-26',
+  },
+  {
+    // Out of the lab in D-517, launched by flags/stick on 2026-11-02 (D-529); its gate (`lanza`) is gone, so
+    // it is in every list on every phone. Its lab page /labs/stick/ is a bridge to /shinobi/ (`deLabs: 'stick'`:
+    // the folder kept the old name)
+    id: 'stick',
+    deLabs: 'stick',
+    // Its name is Shinobi (the owner's choice, first called Ninja); the id stays `stick`
+    // La Copa: its place in the pool an admin picks the days from (cup/engine.js POZO, #855)
+    copa: { pozo: 14 },
+    // Uno al día: by date, never by flag (the deck must be the same on every phone): from the day after
+    // the launch, joining the next deck
+    unoAlDia: { orden: 19, desde: '2026-11-03' },
+    slug: 'shinobi',
+    emoji: '🥷',
+    name: { es: 'Shinobi', en: 'Shinobi', pt: 'Shinobi' },
+    tagline: { es: 'Estira el palo, cruza el abismo y clava la bandera.', en: 'Stretch the stick, cross the gap, plant the flag.', pt: 'Estique o bastão, atravesse o abismo e finque a bandeira.' },
+    keywords: {
+      es: ['shinobi', 'ninja', 'palo', 'puente', 'saltar', 'habilidad', 'reflejos', 'pulso', 'bandera', 'abismo'],
+      en: ['shinobi', 'ninja', 'stick', 'bridge', 'jump', 'skill', 'reflexes', 'timing', 'flag', 'gap'],
+      pt: ['shinobi', 'ninja', 'bastão', 'ponte', 'pular', 'habilidade', 'reflexos', 'precisão', 'bandeira', 'abismo'],
+    },
+    tipos: ['skill'],
+    duration: '1–3',
+    nuevoDesde: '2026-11-02',
+    diasNuevo: 10,
+  },
+  {
+    // Out of the lab in D-517 with Shinobi, launched the same way by flags/stack (see Shinobi). Its name is Babel (the
+    // owner's choice): not the original's (Stack); the id stays `stack`
+    id: 'stack',
+    lanza: 'stack',
+    copa: { pozo: 15 },
+    unoAlDia: { orden: 20, desde: '2026-11-03' },
+    slug: 'babel',
+    emoji: '🗼',
+    name: { es: 'Babel', en: 'Babel', pt: 'Babel' },
+    tagline: { es: 'Levanta tu torre lo más alto que puedas.', en: 'Raise your tower as high as you can.', pt: 'Erga sua torre o mais alto que puder.' },
+    keywords: {
+      es: ['torre', 'apilar', 'bloques', 'babel', 'stack', 'habilidad', 'reflejos', 'pulso', 'altura'],
+      en: ['tower', 'stack', 'blocks', 'babel', 'skill', 'reflexes', 'timing', 'height'],
+      pt: ['torre', 'empilhar', 'blocos', 'babel', 'stack', 'habilidade', 'reflexos', 'precisão', 'altura'],
+    },
+    tipos: ['skill'],
+    duration: '1–3',
+    nuevoDesde: '2026-11-02',
+    diasNuevo: 10,
+  },
+  {
+    // Out of the lab like Shinobi and Babel (D-517): La Copa's screen in cup/games/flap/, its page /flap/,
+    // launched by flags/aletazo at 00:00 Pacific on 2026-11-09 (the `launch` workflow, D-529). Until the
+    // flag is on it carries `oculto`; the lab prototype /labs/flap/ stays until the cleanup PR. The id is
+    // the lab's, which its usage signal and ranking table already use
+    id: 'aletazo',
+    lanza: 'aletazo',
+    copa: { pozo: 16 },
+    // Uno al día: by date, never by flag (the deck must be the same on every phone): from the day after
+    // the launch, joining the next deck
+    unoAlDia: { orden: 21, desde: '2026-11-10' },
+    slug: 'flap',
+    emoji: '🐤',
+    name: { es: 'Aletazo', en: 'Flap', pt: 'Bate-Asa' },
+    tagline: { es: 'Un toque, un aletazo: vuela entre aros y muros.', en: 'One tap, one flap: fly through hoops and walls.', pt: 'Um toque, uma batida de asa: voe entre aros e muros.' },
+    keywords: {
+      es: ['aletazo', 'pájaro', 'pajaro', 'volar', 'aros', 'flappy bird', 'habilidad', 'reflejos', 'pulso', 'toque'],
+      en: ['aletazo', 'bird', 'flap', 'fly', 'hoops', 'flappy bird', 'skill', 'reflexes', 'timing', 'tap'],
+      pt: ['aletazo', 'bate-asa', 'bate asa', 'pássaro', 'voar', 'aros', 'flappy bird', 'habilidade', 'reflexos', 'precisão', 'toque'],
+    },
+    tipos: ['skill'],
+    duration: '1–3',
+    nuevoDesde: '2026-11-09',
+    diasNuevo: 10,
+  },
+  {
+    // Out of the lab like Aletazo (D-517's way): La Copa's screen in cup/games/sudoku/, its page /sudoku/,
+    // launched by flags/sudoku at 21:00 Pacific on 2026-11-11 (the `launch` workflow, D-529). Its levels
+    // are La Copa's variants: 🟢 easy, the 6×6 mini, by default (a cup day, Uno al día), and 🔴 hard, the
+    // 9×9. The id, its ranking tables (`sudoku_easy`, `sudoku_hard`) and the usage signal are the lab's;
+    // the lab prototype /labs/sudoku/ stays until the cleanup PR. There is no sudoku emoji: #️⃣ stands in
+    // where only text fits, and the cover shows the drawn icon (cup/games/sudoku/icon.svg)
+    id: 'sudoku',
+    // Its drawn icon, from the site's root: the home page's card and the search show it in place of the emoji
+    icon: 'cup/games/sudoku/icon.svg',
+    lanza: 'sudoku',
+    copa: { pozo: 17 },
+    // Uno al día: by date, never by flag: from the day after the launch, joining the next deck
+    unoAlDia: { orden: 22, desde: '2026-11-12' },
+    slug: 'sudoku',
+    emoji: '#️⃣',
+    name: { es: 'Sudoku', en: 'Sudoku', pt: 'Sudoku' },
+    tagline: { es: 'El clásico de los números: mini de 6×6 o el de 9×9.', en: 'The numbers classic: a 6×6 mini or the 9×9.', pt: 'O clássico dos números: mini de 6×6 ou o de 9×9.' },
+    keywords: {
+      es: ['sudoku', 'números', 'numeros', 'lógica', 'logica', 'puzle', 'solitario', 'mini sudoku', 'cuadros'],
+      en: ['sudoku', 'numbers', 'logic', 'puzzle', 'solo', 'mini sudoku', 'grid'],
+      pt: ['sudoku', 'números', 'lógica', 'quebra-cabeça', 'solitário', 'mini sudoku', 'quadrados'],
+    },
+    tipos: ['logic'],
+    duration: '3–15',
+    nuevoDesde: '2026-11-12',
+    diasNuevo: 10,
+  },
+  // Los del laboratorio viven en /labs/<slug>/ (D-267): al salir pasan a /<slug>/
+].map(m => ({ ...m, players: '1', path: `${m.labs ? 'labs/' : ''}${m.slug}/`, available: !m.labs, suelto: true, ...(m.lanza ? { oculto: !lanzado(m.lanza) } : {}) }));
+
+/**
+ * Every game the site has, in one list (D-542, the owner: "every game is one more game"). GAMES and
+ * SUELTOS are split only by how a game is built (its engine in its own folder with rules.js, or in
+ * cup/games/), never by what it is: anything that applies to "the games" (a rule, a check, a feature,
+ * a fix) iterates ALL_GAMES. Reach for GAMES or SUELTOS alone only for something about the build.
+ */
+export const ALL_GAMES = [...GAMES, ...SUELTOS];
+
+/**
+ * Los tipos de juego con que se filtra la portada (D-142), en el orden en que se ofrecen.
+ * Cada juego dice los suyos en `tipos`; uno sin tipos solo se ve sin filtro de tipo.
+ * La clave es la que va en la URL (`?type=logic`), en inglés como las rutas (D-192, D-214).
+ */
+export const TIPOS = {
+  words: { emoji: '🔤', name: { es: 'Palabras', en: 'Words', pt: 'Palavras' } },
+  logic: { emoji: '🧩', name: { es: 'Lógica', en: 'Logic', pt: 'Lógica' } },
+  trivia: { emoji: '🧠', name: { es: 'Cultura', en: 'Trivia', pt: 'Cultura' } },
+  // Only dice since Julepe and Cuarto Rey left the home page (D-420): the key stays, the name says what is there (D-517)
+  tabletop: { emoji: '🎲', name: { es: 'Dados', en: 'Dice', pt: 'Dados' } },
+  // The first skill games, Shinobi and Babel (D-517): the home page offers a type only while it has a game to show.
+  // A short name, so five types fit one row on a 320 px phone in every language
+  skill: { emoji: '🎯', name: { es: 'Pulso', en: 'Skill', pt: 'Reflexo' } },
+};
+
+/** Los tipos de antes de D-214 (`?tipo=mesa`): un link viejo sigue filtrando lo mismo. */
+export const TIPOS_VIEJOS = { palabras: 'words', logica: 'logic', cultura: 'trivia', mesa: 'tabletop' };
+
+/**
+ * The home page's order (D-255, D-361): most finished games first, counting the last four weeks of
+ * offline games, rooms that ended, La Copa days played and Uno al día. It is still a fixed list,
+ * so the page needs no database to draw itself, but it is no longer refreshed by hand: every Monday
+ * the Weekly popularity workflow (.github/workflows/popularity.yml, D-547) runs
+ * `node tools/agents/popularity.mjs update` and merges the change when the order changed. The two lines below are written by that tool; a game not in the list
+ * goes after the ones that are, in the order of GAMES and SUELTOS.
+ */
+export const POPULARIDAD_FECHA = '2026-11-11';
+export const POPULARIDAD = ['copa', 'stick', 'generala', 'reinas', 'stack', 'tango', 'pintaminas', 'loteo', 'rutas', 'puentes', 'agentes', 'anio', 'donde', 'zip', 'letras', 'desenredo', 'batalla-naval', 'linea-de-tiempo', 'aletazo', 'toque-y-fama', 'ahorcado', 'conexiones', 'dudo'];
+const puesto = id => { const i = POPULARIDAD.indexOf(id); return i < 0 ? POPULARIDAD.length : i; };
+
+/**
+ * A new game carries a "New" label on its home card for a week (D-333, D-507, the owner's request): from
+ * `nuevoDesde`, the day it reached the home page, for DIAS_NUEVO days. Every game added after D-333
+ * brings its date, and games.test.mjs stops one that doesn't (YA_ESTABAN is the list from before).
+ */
+export const DIAS_NUEVO = 7;
+export const esNuevo = (g, hoy = new Date()) => {
+  if (!g?.nuevoDesde) return false;
+  const desde = Date.parse(`${g.nuevoDesde}T00:00:00`);
+  // A game may carry its own length (`diasNuevo`): Shinobi and Babel keep it 10 days (the owner's request, 2026-11-01)
+  return hoy.getTime() >= desde && hoy.getTime() < desde + (g.diasNuevo || DIAS_NUEVO) * 24 * 60 * 60 * 1000;
+};
+
+/**
+ * Todo lo que ofrece la portada, de lo más jugado a lo menos (D-255). Los que vienen
+ * "Próximamente" van al final, con y sin filtro: no se abren y no deben tapar a los que sí.
+ * While a game carries its "New" label it goes on top, right after La Copa (D-335, the owner's
+ * request: it has no plays yet, so by popularity it would be last); when the label goes, so does that.
+ */
+export function ordenPortada(hoy = new Date()) {
+  const ofrecidos = ALL_GAMES.filter(g => !g.labs && !g.bodega && !g.oculto).sort((a, b) => puesto(a.id) - puesto(b.id));
+  const arriba = g => (g.torneo ? 0 : esNuevo(g, hoy) ? 1 : 2);
+  const disponibles = ofrecidos.filter(g => g.available).sort((a, b) => arriba(a) - arriba(b));
+  return [...disponibles, ...ofrecidos.filter(g => !g.available)];
+}
+export const PORTADA = ordenPortada();
+
+/**
+ * The 🔥 "Popular" label (D-361, the owner's request): the first POPULARES games of the weekly
+ * `POPULARIDAD` order, leaving out La Copa (it has its own card on top). A game still carrying "New"
+ * counts too and then wears both labels (the owner's request, 2026-11-09): Shinobi was among the most
+ * played in its first week. It ranks by `POPULARIDAD`, not by the home page's order, where the new
+ * games sit on top whatever their plays. Only available games on the home page count.
+ */
+export const POPULARES = 3;
+export function populares(hoy = new Date(), orden = ordenPortada(hoy)) {
+  return new Set(orden.filter(g => g.available && !g.torneo && POPULARIDAD.includes(g.id)).sort((a, b) => puesto(a.id) - puesto(b.id)).slice(0, POPULARES).map(g => g.id));
+}
+
+/** Cuántos juegan como mínimo y como máximo ("1–6" → [1, 6]; "1" → [1, 1]). */
+export function rangoJugadores(players) {
+  const n = String(players || '').split(/[^\d]+/).filter(Boolean).map(Number);
+  return n.length ? [Math.min(...n), Math.max(...n)] : [1, 1];
+}
+
+/* ------------------------------------------------------------------ */
+/* Lo derivado: de acá lo lee cualquiera que necesite hablar de juegos  */
+/* o de modos sin copiarse la lista (canon C-16).                      */
+/* ------------------------------------------------------------------ */
+
+/*
+ * `jugadas`: los tipos de mensaje de sala que son una jugada de una persona (un disparo, un
+ * intento, una apuesta). El panel cuenta solo esos (D-138): una sala también se llena de
+ * mensajes que manda el juego solo —la respuesta a cada disparo, los compromisos y las
+ * revelaciones del anti-trampa—, de las entradas y de la charla, y contarlos todos juntos
+ * hacía decir "176 msjs" a una partida donde nadie escribió una palabra.
+ */
+
+/** Los ids, en el orden del menú. */
+export const GAME_IDS = GAMES.map(g => g.id);
+
+// Con los de La Copa: el panel también los nombra cuando mandan su señal de uso (C-16)
+const BY_ID = Object.fromEntries(ALL_GAMES.map(g => [g.id, g]));
+
+/** El juego con ese id, o `null` si no está registrado. */
+export const gameById = id => BY_ID[id] || null;
+
+/**
+ * Cómo se nombra un juego en una URL (C-18, D-266): en inglés, como su carpeta (`reinas` →
+ * `queens`). Los de La Copa que no tienen página propia llevan el suyo. El id no cambia (lo
+ * guardan las salas, el panel y el celular): solo lo que se ve en la dirección.
+ */
+export const SLUGS_SIN_PAGINA = { linea: 'timeline-flash', numero: 'number' };
+const SLUG_DE = { ...Object.fromEntries(ALL_GAMES.map(g => [g.id, g.slug || String(g.path || '').replace(/\/$/, '') || g.id])), ...SLUGS_SIN_PAGINA };
+const ID_DE = Object.fromEntries(Object.entries(SLUG_DE).map(([id, slug]) => [slug, id]));
+/** El nombre en la URL de un juego; un id que no está en la lista queda igual. */
+export const slugDe = id => (Object.hasOwn(SLUG_DE, id) ? SLUG_DE[id] : id);
+/** El id de un juego desde su nombre en la URL, o desde su id (los links de antes de D-266). */
+export const idDeSlug = s => (Object.hasOwn(SLUG_DE, s) ? s : Object.hasOwn(ID_DE, s) ? ID_DE[s] : s);
+
+/**
+ * Cómo se nombra un juego fuera del menú (el panel, por ejemplo).
+ * Un id que no está en la lista se devuelve tal cual: puede ser un juego recién publicado,
+ * uno que se fue, o una versión vieja de la app que todavía manda señales. En los tres casos
+ * hay que poder verlo, no perderlo en silencio (C-16).
+ */
+/**
+ * The lab's games that are not in games.js yet, by the id their usage signal carries (`GAME_ID` in each
+ * game), so every list inside (the owner's panel, its activity monitor, rankings tools) names them as the
+ * player reads them instead of showing the id (the owner saw ¡Al toque! as "microgames"). A lab game with
+ * a game.json takes its name from its manifest; one without lists it here (Sudoku left it when it
+ * graduated: its entry is in SUELTOS). `game-labels.test.mjs` fails
+ * when a game sends signals with an id that has no name.
+ */
+export const LAB_NAMES = {
+  microgames: { emoji: '⚡', name: { es: '¡Al toque!', en: 'In a Flash!', pt: 'Na Hora!' } },
+  memory: { emoji: '👀', name: { es: 'Memorice', en: 'Memorice', pt: 'Memorice' } },
+  artifacts: { emoji: '⚙️', name: { es: 'Artefactos', en: 'Artifacts', pt: 'Artefatos' } },
+  dominorama: { emoji: '🎲', name: { es: 'Dominorama', en: 'Dominorama', pt: 'Dominorama' } },
+  clave: { emoji: '🔐', name: { es: 'La clave', en: 'The Code', pt: 'A senha' } },
+  camaleon: { emoji: '🦎', name: { es: 'El Camaleón', en: 'Chameleon', pt: 'Camaleão' } },
+  transfer: { emoji: '🚉', name: { es: 'Transbordo', en: 'Transfer', pt: 'Baldeação' } },
+  'numeros-explosivos': { emoji: '💥', name: { es: 'Números explosivos', en: 'Exploding Numbers', pt: 'Números explosivos' } },
+};
+
+export function gameLabel(id, lang = 'es') {
+  const g = BY_ID[id] || LAB_NAMES[id];
+  return g ? `${g.emoji} ${g.name[lang] || g.name.es}` : String(id || '?');
+}
+
+/**
+ * Los modos que existen, en el orden en que se ofrecen (C-5). `online` es el de la sala y
+ * se cuenta por sala; los demás son sin red y suben un contador (`local/<juego>/<modo>/<n>`).
+ *
+ * Agregar un modo es agregar una línea acá: el registro de señales lo manda, las reglas de
+ * la base lo aceptan por forma y el panel lo dibuja con su ícono y su color, sin tocar nada
+ * más. The label is in English because only the owner reads it, in the panel, which is English
+ * only (D-350); what the player sees comes from each game's `LOCALES` (C-3).
+ */
+export const MODES = {
+  online: { icon: '📡', label: 'two phones', room: true },
+  local: { icon: '📱', label: 'one phone' },
+  cpu: { icon: '🤖', label: 'vs. the phone' },
+  // `individual`: played by one person; the panel splits its domains by this flag (D-348)
+  solo: { icon: '🧍', label: 'solo', individual: true },
+  // One a Day (D-230): today's game, the same for everyone, in its one-player mode
+  'uno-al-dia': { icon: '📅', label: 'One a Day', individual: true },
+  // A played tournament day: the panel measures it in its own view, with the tournament's data
+  copa: { icon: '🏆', label: 'a La Copa day', torneo: true },
+};
+/** El modo de las partidas de Uno al día (D-230): lo usan los juegos al contarlas y el panel al leerlas. */
+export const MODO_UNO_AL_DIA = 'uno-al-dia';
+
+/** Todos los modos conocidos, en orden. */
+export const MODE_IDS = Object.keys(MODES);
+
+/** El modo de la sala: el que se cuenta por sala y no por contador. */
+export const ROOM_MODE = MODE_IDS.find(m => MODES[m].room);
+
+/** Los que suben un contador de partida sin red: todos menos el de la sala. */
+export const LOCAL_MODES = MODE_IDS.filter(m => !MODES[m].room);
+
+/**
+ * Forma de una clave de modo. Se valida la forma y no la lista: un modo que el código empezó
+ * a mandar antes de que el panel supiera de él tiene que llegar igual (C-16).
+ */
+export const MODE_KEY = /^[a-z][a-z-]{0,15}$/;
+
+/** ¿Esta clave es un modo sin red, que sube contador? Vale para uno que todavía no existe. */
+/**
+ * Whether a game can be played with no connection (D-538, docs/OFFLINE.md): every game is, in its
+ * local modes, unless its entry says `offline: false` (La Copa). Offline mode dims the rest with
+ * "📡 Con señal", and the service worker precaches only these. A two-phone room is never offline,
+ * whatever the game: that is the mode (ROOM_MODE), not the game.
+ */
+export const offlineOk = g => !!g && g.offline !== false;
+/** Pages that are not a game's and are kept offline too (D-538, PR 6): Uno al día's page, whose ▶ plays offline. */
+export const OFFLINE_PAGES = ['today/'];
+
+/** A mode played by one person (D-348): solo and Uno al día. */
+export const isIndividualMode = mode => !!MODES[mode]?.individual;
+
+export const isLocalMode = mode => MODE_KEY.test(String(mode || '')) && !MODES[mode]?.room;
+
+/**
+ * ¿Es un torneo (un juego que dura días y se juega un juego por día) o un juego de una partida?
+ * El panel separa por esto y no por nombre, así que un segundo torneo entraría solo (C-16).
+ */
+export const isTorneo = id => !!BY_ID[id]?.torneo;
+
+/** El ícono del modo; uno desconocido se muestra con su clave, que es mejor que nada. */
+export const modeIcon = mode => MODES[mode]?.icon || '·';
+
+/**
+ * Cuántas personas caben en el juego más numeroso ("1–6" → 6). De acá sale el tope con que
+ * se guardan y se agrupan los jugadores por partida: si algún día entra un juego de ocho,
+ * el tope sube solo. Ojo: los roles de sala (`A`–`F`) y las reglas de la base también tienen
+ * que crecer para que un juego así funcione en dos celulares.
+ */
+export const MAX_PLAYERS = Math.max(...GAMES.filter(g => !g.torneo).map(g => Number(String(g.players).split(/[^\d]+/).filter(Boolean).pop()) || 1));

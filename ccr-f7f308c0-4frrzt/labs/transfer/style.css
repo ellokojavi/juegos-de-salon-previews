@@ -1,0 +1,112 @@
+/* ==========================================================
+   Transbordo: the game's own styles (lab). The shell lives in base.css (DESIGN.md §2);
+   this file keeps only the map, the cards and the plan, on the tokens (DESIGN.md §1).
+   The line colours are the game's own, declared once here.
+   ========================================================== */
+:root {
+  /* Each network's real line colours (its own maps), a touch lighter where the real one is too dark on the night background */
+  --tr-l1: #cc0000; --tr-l2: #ffbe2e; --tr-l3: #a0582a; --tr-l5: #00995a;
+  --tr-a: #00aeef; --tr-b: #ee1c25; --tr-c: #2b7fd4; --tr-e: #9b4dca;
+  --tr-central: #e32017; --tr-jubilee: #a0a5a9; --tr-piccadilly: #3b5fc0; --tr-bakerloo: #b36305;
+  --tr-sp1: #1d6fd1; --tr-sp2: #00a07a; --tr-sp3: #ee372f; --tr-sp4: #ffd600;
+  --tr-red: #e0314b; --tr-green: #1fae4f; --tr-brown: #a8744f; --tr-ra: #f26b2a; --tr-rb: #3b6fd8; --tr-rc: #57b947; --tr-n1: #ee352e; --tr-n6: #00a34a; --tr-n7: #c04ec0; --tr-ns: #9a9b9d; --tr-nl: #b8babd; --tr-one: #2fa84f; --tr-two: #3a7fd0; --tr-mono: #e0457b;
+  --tr-m1: #30a3dc; --tr-m2: #e0292f; --tr-m3: #ffe114; --tr-m5: #96bf0d;
+}
+.tr-line--l1 { --tr: var(--tr-l1); }
+.tr-line--l2 { --tr: var(--tr-l2); }
+.tr-line--l3 { --tr: var(--tr-l3); }
+.tr-line--l5 { --tr: var(--tr-l5); }
+.tr-line--a { --tr: var(--tr-a); }
+.tr-line--b { --tr: var(--tr-b); }
+.tr-line--c { --tr: var(--tr-c); }
+.tr-line--e { --tr: var(--tr-e); }
+.tr-line--central { --tr: var(--tr-central); }
+.tr-line--jubilee { --tr: var(--tr-jubilee); }
+.tr-line--piccadilly { --tr: var(--tr-piccadilly); }
+.tr-line--bakerloo { --tr: var(--tr-bakerloo); }
+.tr-line--sp1 { --tr: var(--tr-sp1); }
+.tr-line--sp2 { --tr: var(--tr-sp2); }
+.tr-line--sp3 { --tr: var(--tr-sp3); }
+.tr-line--sp4 { --tr: var(--tr-sp4); }
+.tr-line--red { --tr: var(--tr-red); }
+.tr-line--green { --tr: var(--tr-green); }
+.tr-line--brown { --tr: var(--tr-brown); }
+.tr-line--ra { --tr: var(--tr-ra); }
+.tr-line--rb { --tr: var(--tr-rb); }
+.tr-line--rc { --tr: var(--tr-rc); }
+.tr-line--n1 { --tr: var(--tr-n1); }
+.tr-line--n6 { --tr: var(--tr-n6); }
+.tr-line--n7 { --tr: var(--tr-n7); }
+.tr-line--ns { --tr: var(--tr-ns); }
+.tr-line--nl { --tr: var(--tr-nl); }
+.tr-line--one { --tr: var(--tr-one); }
+.tr-line--two { --tr: var(--tr-two); }
+.tr-line--mono { --tr: var(--tr-mono); }
+.tr-line--m1 { --tr: var(--tr-m1); }
+.tr-line--m2 { --tr: var(--tr-m2); }
+.tr-line--m3 { --tr: var(--tr-m3); }
+.tr-line--m5 { --tr: var(--tr-m5); }
+
+.how { margin: 0; padding-left: 1.3em; display: grid; gap: var(--s-6); }
+
+/* ---------- The trip ---------- */
+.tr-head { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-120); }
+.tr-trip { list-style: none; margin: 0; padding: var(--s-10) var(--s-14); border-radius: var(--r-12); background: var(--well); display: grid; gap: var(--s-4); }
+.tr-pill { display: inline-block; padding: 0 var(--s-8); border-radius: var(--r-pill); background: var(--tr); color: var(--ink); font-weight: 800; }
+.tr-credit { margin: 0; font-size: var(--fs-75); color: var(--muted); text-align: center; }
+.tr-label { margin: 0; font-weight: 800; color: var(--muted); }
+
+/* ---------- The map ---------- */
+.tr-board { border-radius: var(--r-16); background: var(--well); padding: var(--s-8); }
+.tr-map { display: block; width: 100%; height: auto; }
+.tr-track { fill: none; stroke: var(--tr); stroke-width: 8; stroke-linecap: round; stroke-linejoin: round; }
+.tr-stop circle { fill: var(--ink); stroke: var(--bg1); stroke-width: 3; }
+.tr-stop.is-hub circle { fill: var(--ink); stroke: var(--ink); stroke-width: 4; }
+.tr-stop.is-goal circle { fill: var(--yellow); }
+.tr-stop.is-via circle { fill: var(--orange); }
+.tr-stop.is-closed circle { fill: var(--red); }
+.tr-stop.is-lit circle { fill: var(--cyan); }
+.tr-name { fill: var(--ink); font: 700 13px var(--font-body); paint-order: stroke; stroke: var(--bg1); stroke-width: 3; }
+.tr-stop.is-goal .tr-name { fill: var(--yellow); }
+.tr-x { fill: var(--ink); font: 900 10px sans-serif; text-anchor: middle; }
+.tr-train__body { fill: var(--ink); }
+.tr-train__window { fill: var(--bg1); }
+.tr-train__light { fill: var(--yellow); }
+.tr-train__feet { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.tr-dir__stub { stroke: var(--tr); stroke-width: 4; stroke-dasharray: 3 3; stroke-linecap: butt; }
+.tr-dir__head { fill: none; stroke: var(--tr); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.tr-dir__name { fill: var(--tr); font: italic 800 12px var(--font-body); paint-order: stroke; stroke: var(--bg1); stroke-width: 3; }
+.tr-arrow { fill: var(--cyan); stroke: var(--bg1); stroke-width: 2; stroke-linejoin: round; }
+.tr-train-ring { fill: var(--bg1); stroke: var(--cyan); stroke-width: 3; transition: stroke 0.15s; }
+.tr-mover.is-arrived .tr-train-ring { stroke: var(--lime); }
+.tr-stop circle { transition: fill 0.2s; }
+
+/* ---------- Cards ---------- */
+.tr-plan, .tr-hand { display: flex; flex-wrap: wrap; gap: var(--s-8); }
+.tr-slot, .tr-card { min-width: 92px; min-height: 64px; border-radius: var(--r-12); display: grid; place-items: center; text-align: center; padding: var(--s-6) var(--s-8); }
+.tr-slot { border: 2px dashed var(--line-faint); color: var(--muted); font-weight: 800; }
+.tr-card { border: 2px solid var(--glass-border); border-left: 6px solid var(--tr, var(--glass-border)); background: var(--glass); color: var(--ink); font: inherit; cursor: pointer; gap: var(--s-2); }
+.tr-card small { color: var(--muted); font-size: var(--fs-75); }
+.tr-card__icon { display: block; width: 30px; height: 30px; color: var(--tr, var(--cyan)); }
+.tr-card__icon svg { display: block; width: 100%; height: 100%; }
+.tr-card:disabled { opacity: 0.3; cursor: default; }
+.tr-card--placed { background: var(--well-deep); border-color: var(--cyan); border-left-color: var(--tr, var(--cyan)); }
+.tr-card--placed.is-now { border-color: var(--yellow); background: var(--well); }
+.tr-card--placed.is-hinted { border-color: var(--yellow); border-left-color: var(--tr, var(--yellow)); }
+
+/* ---------- Verdict and result ---------- */
+.tr-verdict.is-ok { border-color: var(--lime); }
+.tr-verdict.is-bad { border-color: var(--red); }
+.tr-trips { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-6); }
+.tr-trips li { display: flex; justify-content: space-between; padding: var(--s-8) var(--s-14); border-radius: var(--r-12); background: var(--well); }
+
+/* ---------- The cover's demo: a trip riding itself, in place of the hero's emoji ---------- */
+.tr-demo { display: grid; gap: var(--s-8); margin: 0 auto var(--s-16); max-width: 360px; }
+.tr-demo__map { height: 190px; border-radius: var(--r-12); background: var(--well); padding: var(--s-6); }
+.tr-demo__map svg { display: block; width: 100%; height: 100%; }
+.tr-demo__plan { display: flex; justify-content: center; gap: var(--s-6); pointer-events: none; }
+.tr-demo .tr-card { min-width: 0; min-height: 0; padding: var(--s-4) var(--s-6); font-size: var(--fs-75); }
+.tr-demo .tr-card__icon { width: 20px; height: 20px; }
+/* A short phone keeps the mode in the first screen (U-39): the demo's cards step aside, then the demo */
+@media (max-height: 740px) { .tr-demo__plan { display: none; } .tr-demo__map { height: 150px; } }
+@media (max-height: 620px) { .tr-demo { display: none; } }

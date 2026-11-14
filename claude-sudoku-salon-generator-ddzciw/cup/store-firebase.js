@@ -1,0 +1,288 @@
+/**
+ * Almacén de La Copa en Firebase Realtime Database, con acceso anónimo de Firebase Auth
+ * (D-96). Misma interfaz que store-local.js.
+ *
+ * Rutas (reglas en firebase/database.rules.json):
+ *   torneos/<código>/meta · players/<pid> · started/<día>/<pid> · results/<día>/<pid> · wild/<pid> · fin
+ *   torneoKeys/<código>/<pid>          sha256 del PIN. Nadie lo puede leer.
+ *   torneoSeats/<código>/<pid>/<uid>   el celular `uid` puede escribir por `pid`. Las reglas
+ *                                    aceptan el asiento solo si trae el mismo hash que torneoKeys,
+ *                                    or the jid that `pid` is linked to, from a phone seated as that player (D-359).
+ *   torneoIntentos/<código>/<pid>    { h, u, at }: the last PIN attempt on that cup player (D-464). One
+ *                                    every 5 s; a seat with the PIN needs this phone's attempt from
+ *                                    the last minute with the same hash. Nobody reads it.
+ */
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js';
+import {
+  getDatabase, ref, get, update, onValue, serverTimestamp, push,
+} from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js';
+import { firebaseConfig } from '../assets/js/firebase-config.js';
+import { OP_MS, waitConnected, withTimeout } from '../assets/js/transport/errors.js';
+import { enviarReporte } from './reportes.js';
+import { aliasHasta, abierto, conCierre } from './engine.js';
+
+const falla = code => Object.assign(new Error(code), { code });
+
+/** How long the rules make a cup player wait between two PIN attempts (D-464), plus a margin. */
+export const PAUSA_INTENTOS = 5500;
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+
+/** Un rechazo de las reglas se ve como PERMISSION_DENIED; lo traducimos a lo que pasó. */
+function traducir(e, siNoHayPermiso = 'permiso') {
+  if (e?.code && !/^PERMISSION|permission/i.test(String(e.code)) && !String(e.code).startsWith('auth/')) return e;
+  const msg = String(e?.code || e?.message || '');
+  if (/PERMISSION_DENIED|permission/i.test(msg)) return falla(siNoHayPermiso);
+  if (/auth\/(operation-not-allowed|admin-restricted-operation)/.test(msg)) return falla('config');
+  if (/auth\/network|network/i.test(msg)) return falla('offline');
+  return e;
+}
+
+export function createFirebaseStore() {
+  const app = getApps()[0] || initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+  let offset = 0;
+  onValue(ref(db, '.info/serverTimeOffset'), s => { offset = Number(s.val()) || 0; });
+  const conectado = cb => onValue(ref(db, '.info/connected'), s => cb(!!s.val()));
+
+  let uidPromesa = null;
+  const listo = () => {
+    uidPromesa ||= new Promise((resolve, reject) => {
+      const off = onAuthStateChanged(auth, user => {
+        if (user) { off(); resolve(user.uid); return; }
+        signInAnonymously(auth).catch(e => { off(); uidPromesa = null; reject(traducir(e)); });
+      });
+    });
+    return uidPromesa;
+  };
+
+  const escribir = async (cambios, siNoHayPermiso) => {
+    await listo();
+    await waitConnected(conectado);
+    try { await withTimeout(update(ref(db), cambios), OP_MS); } catch (e) { throw traducir(e, siNoHayPermiso); }
+  };
+
+  return {
+    tipo: 'firebase',
+    get uid() { return auth.currentUser?.uid || null; },
+    listo,
+    now: () => Date.now() + offset,
+
+    async existe(code) {
+      await listo();
+      await waitConnected(conectado);
+      return (await withTimeout(get(ref(db, `torneos/${code}/meta/v`)), OP_MS)).exists();
+    },
+
+    async crear(code, meta, { pid, name, at, pinHash, co = '' }) {
+      const uid = await listo();
+      await escribir({
+        [`torneos/${code}/meta`]: { ...meta, createdAt: serverTimestamp() },
+        // El país va solo si se sabe: el panel lo pone junto al nombre (D-207)
+        [`torneos/${code}/players/${pid}`]: { name, at: serverTimestamp(), ...(co ? { co } : {}) },
+        [`torneoKeys/${code}/${pid}`]: pinHash,
+        [`torneoSeats/${code}/${pid}/${uid}`]: pinHash,
+        // El link propio, en la misma escritura: si otro lo tomó justo antes, no se crea nada (D-121)
+        ...(meta.alias ? { [`torneoAlias/${meta.alias}`]: { code, hasta: aliasHasta(meta) } } : {}),
+      }, meta.alias ? 'alias' : 'ocupado');
+    },
+
+    /** A qué copa apunta un link propio: `{ code, hasta }` o null (D-121). */
+    async alias(a) {
+      await listo();
+      await waitConnected(conectado);
+      return (await withTimeout(get(ref(db, `torneoAlias/${a}`)), OP_MS)).val();
+    },
+
+    escuchar(code, cb, onError = () => {}) {
+      let off = () => {};
+      listo().then(() => {
+        off = onValue(ref(db, `torneos/${code}`), s => cb(s.val()), e => onError(traducir(e)));
+      }).catch(onError);
+      return () => off();
+    },
+
+    async leer(code) {
+      await listo();
+      await waitConnected(conectado);
+      return (await withTimeout(get(ref(db, `torneos/${code}`)), OP_MS)).val();
+    },
+
+    async inscribir(code, { pid, name, pinHash, co = '' }) {
+      const uid = await listo();
+      await escribir({
+        [`torneos/${code}/players/${pid}`]: { name, at: serverTimestamp(), ...(co ? { co } : {}) },
+        [`torneoKeys/${code}/${pid}`]: pinHash,
+        [`torneoSeats/${code}/${pid}/${uid}`]: pinHash,
+      }, 'llena');
+    },
+
+    /**
+     * A PIN attempt on cup player `pid` (D-464). If the last one is too recent, it waits the 5 s
+     * once and tries again; refused again, 'espera'.
+     */
+    async intentar(code, pid, pinHash) {
+      const uid = await listo();
+      const cambios = { [`torneoIntentos/${code}/${pid}`]: { h: pinHash, u: uid, at: serverTimestamp() } };
+      try { await escribir(cambios, 'espera'); return; } catch (e) { if (e.code !== 'espera') throw e; }
+      await dormir(PAUSA_INTENTOS);
+      await escribir(cambios, 'espera');
+    },
+
+    async sentarse(code, pid, pinHash) {
+      const uid = await listo();
+      await this.intentar(code, pid, pinHash);
+      await escribir({ [`torneoSeats/${code}/${pid}/${uid}`]: pinHash }, 'pin');
+    },
+
+    /**
+     * Sit as the cup player linked to this phone's player, with no cup PIN (D-359): the seat
+     * carries the jid, and the rules accept it if that cup player is linked to it and this phone
+     * is seated as that player.
+     */
+    async sentarseComoJugador(code, pid, jid) {
+      const uid = await listo();
+      await escribir({ [`torneoSeats/${code}/${pid}/${uid}`]: jid }, 'pin');
+    },
+
+    /**
+     * Con mala conexión la escritura puede llegar aunque el celular se canse de esperar, y el
+     * reintento choca con "ya existe" (D-123). Si falla, se mira si quedó hecho: entonces no falló.
+     */
+    async yaEsta(ruta) {
+      try { return (await withTimeout(get(ref(db, ruta)), OP_MS)).exists(); } catch (_) { return false; }
+    },
+
+    /**
+     * Las reglas niegan igual un día cerrado que un celular que dejó de estar sentado (perdió su
+     * sesión anónima, o el admin le dio un PIN nuevo al jugador). Si el día sigue abierto con la
+     * hora del servidor, no fue la hora: es el asiento, y hay que volver a entrar con el PIN.
+     */
+    async porQue(e, code, dia) {
+      if (e?.code !== 'ventana') return e;
+      try {
+        const L = conCierre((await withTimeout(get(ref(db, `torneos/${code}`)), OP_MS)).val());
+        if (L?.meta && abierto(L.meta, dia, this.now())) return falla('permiso');
+      } catch (_) { /* sin poder mirar, queda como estaba */ }
+      return e;
+    },
+
+    async empezar(code, dia, pid) {
+      try { await escribir({ [`torneos/${code}/started/${dia}/${pid}`]: serverTimestamp() }, 'ventana'); } catch (e) {
+        if (await this.yaEsta(`torneos/${code}/started/${dia}/${pid}`)) return;
+        throw await this.porQue(e, code, dia);
+      }
+    },
+
+    async comodin(code, dia, pid) {
+      await escribir({ [`torneos/${code}/wild/${pid}`]: String(dia) }, 'comodin');
+    },
+
+    async resultado(code, dia, pid, r) {
+      try { await escribir({ [`torneos/${code}/results/${dia}/${pid}`]: { ...r, at: serverTimestamp() } }, 'ventana'); } catch (e) {
+        // Si el resultado ya quedó guardado (llegó aunque el celular no se enteró), cuenta como enviado
+        if (await this.yaEsta(`torneos/${code}/results/${dia}/${pid}`)) throw Object.assign(new Error('ya-jugado'), { code: 'ya-jugado' });
+        throw await this.porQue(e, code, dia);
+      }
+    },
+
+    async sacar(code, pid, out) {
+      await escribir({ [`torneos/${code}/players/${pid}/out`]: out ? true : null });
+    },
+
+    /** Bring back a player out for missing two days in a row (D-347): the days closed before now are forgiven. */
+    async devolver(code, pid) {
+      await escribir({ [`torneos/${code}/players/${pid}/back`]: serverTimestamp() });
+    },
+
+    /** Eliminar la copa entera (D-117): la copa, los hashes de los PIN y los asientos, de una vez. */
+    async eliminar(code) {
+      const alias = (await withTimeout(get(ref(db, `torneos/${code}/meta/alias`)), OP_MS)).val();
+      await escribir({
+        [`torneos/${code}`]: null, [`torneoKeys/${code}`]: null, [`torneoSeats/${code}`]: null, [`torneoIntentos/${code}`]: null,
+        // Y quién quería avisos de ella (D-223)
+        [`pushCopa/${code}`]: null,
+        // El link propio queda libre de inmediato (D-121)
+        ...(alias ? { [`torneoAlias/${alias}`]: null } : {}),
+      }, 'permiso');
+    },
+
+    /** Cerrar o reabrir la inscripción (D-110). */
+    async cerrarInscripcion(code, cerrada) {
+      await escribir({ [`torneos/${code}/closed`]: cerrada ? true : null });
+    },
+
+    /** Mover el inicio mientras nadie haya jugado (D-110). Las reglas lo niegan si alguien empezó. */
+    async reprogramar(code, meta) {
+      // Si la copa tiene link propio, se mueve con ella hasta cuándo queda tomado (D-121)
+      await escribir({ [`torneos/${code}/meta`]: meta, ...(meta.alias ? { [`torneoAlias/${meta.alias}`]: { code, hasta: aliasHasta(meta) } } : {}) }, 'empezada');
+    },
+
+    /**
+     * Terminar la copa antes de tiempo (D-161): la hora del servidor en `fin`. Las reglas la
+     * aceptan una sola vez, del admin, con la copa ya partida y sin terminar; desde ahí nadie
+     * puede empezar, jugar ni usar el comodín.
+     */
+    async terminarCopa(code) {
+      await escribir({ [`torneos/${code}/fin`]: serverTimestamp() }, 'fin');
+    },
+
+    /** Cambiar el nombre de la copa (D-148): solo su admin y mientras no termine. */
+    async renombrarCopa(code, name) {
+      await escribir({ [`torneos/${code}/meta/name`]: name }, 'terminada');
+    },
+
+    /** El país de un jugador inscrito antes de que se guardara (D-209): solo el suyo y una vez. */
+    async ponerPais(code, pid, co) {
+      await escribir({ [`torneos/${code}/players/${pid}/co`]: co });
+    },
+
+    /**
+     * El jugador de los rankings detrás de este jugador de la copa (D-212): así sus amigos lo
+     * encuentran y el podio de la copa suma a su medallero. Las reglas piden estar sentado como
+     * los dos.
+     */
+    async enlazar(code, pid, jid) {
+      await escribir({ [`torneos/${code}/players/${pid}/j`]: jid });
+    },
+
+    async renombrar(code, pid, name) {
+      await escribir({ [`torneos/${code}/players/${pid}/name`]: name });
+    },
+
+    /** Un reporte o comentario (LIG-42). Va por REST, sin cuenta: ver `enviarReporte`. */
+    reportar: r => enviarReporte(r),
+
+    /**
+     * Avisos de esta copa para este celular (D-223): la suscripción en `push/<subId>` (nadie la
+     * lee: solo quien manda los avisos) y qué avisos quiere en `pushCopa/<código>/<pid>/<subId>`.
+     * Las reglas piden estar sentado como el jugador, y que la suscripción sea de este celular.
+     */
+    async guardarAvisos(code, pid, subId, sub, { dia = true, plazo = true } = {}) {
+      const uid = await listo();
+      await escribir({
+        [`push/${subId}`]: { ...sub, uid, at: serverTimestamp() },
+        [`pushCopa/${code}/${pid}/${subId}`]: { dia, plazo, at: serverTimestamp() },
+      });
+    },
+
+    async quitarAvisos(code, pid, subId) {
+      await escribir({ [`pushCopa/${code}/${pid}/${subId}`]: null });
+    },
+
+    /**
+     * A new PIN for a cup player, by the admin, who proves their own PIN (D-464): `adminHash` is
+     * the admin's cup PIN hash, tried first as an attempt on the admin. An admin linked to their
+     * player proves the player's PIN instead (`jugador.probarPin`, before this). 'pin-admin' if
+     * neither was the PIN. El PIN nuevo invalida los celulares que ya estaban sentados como ese jugador.
+     */
+    async cambiarPin(code, pid, pinHash, { admin, adminHash } = {}) {
+      if (admin && adminHash) {
+        try { await this.intentar(code, admin, adminHash); } catch (e) { if (e.code !== 'espera') throw e; }
+      }
+      await escribir({ [`torneoKeys/${code}/${pid}`]: pinHash, [`torneoSeats/${code}/${pid}`]: null }, 'pin-admin');
+    },
+  };
+}
+

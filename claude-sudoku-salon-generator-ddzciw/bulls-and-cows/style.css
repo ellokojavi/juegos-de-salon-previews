@@ -1,0 +1,79 @@
+/* ==========================================================
+   Toque y Fama — estilos propios
+   Migrated to the design system (D-533, phase 5 of #1188, #1193): the screens, the cover's hero,
+   the modes, the form fields, the segmented control, the toggle and its switch, the room (code,
+   QR, "or", waiting), whose turn, La Copa's choice buttons and the result's hero come from
+   base.css; the keyboard and the boards from teclado.css (D-102). This file keeps what is the
+   game's own (the secret's reminder, the revealed secrets, the folded replay, the solo game's
+   card), on the tokens.
+   ========================================================== */
+
+/* ---------- Configuración: what is Toque y Fama's own on top of the shell ---------- */
+/* Aire bajo los títulos de las pantallas de configuración y sala */
+#screen-setup > h2, #screen-lobby > h2 { margin-bottom: var(--s-16); }
+
+/* ---------- Partida ---------- */
+/* Recordatorio del número propio */
+.my-secret {
+  display: flex; align-items: center; justify-content: center; gap: var(--s-10); margin: 0 auto var(--s-8); width: fit-content; max-width: 100%;
+  background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-pill); padding: var(--s-6) var(--s-14) var(--s-6) var(--s-12);
+  color: var(--ink); cursor: pointer; font: 800 var(--fs-90) var(--font-body); transition: transform 0.1s;
+}
+.my-secret:active { transform: scale(0.97); }
+.my-secret .label { color: var(--muted); }
+.my-secret .num { font: 900 var(--fs-110) var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.2em; color: var(--muted); }
+.my-secret.shown .num { color: var(--yellow); text-shadow: 0 0 12px rgb(var(--yellow-rgb) / 0.5); }
+.my-secret .hint { color: var(--muted); font-size: var(--fs-75); font-weight: 700; }
+
+/* Separador entre la respuesta y el pase del celular */
+.pass-divider { width: 60%; height: 1px; background: var(--glass-border); margin: var(--s-6) auto var(--s-2); }
+
+/* ---------- Resultado ---------- */
+.secrets { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-10); margin-top: var(--s-8); }
+.secrets .s { background: var(--well); border-radius: var(--r-14); padding: var(--s-10); text-align: center; }
+.secrets .s .n { font: 900 var(--fs-160) var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.16em; color: var(--yellow); }
+.secrets .s small { display: block; color: var(--muted); font-weight: 800; }
+
+/* Repaso de intentos en el resultado (colapsado por defecto): the boards of teclado.css, denser */
+.replay { margin-top: var(--s-10); padding: var(--s-12) var(--s-16); }
+.replay summary { font-size: var(--fs-100); }
+.replay .boards { margin-top: 0; gap: var(--s-8); }
+.replay .board { padding: var(--s-8) var(--s-6); }
+.replay .board li { padding: var(--s-4) var(--s-6); gap: var(--s-4); }
+.replay .board h3 { font-size: var(--fs-100); }
+/* El aire con lo de arriba lo da el repaso o el panel marcado con data-tablero (D-309) */
+#screen-result #result-actions { margin-top: 0; }
+
+/* ---------- Jugar solo: el juego de La Copa (D-142). El tablero (.board--solo) ocupa todo el ancho ---------- */
+/* Con el chat en pantalla, la burbuja flota abajo a la derecha: que no tape el último intento */
+.como { margin: 0; padding-left: 1.2em; display: grid; gap: var(--s-6); color: var(--muted); font-weight: 700; }
+.solo-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s-10); margin-bottom: var(--s-8); min-height: 1.5em; }
+.solo-titulo { font-weight: 900; }
+.cron { font: 900 var(--fs-100) var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); }
+.aviso { text-align: center; font-weight: 800; padding: var(--s-10) var(--s-12); border-radius: var(--r-14); background: var(--glass); }
+.aviso.bien { background: rgb(var(--lime-rgb) / 0.14); color: var(--lime); }
+.aviso.mal { background: rgb(var(--red-rgb) / 0.22); color: var(--ink); }
+/* The solo result's hero is smaller than the shell's: the score, the secret's card and the final
+   buttons fit on a phone without scrolling (C-8, local.mjs checks the buttons at 812 px) */
+#screen-solo-result .result-hero .trophy { font-size: 3.2rem; }
+#screen-solo-result .result-hero h2 { margin: 0; }
+#screen-solo-result .result-hero p { margin: var(--s-2) 0; }
+.score-big { font: 900 clamp(2.4rem, 12vw, 3.2rem)/1.1 var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); text-shadow: var(--shadow-text); }
+/* El número secreto y la tarjeta lado a lado; las filas de la tarjeta se reparten en columnas para no gastar alto (C-8) */
+.solo-fin { display: grid; grid-template-columns: auto 1fr; gap: var(--s-12); align-items: center; }
+.solo-fin .n { font: 900 var(--fs-160) var(--font-num); font-variant-numeric: tabular-nums; letter-spacing: 0.16em; color: var(--yellow); text-align: center; }
+.solo-fin small { display: block; color: var(--muted); font-weight: 800; text-align: center; }
+.tarjeta { text-align: center; font-size: var(--fs-90); line-height: 1.35; background: var(--well); border-radius: var(--r-14); padding: var(--s-8); }
+.tarjeta span { display: block; white-space: nowrap; }
+/* Con más de 5 intentos, en dos columnas que se leen de arriba abajo */
+.tarjeta--2 { columns: 2; column-gap: var(--s-8); font-size: var(--fs-85); }
+
+/* ---------- Portada ---------- */
+/* 🔢 Número or 🔤 Palabra: the shell's .opciones.dos (D-331), compact here because they sit inside
+   the hero, under the language: with the shell's padding the first mode fell below the fold at
+   320×568, where landing-fold.mjs had 15 px to spare in English and Portuguese (U-39) */
+#variant-slot { margin-top: var(--s-10); }
+.variantes .opcion { padding: var(--s-6); min-height: 44px; }
+.variantes .opcion b { font-size: var(--fs-100); }
+/* A short phone (320×568): a smaller icon makes room for the Número / Palabra toggle, so the first mode stays above the fold */
+@media (max-height: 600px) { .intro-hero .icon { font-size: 3.2rem; } }
