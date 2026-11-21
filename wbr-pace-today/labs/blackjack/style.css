@@ -1,0 +1,466 @@
+/* ==========================================================
+   Blackjack: Vegas table & cards on base.css tokens (C-1, DESIGN.md).
+   ========================================================== */
+
+.how { margin: 0; padding-left: var(--s-20); display: grid; gap: var(--s-6); }
+.setup-hint { color: var(--muted); font-weight: 700; text-align: center; margin: 0; font-size: var(--fs-90); }
+
+/* ---------- Setup options ---------- */
+.opt-group { display: grid; gap: var(--s-6); }
+.opt-label { font-size: var(--fs-85); font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.seg-row { display: flex; gap: var(--s-6); }
+.seg-btn {
+  flex: 1; min-height: 44px; border: 0; border-radius: var(--r-12); padding: var(--s-8) var(--s-4);
+  background: var(--well); color: var(--muted); font: 900 var(--fs-90) var(--font-num);
+  cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.seg-btn.active { background: var(--cyan); color: var(--ink-on-cyan); }
+.player-ctrl { display: flex; justify-content: flex-end; gap: var(--s-8); }
+
+/* ---------- Table bar & red card ---------- */
+.bj-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--s-8); flex-wrap: wrap; }
+.red-alert {
+  padding: var(--s-8) var(--s-12); border-radius: var(--r-12);
+  background: rgb(var(--red-rgb) / 0.22); border: 1px solid var(--red);
+  color: var(--ink-bad); font-weight: 900; font-size: var(--fs-85); text-align: center;
+}
+
+/* ---------- Cards ---------- */
+.cards-row { display: flex; flex-wrap: wrap; gap: var(--s-6); justify-content: center; }
+.pcard {
+  position: relative; flex: 0 0 auto;
+  width: 46px; aspect-ratio: 5 / 7;
+  border-radius: var(--r-8); padding: var(--s-4) 0;
+  background: var(--card); color: var(--card-ink);
+  display: grid; align-content: center; justify-items: center;
+  box-shadow: 0 3px 0 var(--well-deep);
+  font-family: var(--font-num);
+}
+.pcard .r { font-weight: 900; font-size: var(--fs-110); line-height: 1; }
+.pcard .s { font-size: var(--fs-100); line-height: 1.1; }
+.pcard.red { color: var(--red); }
+.pcard.back { background: linear-gradient(135deg, var(--purple), var(--pink-deep)); color: var(--ink); }
+
+.pcard--sm { width: 38px; }
+.pcard--sm .r { font-size: var(--fs-90); }
+.pcard--sm .s { font-size: var(--fs-85); }
+.pcard.dealing { animation: cardDeal 0.62s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes cardDeal {
+  from { opacity: 0; transform: translateY(-32px) scale(0.82) rotateY(110deg); }
+  to { opacity: 1; transform: translateY(0) scale(1) rotateY(0deg); }
+}
+
+/* ---------- Dealer & seats ---------- */
+.bj-dealer { display: grid; gap: var(--s-8); justify-items: center; text-align: center; }
+.bj-head { display: flex; align-items: center; gap: var(--s-8); font-weight: 900; font-size: var(--fs-90); color: var(--muted); }
+.score-pill {
+  padding: var(--s-2) var(--s-8); border-radius: var(--r-pill);
+  background: var(--well-deep); color: var(--ink); font: 900 var(--fs-90) var(--font-num);
+}
+.score-pill.bust { color: var(--pink); }
+.score-pill.bj { color: var(--yellow); }
+
+.bj-seats { display: grid; gap: var(--s-8); }
+.bj-seat {
+  display: grid; gap: var(--s-6); padding: var(--s-10) var(--s-12);
+  border-radius: var(--r-14); background: var(--well);
+}
+.bj-seat.active { outline: 2px solid var(--cyan); }
+.bj-seat.out { opacity: 0.55; }
+.bj-seat-top { display: flex; justify-content: space-between; align-items: center; gap: var(--s-8); }
+.bj-seat-name { font-weight: 900; font-size: var(--fs-90); }
+.bj-seat-coins { font: 900 var(--fs-90) var(--font-num); color: var(--yellow); }
+
+.bj-hands { display: grid; gap: var(--s-8); }
+.bj-hand {
+  display: grid; gap: var(--s-6); padding: var(--s-8);
+  border-radius: var(--r-10); background: var(--well-deep);
+}
+.bj-hand.active-hand { outline: 2px solid var(--yellow); }
+.bj-hand-meta { display: flex; justify-content: space-between; align-items: center; gap: var(--s-8); font-size: var(--fs-85); font-weight: 800; color: var(--muted); }
+
+.outcome-tag { font-weight: 900; font-size: var(--fs-85); }
+.outcome-tag.win, .outcome-tag.blackjack { color: var(--lime); }
+.outcome-tag.push { color: var(--cyan); }
+.outcome-tag.lose, .outcome-tag.bust { color: var(--pink); }
+.outcome-tag.surrender { color: var(--muted); }
+
+/* ---------- Betting & actions ---------- */
+.bet-stage {
+  display: grid; gap: var(--s-8); justify-items: center;
+  padding: var(--s-12); border-radius: var(--r-16);
+  background: var(--well-deep); border: 2px solid rgb(var(--yellow-rgb) / 0.28);
+}
+.bet-amount { font: 900 var(--fs-140) var(--font-num); color: var(--yellow); transition: transform 0.14s; }
+.bet-amount.bump { animation: chipBounce 0.22s ease-out; }
+.chip-stacks {
+  display: flex; align-items: flex-end; justify-content: center; gap: var(--s-10);
+  min-height: 112px; padding-top: var(--s-4); flex-wrap: wrap;
+}
+.chip-tower {
+  display: grid; justify-items: center; gap: var(--s-2);
+  border: 0; background: transparent; padding: var(--s-4); cursor: pointer;
+  transition: transform 0.12s;
+}
+.chip-tower:active { transform: scale(0.95); }
+.chip-stack-svg { width: 58px; height: 96px; display: block; overflow: visible; }
+.chip-top-drop { animation: chipDrop3d 0.28s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.chip-tower-lbl { font: 900 var(--fs-75) var(--font-num); color: var(--muted); }
+
+.casino-chips { display: flex; justify-content: center; gap: var(--s-10); flex-wrap: wrap; }
+.casino-chip {
+  width: 58px; height: 58px; padding: 0; border: 0; background: transparent;
+  cursor: pointer; display: grid; place-items: center; transition: transform 0.1s;
+}
+.casino-chip svg { width: 56px; height: 56px; display: block; }
+.casino-chip:active:not(:disabled) { transform: translateY(3px) scale(0.94); }
+.casino-chip:disabled { opacity: 0.32; cursor: default; }
+
+.chips-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-8); }
+.bet-chip {
+  min-height: 44px; border: 0; border-radius: var(--r-12);
+  background: var(--well-deep); color: var(--yellow);
+  font: 900 var(--fs-90) var(--font-num); cursor: pointer;
+}
+.bet-chip:disabled { opacity: 0.35; cursor: default; }
+.actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-8); }
+@keyframes chipBounce {
+  0% { transform: scale(0.92); }
+  50% { transform: translateY(-4px) scale(1.07); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes chipDrop3d {
+  0% { opacity: 0.4; transform: translateY(-16px) scale(1.06); }
+  70% { opacity: 1; transform: translateY(2px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Result standings ---------- */
+.standings { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-8); }
+.standings li {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s-12);
+  padding: var(--s-10) var(--s-14); border-radius: var(--r-12); background: var(--well);
+}
+.standings li.top { outline: 2px solid var(--yellow); }
+.standings b { font-family: var(--font-num); font-size: var(--fs-110); color: var(--yellow); }
+
+/* ---------- Game icon (icon.svg) ---------- */
+.intro-hero .bj-logo { width: 6rem; height: 6rem; margin: 0 auto; filter: drop-shadow(0 0 18px rgb(var(--yellow-rgb) / 0.45)); }
+.bj-icon { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -0.2em; }
+.chip .bj-icon { margin-right: var(--s-6); }
+
+/* ---------- Full-screen Blackjack FX ---------- */
+.bj-fx {
+  position: fixed; inset: 0; z-index: 90; pointer-events: none;
+  display: grid; place-items: center; padding: var(--s-20);
+  animation: bjFxFade 1.9s ease-out forwards;
+}
+.bj-fx--win { background: radial-gradient(circle, rgb(var(--yellow-rgb) / 0.42), transparent 70%); }
+.bj-fx--lose { background: radial-gradient(circle, transparent 30%, rgb(var(--red-rgb) / 0.58) 100%); }
+.bj-fx-card {
+  display: grid; gap: var(--s-8); justify-items: center; text-align: center;
+  padding: var(--s-20) var(--s-28); border-radius: var(--r-22);
+  background: var(--well-deep); box-shadow: var(--shadow-panel);
+  animation: bjPopBanner 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bj-fx--win .bj-fx-card { border: 2px solid var(--yellow); color: var(--yellow); }
+.bj-fx--lose .bj-fx-card { border: 2px solid var(--red); color: var(--ink-bad); }
+.bj-fx-icon { font-size: var(--fs-200); line-height: 1; }
+.bj-fx-title {
+  font-family: var(--font-display); font-size: var(--fs-200);
+  letter-spacing: 0.04em; text-shadow: var(--shadow-text);
+}
+#app.bj-shake { animation: bjScreenShake 0.65s ease-in-out; }
+
+@keyframes bjPopBanner {
+  0% { opacity: 0; transform: scale(0.55) rotate(-4deg); }
+  70% { opacity: 1; transform: scale(1.06) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes bjFxFade {
+  0%, 74% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes bjScreenShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-10px) rotate(-1deg); }
+  30% { transform: translateX(10px) rotate(1deg); }
+  45% { transform: translateX(-8px) rotate(-0.8deg); }
+  60% { transform: translateX(8px) rotate(0.8deg); }
+  75% { transform: translateX(-4px); }
+}
+
+/* ---------- The felt table (flag blackjack-felt, lab: #seccion-blackjack-felt) ----------
+   Everything below applies only under html.bj-felt: off, the table is the panels above. */
+.felt-arc { display: none; }
+.bj-felt .bj-table {
+  display: grid; gap: var(--s-8); padding: var(--s-12) var(--s-12) var(--s-28);
+  border-radius: var(--r-22) var(--r-22) 50% 50% / var(--r-22) var(--r-22) 22% 22%;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(var(--cyan-rgb) / 0.45), rgb(var(--cyan-rgb) / 0.16) 60%, rgb(var(--cyan-rgb) / 0.06) 100%),
+    var(--well-deep);
+  border: 3px solid rgb(var(--yellow-rgb) / 0.55);
+  box-shadow: inset 0 0 0 6px var(--well), inset 0 0 40px var(--well-deep), var(--shadow-panel);
+}
+.bj-felt .bj-table .bj-dealer,
+.bj-felt .bj-table .bj-seat,
+.bj-felt .bj-table .bj-hand { background: none; border: 0; box-shadow: none; backdrop-filter: none; outline: 0; }
+.bj-felt .felt-arc { display: block; }
+.bj-felt .felt-arc svg { display: block; width: 100%; height: 64px; }
+.bj-felt .felt-arc text { font: 900 11px var(--font-num); letter-spacing: 2.2px; fill: rgb(var(--yellow-rgb) / 0.85); }
+.bj-felt .felt-arc text.sub { font-size: 9px; letter-spacing: 1.6px; fill: var(--muted); }
+
+/* Cards: bigger, fanned, the rank in the corner and again upside down, the suit large in the middle */
+.bj-felt .cards-row { gap: 0; }
+.bj-felt .pcard { width: 66px; border-radius: var(--r-10); box-shadow: 0 6px 14px var(--well-deep); }
+.bj-felt .pcard + .pcard { margin-left: calc(-1 * var(--s-24)); }
+.bj-felt .pcard { --tilt: 4deg; --lift: 0px; transform: translateY(var(--lift)) rotate(var(--tilt)); }
+.bj-felt .pcard:nth-child(odd) { --tilt: -5deg; --lift: var(--s-4); }
+/* The deal lands each card already at its resting tilt: the same transform list from start to end, so nothing snaps when it settles */
+.bj-felt .pcard.dealing { animation-name: bjFeltDeal; }
+@keyframes bjFeltDeal {
+  from { opacity: 0; transform: translateY(-32px) rotate(var(--tilt)) rotateY(110deg) scale(0.82); }
+  to { opacity: 1; transform: translateY(var(--lift)) rotate(var(--tilt)) rotateY(0deg) scale(1); }
+}
+.bj-felt .pcard:not(.back) .r { position: absolute; top: var(--s-4); left: var(--s-6); font-size: var(--fs-110); }
+.bj-felt .pcard:not(.back) .s { font-size: var(--fs-200); }
+.bj-felt .pcard .c { position: absolute; bottom: var(--s-4); right: var(--s-6); font: 900 var(--fs-75) var(--font-num); transform: rotate(180deg); }
+.bj-felt .pcard--sm { width: 50px; }
+.bj-felt .pcard--sm:not(.back) .s { font-size: var(--fs-140); }
+.bj-felt .pcard.back {
+  background:
+    repeating-linear-gradient(45deg, var(--glass-border) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(-45deg, var(--glass-border) 0 2px, transparent 2px 9px),
+    linear-gradient(135deg, var(--pink), var(--purple));
+  border: 4px solid var(--card);
+}
+.bj-felt .bj-dealer .score-pill:not(.bust):not(.bj) { background: var(--cyan); color: var(--ink-on-cyan); }
+
+/* The turn: the hand glows instead of two frames */
+.bj-felt .bj-hand { position: relative; justify-items: center; }
+.bj-felt .bj-hand-meta { width: 100%; }
+.bj-felt .bj-hand .bet-text { visibility: hidden; }
+.bj-felt .bj-hand.active-hand .cards-row { filter: drop-shadow(0 0 14px rgb(var(--yellow-rgb) / 0.55)); }
+
+/* The bet: a chip on its spot */
+.bj-felt .bet-spot {
+  position: relative; display: grid; place-items: center; width: 74px; height: 74px; margin-top: var(--s-6);
+  border-radius: 50%; border: 2px dashed rgb(var(--yellow-rgb) / 0.7); background: var(--well);
+}
+.bj-felt .bet-spot svg { width: 48px; height: 48px; filter: drop-shadow(0 4px 4px var(--well-deep)); }
+.bj-felt .bet-spot b {
+  position: absolute; bottom: calc(-1 * var(--s-12)); padding: 1px var(--s-10); border-radius: var(--r-pill);
+  background: var(--yellow); color: var(--ink-on-yellow); font: 900 var(--fs-85) var(--font-num);
+}
+
+/* The shoe: a bar that empties, the red card marked */
+.bj-felt .shoe { display: grid; gap: var(--s-4); min-width: 150px; }
+.bj-felt .shoe-bar { position: relative; height: 8px; border-radius: var(--r-pill); background: var(--well-deep); }
+.bj-felt .shoe-bar i { position: absolute; inset: 0 auto 0 0; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--cyan), var(--lime)); }
+.bj-felt .shoe-bar u { position: absolute; top: calc(-1 * var(--s-4)); width: 4px; height: 16px; border-radius: var(--r-pill); background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+/* The result of a hand: a stamp over it */
+.bj-felt .bj-hand .outcome-tag { visibility: hidden; }
+.bj-felt .stamp {
+  position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%) rotate(-12deg);
+  padding: var(--s-4) var(--s-16); border: 4px solid currentColor; border-radius: var(--r-12);
+  background: var(--snackbar-bg); font: 400 var(--fs-200) var(--font-display); letter-spacing: 0.06em;
+  white-space: nowrap; pointer-events: none; text-transform: uppercase;
+  animation: bjStamp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bj-felt .stamp.win, .bj-felt .stamp.blackjack { color: var(--lime); }
+.bj-felt .stamp.push { color: var(--cyan); }
+.bj-felt .stamp.lose, .bj-felt .stamp.bust { color: var(--pink); }
+.bj-felt .stamp.surrender { color: var(--muted); }
+@keyframes bjStamp {
+  from { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(1.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) rotate(-12deg) scale(1); }
+}
+/* The cover's demo (flag blackjack-felt): a small felt with a hand dealt to a Blackjack, in place of the icon */
+.bj-felt .bj-demo {
+  position: relative; display: grid; gap: var(--s-6); justify-items: center; width: min(100%, 260px); margin: 0 auto;
+  padding: var(--s-10) var(--s-12) var(--s-14); min-height: 214px; align-content: start;
+  border-radius: var(--r-22) var(--r-22) 50% 50% / var(--r-22) var(--r-22) 30% 30%;
+  background: radial-gradient(120% 90% at 50% 0%, rgb(var(--cyan-rgb) / 0.45), rgb(var(--cyan-rgb) / 0.1) 70%), var(--well-deep);
+  border: 3px solid rgb(var(--yellow-rgb) / 0.55);
+  box-shadow: inset 0 0 0 5px var(--well), var(--shadow-panel);
+}
+.bj-felt .bj-demo .cards-row { min-height: 82px; }
+.bj-felt .bj-demo .pcard { width: 56px; }
+.bj-felt .bj-demo .pcard:not(.back) .s { font-size: var(--fs-140); }
+.bj-felt .bj-demo-player { display: flex; align-items: center; gap: var(--s-8); }
+.bj-felt .bj-demo .score-pill { min-width: 2.2em; text-align: center; }
+.bj-felt .bj-demo.win .score-pill { background: var(--yellow); color: var(--ink-on-yellow); box-shadow: 0 0 16px rgb(var(--yellow-rgb) / 0.7); }
+.bj-felt .bj-demo.win .bj-demo-player .cards-row { filter: drop-shadow(0 0 14px rgb(var(--yellow-rgb) / 0.6)); }
+.bj-felt .bj-demo-win {
+  position: absolute; left: 50%; top: 52%; padding: var(--s-2) var(--s-14);
+  border: 3px solid var(--yellow); border-radius: var(--r-12); background: var(--snackbar-bg); color: var(--yellow);
+  font: 400 var(--fs-140) var(--font-display); letter-spacing: 0.06em; white-space: nowrap;
+  opacity: 0; transform: translate(-50%, -50%) rotate(-10deg) scale(1.6); pointer-events: none;
+}
+.bj-felt .bj-demo.win .bj-demo-win { animation: bjStampDemo 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes bjStampDemo { to { opacity: 1; transform: translate(-50%, -50%) rotate(-10deg) scale(1); } }
+@media (prefers-reduced-motion: reduce) { .bj-felt .bj-demo .pcard.dealing, .bj-felt .bj-demo.win .bj-demo-win { animation: none; opacity: 1; } }
+
+/* Spacing (DESIGN.md §6): the cover's title sits 12 px under the demo (the shared -9 px margin is for an
+   emoji's own air, which the demo's felt does not have); an empty resume slot takes no gap of the stack */
+#resume-slot:empty { display: none; }
+.bj-felt .intro-hero .bj-demo:not([hidden]) + h1 { margin-top: var(--s-12); }
+/* The arc's two lines sit evenly between the dealer's cards and the player's name */
+.bj-felt .felt-arc { margin-top: calc(-1 * var(--s-16)); }
+/* The hand's score centred over its cards, like the dealer's (its bet line is the chip below) */
+.bj-felt .bj-hand-meta { justify-content: center; }
+.bj-felt .bj-hand-meta .bet-text { display: none; }
+/* Placing the bet (flag blackjack-felt): the table and the action box morph to their playing size */
+.bj-felt .bj-table { view-transition-name: bj-table; }
+.bj-felt #action-box { view-transition-name: bj-action; }
+::view-transition-group(bj-table), ::view-transition-group(bj-action) { animation-duration: 0.55s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+::view-transition-old(bj-action) { animation: bjFold 0.3s ease-in both; }
+@keyframes bjFold { to { opacity: 0; transform: scaleY(0.85); } }
+/* The setup's coin options carry the table's chip (DESIGN.md rule 9): 🪙 drew as a grey moon on iPhone */
+.seg-chip { display: inline-flex; width: 1.15em; height: 1.15em; margin-right: var(--s-4); vertical-align: -0.2em; }
+.seg-chip svg { width: 100%; height: 100%; }
+/* The signed-in player's name as a block, with «Cambiar» to type another (flag blackjack-felt) */
+.bj-felt .signed-name { padding: var(--s-10) 0; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.name-change { position: relative; min-height: 44px; padding: 0 var(--s-4); font: inherit; font-weight: 800; color: var(--yellow); background: none; border: 0; text-decoration: underline; cursor: pointer; }
+/* A table that does not move (flag blackjack-felt): from the bet on, the rows are there at their full height and empty,
+   the first card sits a little left of the middle and the next ones land to its right, the way a dealer places them;
+   nothing already on the felt moves when another lands. Off the table, things fade. */
+.bj-felt .bj-table .cards-row { width: 100%; justify-content: flex-start; flex-wrap: nowrap; min-height: 104px; }
+.bj-felt .bj-table .cards-row:has(.pcard--sm) { min-height: 80px; }
+.bj-felt .score-pill.slot { visibility: hidden; }
+.bj-felt .score-pill, .bj-felt .stamp { transition: opacity 0.3s ease; }
+.bj-felt .bj-table.clearing .pcard, .bj-felt .bj-table.clearing .stamp, .bj-felt .bj-table.clearing .score-pill, .bj-felt .bj-table.clearing .outcome-tag { opacity: 0; transition: opacity 0.3s ease; }
+/* In the table, a tighter fan (26 px a card) so five cards fit at 320 px with the first ones never moving */
+.bj-felt .bj-table .pcard + .pcard { margin-left: calc(-1 * (var(--s-32) + var(--s-8))); }
+.bj-felt .bj-table .cards-row { padding-left: calc(50% - 46px); }
+.bj-felt .bj-table .pcard--sm + .pcard--sm { margin-left: calc(-1 * var(--s-24)); }
+.bj-felt .bj-table .cards-row:has(.pcard--sm) { padding-left: calc(50% - 37px); }
+
+/* The play screen fits a phone without scrolling, «Cómo se juega» folded included (flag blackjack-felt):
+   a lower table, smaller cards on it, the bet's spot beside the cards instead of under them, a tighter betting box */
+.bj-felt .bj-table { gap: var(--s-4); padding: var(--s-8) var(--s-10) var(--s-14); border-radius: var(--r-22) var(--r-22) 40% 40% / var(--r-22) var(--r-22) 14% 14%; }
+.bj-felt .felt-arc svg { height: 40px; }
+.bj-felt .felt-arc { margin-top: calc(-1 * var(--s-8)); }
+.bj-felt .bj-table .pcard { width: 54px; }
+.bj-felt .bj-table .cards-row { min-height: 84px; padding-left: calc(50% - 38px); }
+.bj-felt .bj-table .pcard + .pcard { margin-left: calc(-1 * var(--s-32)); }
+.bj-felt .bj-table .pcard:not(.back) .s { font-size: var(--fs-140); }
+.bj-felt .bj-table .pcard:not(.back) .r { font-size: var(--fs-90); }
+.bj-felt .bj-table .bet-spot { position: absolute; left: var(--s-4); bottom: var(--s-14); width: 56px; height: 56px; margin: 0; }
+.bj-felt .bj-table .bet-spot svg { width: 38px; height: 38px; }
+.bj-felt .bj-table .bet-spot.empty svg, .bj-felt .bj-table .bet-spot.empty b { visibility: hidden; }
+.bj-felt .bj-seat { gap: var(--s-4); }
+.bj-felt .bet-stage .setup-hint { display: none; }
+.bj-felt .chip-stacks { min-height: 76px; }
+.bj-felt .chip-stack-svg { height: 70px; }
+/* On the felt the bet is the chip on its spot, with its amount: the betting box keeps only the chips to add and its buttons */
+.bj-felt #action-box .bet-stage { display: none; }
+.bj-felt .bj-table .bj-dealer { padding: var(--s-4) var(--s-8); }
+.bj-felt .bj-table .bj-seats, .bj-felt .bj-table .bj-seat, .bj-felt .bj-table .bj-hands, .bj-felt .bj-table .bj-hand { padding-block: 0; }
+.bj-felt .felt-arc svg { height: 34px; }
+.bj-felt #action-box { padding-block: var(--s-10); gap: var(--s-8); }
+.bj-felt #action-box > .lead { margin: 0; font-size: var(--fs-100); }
+.bj-felt .felt-arc { margin-block: calc(-1 * var(--s-12)) calc(-1 * var(--s-6)); }
+.bj-felt .casino-chip svg { width: 48px; height: 48px; }
+.bj-felt .actions-grid .btn { min-height: 48px; padding-block: var(--s-8); }
+.bj-felt .chips-row .bet-chip { min-height: 40px; padding-block: var(--s-6); }
+.bj-felt .actions-grid .btn { white-space: nowrap; font-size: var(--fs-110); }
+.bj-felt .casino-chips { gap: var(--s-14); }
+.bj-felt .casino-chip { padding: 0; }
+.bj-felt .casino-chip { width: 48px; height: 48px; }
+.bj-felt #screen-play.solo #action-box > .lead { display: none; }
+
+/* Losing to the house (flag blackjack-felt): the room turns red from its edges, the 💸 sinks instead of popping,
+   the title goes red and the standings lose their colour; no confetti (game.js) */
+html.bj-defeat body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 40%, transparent 35%, rgb(var(--red-rgb) / 0.5) 100%), rgb(var(--red-rgb) / 0.14);
+  animation: bjDefeatRoom 0.9s ease-out both;
+}
+html.bj-defeat #app { position: relative; z-index: 1; }
+#screen-result.defeat .trophy { animation: bjDefeatSink 1.1s cubic-bezier(0.4, 0, 0.2, 1) both; filter: grayscale(0.5); }
+#screen-result.defeat #result-title { color: var(--red); text-shadow: 0 0 18px rgb(var(--red-rgb) / 0.45); }
+#screen-result.defeat .standings { filter: saturate(0.35); }
+@keyframes bjDefeatRoom { from { opacity: 0; } }
+@keyframes bjDefeatSink { 0% { opacity: 0; transform: translateY(-24px) scale(1.15); } 60% { opacity: 1; transform: translateY(8px) rotate(-6deg); } 100% { transform: translateY(4px) rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { html.bj-defeat body::before, #screen-result.defeat .trophy { animation: none; } }
+
+/* The felt fills the phone's height (flag blackjack-felt): game.js gives the play screen what is left of the view, the
+   table takes all of it the bar, the buttons and «Cómo se juega» do not; the dealer's half and the player's half
+   share it evenly, with the arc between them, and the cards grow with the view's height (46 to 78 px wide) */
+.bj-felt .bj-table { --bj-card: clamp(46px, 7svh, 78px); flex: 1 0 auto; grid-template-rows: 1fr auto 1fr; align-items: center; }
+.bj-felt .bj-table .pcard { width: var(--bj-card); }
+.bj-felt .bj-table .cards-row { min-height: calc(var(--bj-card) * 1.5); padding-left: calc(50% - var(--bj-card) * 0.7); }
+.bj-felt .bj-table .pcard + .pcard { margin-left: calc(var(--bj-card) * -0.6); }
+.bj-felt .bj-table .pcard:not(.back) .s { font-size: calc(var(--bj-card) * 0.42); }
+.bj-felt .bj-table .pcard:not(.back) .r { font-size: calc(var(--bj-card) * 0.28); }
+.bj-felt .felt-arc svg { height: clamp(30px, 4.6svh, 60px); }
+.bj-felt .bj-table .bet-spot { bottom: auto; top: calc(50% - 28px); }
+/* The same table in every phase: the box under it keeps the betting box's height, so the felt never resizes */
+.bj-felt #screen-play.solo #action-box { min-height: 174px; justify-content: center; }
+
+/* The first step on an empty felt (flag blackjack-felt): one line in chalk, stitched like the bet's dashed spot beside it,
+   its ↓ bobbing towards the chips in the spot's breathing rhythm; gone once the deal starts */
+.bj-felt .bet-hint {
+  display: inline-flex; align-items: center; gap: var(--s-8); align-self: center; margin: 0 auto calc(-1 * var(--s-4)); width: fit-content;
+  padding: var(--s-4) var(--s-12); border: 1.5px dashed rgb(var(--yellow-rgb) / 0.4); border-radius: var(--r-pill);
+  font: 800 var(--fs-90) var(--font-body); white-space: nowrap; color: rgb(var(--yellow-rgb) / 0.85);
+  text-shadow: 0 0 6px rgb(var(--yellow-rgb) / 0.35), 0 1px 0 var(--well-deep); animation: bjHintIn 0.6s ease-out 0.3s both;
+}
+.bj-felt .bet-hint i { font-style: normal; display: inline-block; animation: bjHintNudge 1.6s ease-in-out infinite; }
+.bj-felt:has(.bet-hint) .bet-spot:not(.empty) { animation: bjSpotBreathe 1.6s ease-in-out infinite; }
+@keyframes bjHintIn { from { opacity: 0; transform: translateY(var(--s-6)); } }
+@keyframes bjHintNudge { 50% { transform: translateY(3px); } }
+@keyframes bjSpotBreathe { 50% { box-shadow: 0 0 0 var(--s-6) rgb(var(--yellow-rgb) / 0.16), 0 0 18px rgb(var(--yellow-rgb) / 0.35); } }
+@media (prefers-reduced-motion: reduce) { .bj-felt .bet-hint, .bj-felt .bet-hint i, .bj-felt:has(.bet-hint) .bet-spot:not(.empty) { animation: none; } }
+
+/* Clearing the felt for a new hand (flag blackjack-felt): each card slides off towards the dealer's side, turning
+   a little and fading, one after another; the stamps and scores fade with them (game.js waits CLEAR_MS) */
+.bj-felt .bj-table.clearing .pcard { opacity: 1; animation: bjSweep 0.45s cubic-bezier(0.55, 0, 0.75, 0.2) both; }
+.bj-felt .bj-table.clearing .pcard:nth-child(2) { animation-delay: 0.05s; }
+.bj-felt .bj-table.clearing .pcard:nth-child(3) { animation-delay: 0.1s; }
+.bj-felt .bj-table.clearing .pcard:nth-child(n+4) { animation-delay: 0.15s; }
+.bj-felt .bj-table.clearing .bj-seats .pcard { animation-name: bjSweepUp; }
+@keyframes bjSweep { to { opacity: 0; transform: translate(var(--s-32), calc(-1 * var(--s-16))) rotate(14deg) scale(0.86); } }
+@keyframes bjSweepUp { to { opacity: 0; transform: translate(var(--s-32), calc(-3 * var(--s-24))) rotate(18deg) scale(0.86); } }
+@media (prefers-reduced-motion: reduce) { .bj-felt .bj-table.clearing .pcard { animation: none; opacity: 0; } }
+
+/* The table's words are printed in the felt: bigger, soft, a touch blurred and sunk into the cloth */
+.bj-felt .felt-arc text { font-size: 15px; letter-spacing: 3px; fill: rgb(var(--yellow-rgb) / 0.42); filter: blur(0.4px); }
+.bj-felt .felt-arc text.sub { font-size: 11.5px; letter-spacing: 2.2px; fill: rgb(var(--yellow-rgb) / 0.26); }
+.bj-felt .felt-arc svg { mix-blend-mode: screen; }
+.bj-felt .felt-arc svg { height: clamp(40px, 7.5svh, 76px); }
+.bj-felt .felt-arc text { font-size: 17px; }
+.bj-felt .felt-arc text.sub { font-size: 12.5px; }
+.bj-felt .felt-arc svg { height: clamp(34px, 6.2svh, 76px); }
+.bj-felt .felt-arc svg { height: clamp(30px, 5.4svh, 76px); }
+
+/* The player's plate: «name 🪙 coins» in one line when it fits, the coins wrapping under a longer name (never cut), in a dark stitched plate on the felt right above their bet's
+   spot (the spot is centred in the hand, so the plate is placed from that centre). Out of the flow, so a turn,
+   a bet or a new count never nudges it, and each seat of a full table carries its own over its chips */
+.bj-felt .bj-table .bj-hand { position: relative; }
+.bj-felt .bj-table .bj-seat-top {
+  position: absolute; left: calc(var(--s-4) + 28px); top: auto; bottom: calc(50% + 28px + var(--s-12)); transform: translateX(-50%); max-width: 112px;
+  flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: var(--s-6); row-gap: 0;
+  padding: var(--s-4) var(--s-10); border-radius: var(--r-14);
+  background: var(--well-deep); box-shadow: inset 0 0 0 1px rgb(var(--yellow-rgb) / 0.35);
+  white-space: nowrap; line-height: 1.15; pointer-events: none;
+}
+.bj-felt .bj-table .bj-seat-name { font-size: var(--fs-85); white-space: nowrap; }
+.bj-felt .bj-table .bj-seat-coins { font-size: var(--fs-85); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The score pill and the outcome tag take the same height, so the hand does not move when the result shows */
+.bj-felt .bj-table .bj-hand-meta { min-height: var(--s-24); }
+.bj-felt #action-box { align-content: center; justify-content: center; }
+
+/* A chip on its way between the player's pile and the bet (flyChip in game.js): over everything, never in the way */
+.bj-flying-chip { position: fixed; z-index: 50; pointer-events: none; will-change: transform; filter: drop-shadow(0 6px 8px var(--well-deep)); }
+.bj-flying-chip svg { display: block; width: 100%; height: 100%; }
+
+/* «Pedir» on the felt: a hand taps the cloth twice by your cards, a ring per tap (showTapHand) */
+.bj-tap-hand { position: fixed; z-index: 50; pointer-events: none; transform: translate(-30%, -10%); }
+.bj-tap-hand span { display: block; font-size: var(--fs-200); animation: bjTapTwice 0.7s ease-out both; filter: drop-shadow(0 4px 6px var(--well-deep)); }
+.bj-tap-hand i { position: absolute; left: 30%; top: 10%; width: var(--s-32); height: var(--s-32); margin: calc(-1 * var(--s-16)); border-radius: 50%; border: 2px solid rgb(var(--yellow-rgb) / 0.8); opacity: 0; animation: bjTapRing 0.45s ease-out both; }
+.bj-tap-hand i + i { animation-delay: 0.22s; }
+@keyframes bjTapTwice { 0% { opacity: 0; transform: translateY(var(--s-8)); } 15% { opacity: 1; transform: none; } 25%, 55% { transform: scale(0.88); } 40%, 70% { transform: none; } 100% { opacity: 0; } }
+@keyframes bjTapRing { from { opacity: 1; transform: scale(0.3); } to { opacity: 0; transform: scale(1.6); } }

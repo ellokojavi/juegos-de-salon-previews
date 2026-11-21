@@ -1,0 +1,121 @@
+/* Artefactos (lab). The shell (screens, hero, panel, buttons, chips) is base.css's; this sheet holds only
+   the board, the tray and the result card, on the design system's tokens (D-533, docs/DESIGN.md). */
+
+/* The board's own colour (DESIGN.md §4): the workshop's darker floor behind the canvas */
+:root { --artifacts-floor: rgba(10, 4, 24, 0.45); }
+
+/* The cover's demo: a level solving itself, framed like the board */
+.demo {
+  width: min(72%, 270px); aspect-ratio: 8 / 11; margin: 0 auto var(--s-12); border-radius: var(--r-16);
+  border: 1px solid var(--glass-border); background: var(--artifacts-floor); overflow: hidden; box-shadow: var(--shadow-panel);
+}
+.demo canvas { display: block; width: 100%; height: 100%; }
+@media (max-height: 760px) { .demo { width: min(45%, 170px); } }
+/* A short phone keeps Jugar in the first screen (U-39): the demo steps aside */
+@media (max-height: 640px) { .demo { display: none; } }
+.credito { margin: var(--s-10) 0 0; font-size: var(--fs-85); text-wrap: balance; }
+.credito a { color: var(--cyan); }
+.pasos { list-style: none; margin: var(--s-10) 0 0; padding: 0; display: grid; gap: var(--s-8); }
+.pasos li { display: grid; grid-template-columns: 30px 1fr; gap: var(--s-8); align-items: center; font-size: var(--fs-90); }
+.idioma { display: flex; justify-content: center; }
+
+/* The run on the cover: the level, its difficulty, the stars */
+.niveles { justify-content: center; }
+
+.cabecera { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: var(--s-8); font-weight: 900; }
+.cabecera .reloj-caja { justify-self: end; }
+/* The five stages as dots, as Tren en Vilo's: passed, failed, the one in play, still to come */
+.etapas { display: flex; gap: var(--s-6); }
+.etapas span { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line-faint); }
+.etapas .ok { background: var(--lime); border-color: var(--lime); }
+.etapas .no { background: var(--red); border-color: var(--red); }
+.etapas .ahora { background: var(--ink); border-color: var(--ink); }
+.reloj-caja { white-space: nowrap; }
+.reloj { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.reloj.apurado { color: var(--pink); animation: artifacts-late 1s ease-in-out infinite; }
+/* «Etapa 2 de 5» in yellow between the dots and the clock, its difficulty small under it */
+.etapa-titulo { display: grid; text-align: center; line-height: 1.1; }
+.etapa-titulo p { margin: 0; font-size: var(--fs-75); font-weight: 700; }
+.etapa { margin: 0; font: var(--fs-110) var(--font-display); letter-spacing: 0.05em; color: var(--yellow); white-space: nowrap; }
+@media (max-width: 360px) { .etapas { gap: var(--s-4); } .etapas span { width: 10px; height: 10px; } }
+/* The stage announced over the board as it starts: big, then gone (the header keeps it) */
+.anuncio {
+  position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; gap: var(--s-4); text-align: center;
+  pointer-events: none; opacity: 0; background: rgb(var(--bg1-rgb) / 0.45);
+}
+.anuncio b { font: var(--fs-200) var(--font-display); letter-spacing: 0.05em; color: var(--yellow); text-shadow: var(--shadow-text); }
+.anuncio span { font-weight: 900; font-size: var(--fs-120); }
+.anuncio.ver { animation: artifacts-anuncio 1.6s ease-out; }
+@keyframes artifacts-anuncio { 0% { opacity: 0; transform: scale(1.08); } 15%, 65% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .anuncio.ver { animation: none; } }
+@keyframes artifacts-late { 50% { opacity: 0.55; } }
+/* The result's table: a row per stage, the speed and the total */
+.tabla-fin { width: 100%; border-collapse: collapse; font-size: var(--fs-85); }
+.tabla-fin th { color: var(--muted); font-weight: 700; text-align: left; padding: var(--s-4); }
+.tabla-fin td { padding: var(--s-6) var(--s-4); border-top: 1px solid var(--glass-border); }
+.tabla-fin td:last-child, .tabla-fin th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla-fin .no td { color: var(--muted); }
+.tabla-fin .estrellas-td { color: var(--yellow); white-space: nowrap; }
+.tabla-fin .total td { font-weight: 900; font-size: var(--fs-100); }
+@media (max-width: 360px) { .tabla-fin { font-size: var(--fs-75); } .tabla-fin th, .tabla-fin td { padding-inline: var(--s-2); } }
+.leyenda { font-size: var(--fs-75); margin: var(--s-8) 0 0; }
+.score-big { font: 900 clamp(3rem, 16vw, 4.4rem)/1 var(--font-num); color: var(--yellow); text-shadow: var(--shadow-text); }
+.sello { margin: 0; font-weight: 900; }
+
+/* The board: an 8 × 11 grid, as wide as the screen allows and never taller than it */
+.tablero {
+  position: relative; width: min(100%, max(220px, calc((100svh - 380px) * 8 / 11))); aspect-ratio: 8 / 11; margin: 0 auto;
+  border: 1px solid var(--glass-border); border-radius: var(--r-16); background: var(--artifacts-floor);
+  overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+#lienzo { display: block; width: 100%; height: 100%; cursor: pointer; touch-action: none; }
+/* The help under the board: always one line */
+.mensaje { margin: 0; min-height: 1.4em; text-align: center; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The chosen part's Girar and Quitar, floating just above it (below it on the top row) */
+.acciones { position: absolute; z-index: 1; display: flex; gap: var(--s-6); transform: translate(-50%, calc(-100% - var(--s-4))); animation: artifacts-pop 0.15s ease-out; }
+.acciones.abajo { transform: translate(-50%, var(--s-4)); }
+.acciones[hidden] { display: none; }
+/* Going away (5 s without a touch, a drag, the ball running, the part let go): a short fade out */
+.acciones { transition: opacity 0.22s ease-out; }
+.acciones.saliendo { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .acciones { transition: none; animation: none; } }
+/* Small, flat, round icon buttons: no 3D edge, just a solid fill and a thin border */
+.acciones .icono {
+  appearance: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--glass-border); background: var(--bg1); color: var(--ink); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.acciones .icono { position: relative; }
+.acciones .icono::before { content: ''; position: absolute; inset: -4px; }   /* a 44 px touch target around the 36 px circle */
+.acciones .icono:active { transform: scale(0.92); }
+.acciones .icono--quitar { color: var(--danger-soft); }
+.acciones .icono svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes artifacts-pop { from { opacity: 0; } }
+
+/* The tray: one button per kind of part, with how many are left */
+.bandeja { display: flex; flex-wrap: wrap; gap: var(--s-8); justify-content: center; }
+/* Each part as the object it is, to drag straight onto the board */
+.bandeja .pieza {
+  position: relative; display: grid; place-items: center; padding: var(--s-4); border-radius: var(--radius);
+  border: 1px solid var(--glass-border); background: var(--artifacts-floor); touch-action: none; cursor: grab;
+}
+.bandeja .pieza-dibujo { display: block; width: 64px; height: 32px; pointer-events: none; }
+.bandeja .pieza.on { border-color: var(--yellow); box-shadow: 0 0 0 2px rgb(var(--yellow-rgb) / 0.4); }
+.bandeja .pieza.agotada, .bandeja .pieza:disabled { opacity: 0.3; cursor: default; }
+.bandeja .pieza b { position: absolute; right: -6px; top: -8px; font-size: var(--fs-85); color: var(--yellow); background: var(--bg1); border-radius: 999px; padding: 0 var(--s-4); }
+body.arrastrando, body.arrastrando * { cursor: grabbing; -webkit-user-select: none; user-select: none; }
+/* Dragging a part off the board: the board's edge goes red, as in «let go here to remove it» */
+.tablero.fuera { border-color: var(--red); box-shadow: 0 0 0 2px rgb(var(--red-rgb) / 0.4); }
+
+/* The result, over the board */
+.capa { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--s-14); background: rgb(var(--bg1-rgb) / 0.6); }
+.tarjeta { text-align: center; width: 100%; }
+.tarjeta p { margin: 0; }
+.estrellas { font-size: var(--fs-200); letter-spacing: 0.2em; color: var(--yellow); text-shadow: var(--shadow-text); }
+.pie { text-align: center; margin-top: var(--s-16); }
+/* Once won, only the result card speaks: the tray and the buttons under the board step aside */
+body.ganado #s-juego > .bandeja, body.ganado .herramientas, body.ganado .mensaje { visibility: hidden; }
+.herramientas { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-8); }
+.herramientas .btn { padding-inline: var(--s-6); white-space: nowrap; min-width: 0; }
+@media (max-width: 360px) { .herramientas .btn { font-size: var(--fs-90); } }
+

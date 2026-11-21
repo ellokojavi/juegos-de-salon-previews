@@ -1,0 +1,68 @@
+// Generated from game.json by node tools/generators/manifests.mjs: do not edit by hand.
+export default {
+  "id": "wobbles",
+  "path": "labs/wobbles/",
+  "emoji": "⚖️",
+  "name": {
+    "es": "Tembleque",
+    "en": "The Wobbles",
+    "pt": "Tremelique"
+  },
+  "tagline": {
+    "es": "Apila piezas en la balanza sin que se caigan, en modo fácil o difícil.",
+    "en": "Stack pieces on the scale without letting them fall, in easy or hard mode.",
+    "pt": "Empilhe peças na balança sem deixá-las cair, no modo fácil ou difícil."
+  },
+  "keywords": {
+    "es": [
+      "equilibrio",
+      "balanza",
+      "apilar"
+    ],
+    "en": [
+      "balance",
+      "scale",
+      "stack"
+    ],
+    "pt": [
+      "equilíbrio",
+      "balança",
+      "empilhar"
+    ]
+  },
+  "players": {
+    "min": 1,
+    "max": 1
+  },
+  "duration": "1–5",
+  "tipos": [
+    "skill"
+  ],
+  "labs": true,
+  "available": false,
+  "modes": [
+    "solo"
+  ],
+  "ai": false,
+  "memory": "juegos-de-salon:wobbles:session",
+  "languages": [
+    "es",
+    "en",
+    "pt"
+  ],
+  "firebasePaths": [],
+  "canonExceptions": [
+    {
+      "canon": "C-2",
+      "why": "Two levels, each the owner's prototype brought whole from another tool and kept untouched (docs/games/wobbles.md): easy/ (2D) and hard/ (3D), pages of their own with their code inline, behind a cover that follows the canons. So there is no engine.js or engine.test.mjs: the physics lives in each level's page."
+    },
+    {
+      "canon": "C-6",
+      "why": "Two levels, each the owner's prototype brought whole from another tool and kept untouched (docs/games/wobbles.md): easy/ (2D) and hard/ (3D), pages of their own with their code inline, behind a cover that follows the canons. A round lasts a minute or two and is not resumed: no session.js store and no #resume-slot."
+    },
+    {
+      "canon": "C-7",
+      "why": "Two levels, each the owner's prototype brought whole from another tool and kept untouched (docs/games/wobbles.md): easy/ (2D) and hard/ (3D), pages of their own with their code inline, behind a cover that follows the canons. Solo with no sharing yet, so nothing goes through compartir.js, and its rounds send no trackStart/trackFinish (the cover counts the visit)."
+    }
+  ]
+};

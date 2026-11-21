@@ -1,0 +1,198 @@
+/**
+ * El almacén de prueba de los jugadores y sus récords (D-212): la base de datos vive en el
+ * `localStorage` y hace cumplir lo mismo que las reglas de Firebase para estas ramas. Lo usan
+ * las pruebas con node, los guiones de punta a punta y el sitio servido en localhost, para que
+ * nada de eso escriba en los rankings de verdad.
+ */
+import { claveOrden, S_MAX, MS_MAX, esCuenta, UAD_PUNTOS, bonoRacha } from './records.js';
+
+const DB = 'juegos-de-salon:prueba:records-db';
+const UID = 'juegos-de-salon:prueba:records-uid';
+const falla = code => Object.assign(new Error(code), { code });
+
+const partes = ruta => ruta.split('/').filter(Boolean);
+function leerEn(obj, ruta) {
+  let o = obj;
+  for (const p of partes(ruta)) { if (o == null || typeof o !== 'object') return null; o = o[p]; }
+  return o ?? null;
+}
+function ponerEn(obj, ruta, v) {
+  const ps = partes(ruta);
+  let o = obj;
+  for (const p of ps.slice(0, -1)) o = (o[p] && typeof o[p] === 'object') ? o[p] : (o[p] = {});
+  if (v === null) delete o[ps.at(-1)]; else o[ps.at(-1)] = v;
+}
+const copia = x => (x == null ? null : JSON.parse(JSON.stringify(x)));
+
+/** Resuelve `{'.sv': 'timestamp'}` y `{'.sv': {increment}}`, como el servidor. */
+function resolver(v, previo, now) {
+  if (v && typeof v === 'object') {
+    if (v['.sv'] === 'timestamp') return now;
+    if (v['.sv']?.increment) return (Number(previo) || 0) + v['.sv'].increment;
+    const out = {};
+    for (const [k, x] of Object.entries(v)) out[k] = resolver(x, previo?.[k], now);
+    return out;
+  }
+  return v;
+}
+
+export function crearAlmacenLocal({ storage = globalThis.localStorage, uid = null, now = () => Date.now() } = {}) {
+  const db = () => { try { return JSON.parse(storage.getItem(DB)) || {}; } catch (_) { return {}; } };
+  const guardar = d => { try { storage.setItem(DB, JSON.stringify(d)); } catch (_) { /* sin memoria */ } };
+  const miUid = () => {
+    if (uid) return uid;
+    try {
+      let u = storage.getItem(UID);
+      if (!u) { u = `u${Math.random().toString(36).slice(2, 12)}`; storage.setItem(UID, u); }
+      return u;
+    } catch (_) { return 'u-sin-memoria'; }
+  };
+
+  /** Lo que las reglas revisan en cada ruta de estas ramas. `viejo` es `root`, `nuevo` es `newData`. */
+  function permitido(ruta, viejo, nuevo, u, t) {
+    const p = partes(ruta);
+    const sentado = (base, jid) => leerEn(base, `jugadorSeats/${jid}/${u}`) != null;
+    // This phone's PIN attempt from the last minute holds `h` (D-464)
+    const probo = (jid, h) => {
+      const x = leerEn(viejo, `jugadorIntentos/${jid}`);
+      return !!x && x.u === u && x.at > t - 60000 && x.h === h;
+    };
+    const [rama, a, b, c] = p;
+    // One PIN attempt every 5 s per player, on a player with a key, never deleted (D-464)
+    if (rama === 'jugadorIntentos') {
+      const x = leerEn(nuevo, ruta), antes = leerEn(viejo, ruta);
+      return p.length === 2 && !!x && leerEn(viejo, `jugadorKeys/${a}`) != null && (!antes || antes.at < t - 5000)
+        && /^[0-9a-f]{64}$/.test(x.h || '') && x.u === u && x.at === t && Object.keys(x).every(k => ['h', 'u', 'at'].includes(k));
+    }
+    if (rama === 'jugadorSeats') {
+      const clave = leerEn(viejo, `jugadorKeys/${a}`);
+      const vale = h => h === leerEn(nuevo, `jugadorKeys/${a}`) && (clave == null || probo(a, clave));
+      if (p.length === 2) return sentado(viejo, a) && Object.entries(leerEn(nuevo, ruta) || {}).every(([k, h]) => k === u && vale(h));
+      const h = leerEn(nuevo, ruta);
+      return b === u && (h === null || vale(h));
+    }
+    if (rama === 'jugadorKeys') {
+      const antes = leerEn(viejo, ruta);
+      const libre = !leerEn(viejo, `jugadores/${a}`) || leerEn(viejo, `jugadores/${a}/legado`) === true;
+      return antes == null ? libre && sentado(nuevo, a) : sentado(viejo, a) && probo(a, antes);
+    }
+    if (rama === 'jugadorNombres') return leerEn(viejo, ruta) == null && leerEn(nuevo, ruta) === true && sentado(nuevo, b);
+    if (rama === 'jugadores') {
+      if (p.length === 2) return leerEn(viejo, ruta) == null && sentado(nuevo, a);
+      if (b === 'legado') return leerEn(nuevo, ruta) == null && sentado(nuevo, a);
+      if (b === 'co') return leerEn(viejo, ruta) == null && sentado(nuevo, a) && /^[A-Z]{2}$/.test(leerEn(nuevo, ruta));
+      if (b === 'juegos') {
+        if (!sentado(viejo, a)) return false;
+        if (p[4] === 'n') { const antes = leerEn(viejo, ruta) || 0; return leerEn(nuevo, ruta) === antes + 1; }
+        return true;
+      }
+      return false;
+    }
+    if (rama === 'records') {
+      const jid = p[3];
+      const r = leerEn(nuevo, ruta), antes = leerEn(viejo, ruta);
+      if (!sentado(viejo, jid) || !r) return false;
+      if (!(r.s >= 0 && r.s <= S_MAX && r.ms >= 0 && r.ms <= MS_MAX && r.k === claveOrden(r.s, r.ms))) return false;
+      if (r.n !== leerEn(viejo, `jugadores/${jid}/n`)) return false;
+      if (esCuenta(p[1]) && !(r.s === (antes?.s || 0) + 1 && r.ms === 0)) return false;
+      if (r.co !== undefined && !/^[A-Z]{2}$/.test(r.co)) return false;
+      // Uno al día (D-230): el puntaje del día es el de la historia de ese día; la semana suma un
+      // día de la historia (`u`) que todavía no se sumó (`w` se marca en la misma escritura)
+      if (p[1] === 'uno-al-dia') {
+        if (p[2].startsWith('d')) { if (r.s !== leerEn(nuevo, `unoAlDia/${jid}/${p[2].slice(1)}/s`)) return false; }
+        else {
+          const h = `unoAlDia/${jid}/${r.u}`;
+          if (!/^[0-9]{5}$/.test(r.u || '') || leerEn(nuevo, `${h}/w`) !== true || leerEn(viejo, `${h}/w`) != null) return false;
+          if (r.s !== (antes?.s || 0) + leerEn(nuevo, `${h}/s`)) return false;
+        }
+      }
+      // Uno al día points (lab, D-412): a month adds one day of the history once (`p` is set in the
+      // same write), its game score plus the streak bonus; the streak `r` grows at most one a day
+      if (p[1] === UAD_PUNTOS) {
+        if (!/^s[0-9]{4}-[0-9]{2}$/.test(p[2]) || r.ms !== 0) return false;
+        // An invited friend's +10 (D-414): their acceptance gets `p` in the same write, once
+        if (r.i !== undefined) {
+          const a = `invitados/${jid}/${r.i}`;
+          if (typeof r.i !== 'string' || leerEn(viejo, `${a}/d`) == null || leerEn(nuevo, `${a}/p`) !== true || leerEn(viejo, `${a}/p`) != null) return false;
+          if (r.u !== antes?.u || r.r !== antes?.r || r.s !== (antes?.s || 0) + 10) return false;
+          return !antes || r.k < antes.k;
+        }
+        const h = `unoAlDia/${jid}/${r.u}`;
+        if (!/^[0-9]{5}$/.test(r.u || '')) return false;
+        if (!(Number.isInteger(r.r) && r.r >= 1 && r.r <= 10 && r.r <= (antes?.r ? antes.r + 1 : 10))) return false;
+        if (leerEn(nuevo, `${h}/p`) !== true || leerEn(viejo, `${h}/p`) != null) return false;
+        if (r.s !== (antes?.s || 0) + leerEn(nuevo, `${h}/s`) + bonoRacha(r.r)) return false;
+      }
+      return !antes || r.k < antes.k;
+    }
+    // La historia de Uno al día: un día se escribe una vez; después solo se le pone `w`
+    if (rama === 'unoAlDia') {
+      if (!sentado(viejo, a) || !/^[0-9]{5}$/.test(b || '')) return false;
+      // `w` and `p` (the day's points) only near the day's own date and after its start (D-465)
+      const aTiempo = () => Number(b) * 86400000 > now() - 172800000 && Number(b) * 86400000 < now() + 86400000 && leerEn(viejo, `unoAlDiaInicio/${a}/${b}`) != null;
+      // `w` and `p` only on a day played: a saved day's marker never gets them (D-415)
+      if (p.length === 4 && (c === 'w' || c === 'p')) return leerEn(viejo, ruta) == null && leerEn(nuevo, ruta) === true && leerEn(viejo, `unoAlDia/${a}/${b}/c`) == null && aTiempo();
+      const x = leerEn(nuevo, ruta);
+      if (p.length === 3 && (x?.w !== undefined || x?.p !== undefined) && !aTiempo()) return false;
+      // A day a 🧊 saved (D-415): only the marker, no score
+      if (p.length === 3 && leerEn(viejo, ruta) == null && x?.c !== undefined) return x.c === true && typeof x.at === 'number' && Object.keys(x).every(k => ['c', 'at'].includes(k));
+      return p.length === 3 && leerEn(viejo, ruta) == null && !!x && typeof x.j === 'string' && x.s >= 0 && x.s <= 100 && x.ms >= 0 && typeof x.at === 'number'
+        && Object.keys(x).every(k => ['j', 's', 'ms', 'at', 'w', 'p'].includes(k));
+    }
+    // The index by day (D-475): a played day's score, once, written with that day of the history
+    if (rama === 'unoAlDiaDias') {
+      const x = leerEn(nuevo, ruta);
+      return p.length === 3 && /^[0-9]{5}$/.test(a || '') && sentado(viejo, b) && leerEn(viejo, ruta) == null && typeof x === 'number'
+        && leerEn(viejo, `unoAlDia/${b}/${a}`) == null && x === leerEn(nuevo, `unoAlDia/${b}/${a}/s`);
+    }
+    // When a day's first attempt of Uno al día started (D-433): once, by a phone seated as the player
+    if (rama === 'unoAlDiaInicio') return p.length === 3 && sentado(viejo, a) && /^[0-9]{5}$/.test(b || '') && leerEn(viejo, ruta) == null && typeof leerEn(nuevo, ruta) === 'number';
+    // Quién aceptó una invitación (D-230): cada celular una vez, y nadie se invita a sí mismo
+    if (rama === 'invitados') {
+      // The inviter marks an acceptance counted for the month's +10 (D-414), once
+      if (p.length === 4 && c === 'p') return sentado(viejo, a) && leerEn(viejo, `invitados/${a}/${b}/d`) != null && leerEn(viejo, ruta) == null && leerEn(nuevo, ruta) === true;
+      const x = leerEn(nuevo, ruta);
+      return p.length === 3 && b === u && leerEn(viejo, ruta) == null && !!x && !sentado(viejo, a) && typeof x.d === 'number'
+        && (x.j === undefined || (/^[a-z0-9]{8}$/.test(x.j) && x.j !== a)) && Object.keys(x).every(k => ['d', 'at', 'j'].includes(k));
+    }
+    // A podium is the nightly job's (D-499); a phone only signs its own place on one, once (D-358)
+    if (rama === 'torneoPodios') return p.length === 5 && b === 'p' && p[4] === 'j' && leerEn(viejo, `torneoPodios/${a}`) != null && leerEn(viejo, ruta) == null;
+    // Los avisos de Uno al día (D-230): la suscripción la escribe su celular, y lo de Uno al día solo
+    // el celular dueño de esa suscripción (en el sitio publicado van a Firebase; aquí, para probar)
+    if (rama === 'push') return p.length === 2 && (leerEn(viejo, `push/${a}/uid`) ?? u) === u && (leerEn(nuevo, ruta) === null || leerEn(nuevo, `push/${a}/uid`) === u);
+    if (rama === 'pushDia') return p.length === 2 && (leerEn(viejo, `push/${a}/uid`) === u || leerEn(nuevo, `push/${a}/uid`) === u);
+    // La copa de un jugador (D-220): las reglas también piden estar sentado en la copa como `p` y
+    // que la copa lo tenga enlazado, pero la copa vive en otro almacén de prueba (store-local.js)
+    if (rama === 'jugadorCopas') {
+      const x = leerEn(nuevo, ruta);
+      if (!sentado(viejo, a) || !/^[A-HJ-NP-Z]{5}$/.test(b || '') || p.length !== 3) return false;
+      return x === null || (/^[a-z0-9]{6}$/.test(x.p) && typeof x.at === 'number' && Object.keys(x).every(k => k === 'p' || k === 'at'));
+    }
+    return false;
+  }
+
+  return {
+    tipo: 'local',
+    listo: async () => miUid(),
+    now,
+    async get(ruta) { return copia(leerEn(db(), ruta)); },
+    async update(cambios) {
+      const viejo = db(), nuevo = copia(viejo) || {}, u = miUid(), t = now();
+      for (const [ruta, v] of Object.entries(cambios)) ponerEn(nuevo, ruta, resolver(copia(v), leerEn(viejo, ruta), t));
+      for (const ruta of Object.keys(cambios)) if (!permitido(ruta, viejo, nuevo, u, t)) throw falla('permiso');
+      guardar(nuevo);
+    },
+    async top(t, periodo, n) {
+      return Object.entries(leerEn(db(), `records/${t}/${periodo}`) || {})
+        .map(([jid, r]) => ({ jid, ...r })).sort((a, b) => a.k - b.k).slice(0, n);
+    },
+    async vecinos(t, periodo, k, n) {
+      const todas = await this.top(t, periodo, Infinity);
+      return { arriba: todas.filter(f => f.k < k).slice(-n), abajo: todas.filter(f => f.k > k).slice(0, n) };
+    },
+    async podios(n) {
+      return Object.fromEntries(Object.entries(leerEn(db(), 'torneoPodios') || {})
+        .sort((a, b) => (b[1].end || 0) - (a[1].end || 0)).slice(0, n));
+    },
+  };
+}

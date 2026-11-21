@@ -1,0 +1,60 @@
+{
+  "id": "blackjack",
+  "path": "labs/blackjack/",
+  "emoji": "♠️",
+  "name": {
+    "es": "Blackjack",
+    "en": "Blackjack",
+    "pt": "Blackjack"
+  },
+  "tagline": {
+    "es": "Mesa de Blackjack estilo Las Vegas contra la casa, solo o con hasta 6 jugadores.",
+    "en": "Vegas-style Blackjack table against the house, solo or with up to 6 players.",
+    "pt": "Mesa de Blackjack estilo Las Vegas contra a casa, sozinho ou com até 6 jogadores."
+  },
+  "keywords": {
+    "es": [
+      "blackjack",
+      "cartas",
+      "casino"
+    ],
+    "en": [
+      "blackjack",
+      "cards",
+      "casino"
+    ],
+    "pt": [
+      "blackjack",
+      "cartas",
+      "cassino"
+    ]
+  },
+  "players": {
+    "min": 1,
+    "max": 6
+  },
+  "duration": "3–10",
+  "tipos": [
+    "tabletop"
+  ],
+  "jugadas": [
+    "bj"
+  ],
+  "labs": true,
+  "available": false,
+  "modes": [
+    "cpu",
+    "online"
+  ],
+  "ai": true,
+  "memory": "juegos-de-salon:blackjack:session",
+  "languages": [
+    "es",
+    "en",
+    "pt"
+  ],
+  "firebasePaths": [
+    "rooms/{code}"
+  ],
+  "canonExceptions": []
+}

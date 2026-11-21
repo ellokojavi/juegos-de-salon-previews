@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#150726">
+<title>⚖️ Tembleque</title>
+  <!-- A lab game (D-395): behind the lab's door (D-281) and not indexed. The game below is the owner's
+       prototype as delivered, kept whole: the easy level of docs/games/wobbles.md -->
+  <script src="../../../assets/js/labs-puerta.js?h=ae4ae8ca"></script>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="manifest" href="../../../manifest.webmanifest">
+  <script>
+    // The chosen language's manifest, before the browser reads it (D-222)
+    (function () {
+      try {
+        var l = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('juegos-de-salon:lang') || '').toLowerCase();
+        var m = document.querySelector('link[rel="manifest"]');
+        if (m && /^(en|pt)$/.test(l)) m.href = m.href.replace(/manifest\.webmanifest$/, 'manifest.' + l + '.webmanifest');
+      } catch (_) { /* the Spanish one stays */ }
+    })();
+  </script>
+  <link rel="icon" href="../../../assets/icon.svg" type="image/svg+xml">
+  <script src="../../../assets/js/vigia.js?h=1f8f6338"></script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Juegos de Salón">
+  <link rel="apple-touch-icon" href="../../../assets/icons/apple-touch-icon.png">
+<link rel="preload" href="../../../assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../../assets/fonts/bangers-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../../assets/css/base.css?h=0ea4959b">
+<link rel="stylesheet" href="../../../assets/css/ranking.css?h=b3c19fbc">
+<style>
+  /* The site's fonts and palette (assets/css/base.css), copied here so the prototype stands alone */
+  @font-face { font-family: 'Bangers'; font-weight: 400; font-display: swap; src: url('../../../assets/fonts/bangers-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Nunito'; font-weight: 400 900; font-display: swap; src: url('../../../assets/fonts/nunito-latin.woff2') format('woff2'); }
+  :root {
+    --bg1: #150726; --bg2: #2a0a4a; --bg3: #0b1e3f;
+    --pink: #ff2e88; --yellow: #ffd23f; --cyan: #2ee6d6; --lime: #9dff3a; --purple: #8a4dff;
+    --ink: #fff; --muted: rgba(255, 255, 255, 0.72); --glass: rgba(255, 255, 255, 0.08); --glass-border: rgba(255, 255, 255, 0.16);
+    --font-display: 'Bangers', 'Impact', 'Arial Black', sans-serif; --font-body: 'Nunito', system-ui, -apple-system, sans-serif;
+    --fondo:
+      radial-gradient(1200px 600px at 10% -10%, rgba(255, 46, 136, 0.35), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(46, 230, 214, 0.22), transparent 60%),
+      radial-gradient(800px 600px at 50% 120%, rgba(138, 77, 255, 0.35), transparent 60%),
+      linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; overscroll-behavior: none; }
+  body {
+    height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg1); background-image: var(--fondo); color: var(--ink); font-family: var(--font-body);
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  main { position: relative; flex: 1; min-height: 0; }
+  /* One slim row over the scene (the title went: the owner wanted the room for the game) */
+  #hud {
+    position: absolute; z-index: 2; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 0; right: 0; height: 40px; max-width: 560px; margin: 0 auto; padding: 0 10px;
+    display: grid; grid-template-columns: 40px 1fr auto 1fr 40px; align-items: center; gap: 10px; pointer-events: none; font-weight: 900;
+  }
+  #hud a, #hud button {
+    pointer-events: auto; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; text-decoration: none;
+    font: 900 1.1rem var(--font-body); color: var(--ink); background: var(--glass); border: 1px solid var(--glass-border); border-radius: 999px;
+  }
+  /* Two equal columns either side of the lives keep them in the very middle of the row, whatever the count's width */
+  #hud a { grid-column: 1; } #hud button { grid-column: 5; }
+  #lives { grid-column: 3; display: flex; gap: 6px; font-size: 1.05rem; line-height: 1; }
+  #lives i { position: relative; display: inline-block; font-style: normal; }
+  #lives i span { display: inline-block; transition: opacity 0.3s, filter 0.3s, transform 0.3s; }
+  #lives i.off span { opacity: 0.3; filter: grayscale(1); transform: scale(0.85); }
+  /* A life lost (breakHeart): the heart swells, cracks down the middle and its two halves fall apart, while a ring opens
+     around it; what stays is the dimmed heart, which waits for the crack before it dims */
+  #lives i.roto span { transition-delay: 0.3s; }
+  #lives i b { position: absolute; left: 0; top: 0; pointer-events: none; }
+  #lives i b.iz { clip-path: polygon(0 0, 56% 0, 42% 30%, 60% 54%, 44% 76%, 52% 100%, 0 100%); animation: vida-iz 1s cubic-bezier(0.3, 0.6, 0.4, 1) both; }
+  #lives i b.de { clip-path: polygon(56% 0, 100% 0, 100% 100%, 52% 100%, 44% 76%, 60% 54%, 42% 30%); animation: vida-de 1s cubic-bezier(0.3, 0.6, 0.4, 1) both; }
+  #lives i b.onda { left: 50%; top: 50%; width: 12px; height: 12px; margin: -7px 0 0 -7px; border: 2px solid var(--pink); border-radius: 50%; box-shadow: 0 0 8px var(--pink); animation: vida-onda 0.7s ease-out 0.25s both; }
+  @keyframes vida-iz { 0% { transform: scale(1); opacity: 1; } 18% { transform: scale(1.8); } 30% { transform: scale(1.55); opacity: 1; } 100% { transform: scale(1.25) translate(-13px, 24px) rotate(-60deg); opacity: 0; } }
+  @keyframes vida-de { 0% { transform: scale(1); opacity: 1; } 18% { transform: scale(1.8); } 30% { transform: scale(1.55); opacity: 1; } 100% { transform: scale(1.25) translate(13px, 24px) rotate(60deg); opacity: 0; } }
+  @keyframes vida-onda { from { transform: scale(0.4); opacity: 0.9; } to { transform: scale(4.2); opacity: 0; } }
+  /* The last life beats */
+  #lives.last i:not(.off) span { animation: vida-latido 0.8s ease-in-out infinite; }
+  @keyframes vida-latido { 0%, 100% { transform: scale(1); } 30% { transform: scale(1.28); } 55% { transform: scale(1.05); } }
+  @media (prefers-reduced-motion: reduce) { #lives i b { display: none; } #lives.last i:not(.off) span { animation: none; } }
+  #score { grid-column: 4; justify-self: end; margin-right: 8px; font: 400 2rem/1 var(--font-display); color: var(--yellow); letter-spacing: 0.04em; text-shadow: 0 0 14px rgba(255, 210, 63, 0.5); }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; display: block; }
+  #card {
+    position: absolute; inset: 0; display: grid; place-items: center; padding: 14px;
+    /* No backdrop blur: a full-screen blur cost most of the frame on a phone; the veil is darker instead */
+    background: rgba(21, 7, 38, 0.8);
+  }
+  #card .in {
+    width: min(100%, 400px); max-height: 100%; overflow: auto; text-align: center; padding: 16px;
+    background: rgba(42, 10, 74, 0.82); border: 1px solid var(--glass-border); border-radius: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 26px rgba(46, 230, 214, 0.15);
+  }
+  #cEmoji { font-size: 2.6rem; line-height: 1.1; }
+  #card h2 { margin: 2px 0 8px; font: 400 2.1rem var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; }
+  #cBody { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+  #cBody ol { margin: 0; padding-left: 1.3em; } #cBody li { margin: 6px 0; }
+  #cBody ul { list-style: none; margin: 0; padding: 0; }
+  #cBody .big { text-align: center; font: 400 3.4rem/1 var(--font-display); color: var(--yellow); margin: 0 0 8px; text-shadow: 0 0 18px rgba(255, 210, 63, 0.5); }
+  #cBody .nota { margin: 10px 0 0; font-size: 0.85rem; }
+  #cBody .nota { text-align: center; text-wrap: balance; }
+  #cBody .nota + .nota { margin-top: 4px; }
+  #cBody .build { margin: 6px 0 0; text-align: center; font-size: 0.7rem; font-weight: 700; color: rgba(255, 255, 255, 0.4); }
+  /* How to play, in three pictures: each step is a small animated drawing in the game's own lines, with its words beside it */
+  .pasos { display: grid; gap: 10px; }
+  .paso { display: grid; grid-template-columns: 112px 1fr; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 14px; background: rgba(0, 0, 0, 0.25); }
+  .paso svg { width: 112px; height: 80px; overflow: visible; }
+  .paso .neon { filter: drop-shadow(0 0 2.5px currentColor); }
+  .paso p { margin: 0; font-size: 0.88rem; line-height: 1.3; }
+  .paso b { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; font: 400 1.25rem var(--font-display); letter-spacing: 0.05em; color: var(--ink); text-transform: uppercase; }
+  .paso b i { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; font-style: normal; font-size: 1.05rem; color: #3a1200; background: var(--yellow); }
+  .paso svg [class^="a-"], .paso svg [class*=" a-"] { transform-box: fill-box; transform-origin: center; }
+  .a-vaiven { animation: paso-vaiven 2.4s ease-in-out infinite alternate; }
+  .a-onda { animation: paso-onda 1.2s ease-out infinite; }
+  .a-cae { animation: paso-cae 2.8s ease-in infinite; }
+  .a-salpica { animation: paso-salpica 2.8s ease-out infinite; }
+  .a-vida { animation: paso-vida 2.8s linear infinite; }
+  .paso svg .a-vuelca { transform-box: view-box; transform-origin: 56px 50px; animation: paso-vuelca 3.6s ease-in-out infinite; }
+  .a-verde { animation: paso-verde 3.6s ease-in-out infinite; }
+  .a-rojo { animation: paso-rojo 3.6s ease-in-out infinite; }
+  .a-burbuja { animation: paso-burbuja 3.6s ease-in-out infinite; }
+  .a-rueda { animation: paso-rueda 3.6s ease-in-out infinite; }
+  @keyframes paso-vaiven { from { transform: translateX(-26px); } to { transform: translateX(26px); } }
+  @keyframes paso-onda { from { transform: scale(1); opacity: 0.9; } to { transform: scale(2.8); opacity: 0; } }
+  @keyframes paso-cae { 0%, 10% { transform: translate(0, 0) rotate(0); opacity: 1; } 62% { transform: translate(4px, 34px) rotate(50deg); opacity: 1; } 72%, 100% { transform: translate(4px, 42px) rotate(60deg); opacity: 0; } }
+  @keyframes paso-salpica { 0%, 60% { transform: scale(0.3); opacity: 0; } 66% { opacity: 1; } 100% { transform: scale(2.6); opacity: 0; } }
+  @keyframes paso-vida { 0%, 64% { opacity: 1; filter: none; } 74%, 100% { opacity: 0.3; filter: grayscale(1); } }
+  @keyframes paso-vuelca { 0%, 30% { transform: rotate(0); } 62%, 82% { transform: rotate(15deg); } 100% { transform: rotate(0); } }
+  @keyframes paso-verde { 0%, 26% { opacity: 0.9; } 40%, 100% { opacity: 0; } }
+  @keyframes paso-rojo { 0%, 42% { opacity: 0; } 62%, 82% { opacity: 0.95; } 100% { opacity: 0; } }
+  @keyframes paso-burbuja { 0%, 30% { transform: translateX(0); fill: #9dff3a; } 62%, 82% { transform: translateX(17px); fill: #ff5a6e; } 100% { transform: translateX(0); fill: #9dff3a; } }
+  @keyframes paso-rueda { 0%, 40% { transform: translateX(0); } 82% { transform: translateX(9px); } 100% { transform: translateX(0); } }
+  @media (prefers-reduced-motion: reduce) { .paso svg * { animation: none !important; } }
+  /* A small phone: the same three steps, tighter, so the button stays in sight; the card keeps clear of the top row's buttons */
+  @media (max-width: 360px), (max-height: 640px) {
+    #card { padding: 52px 10px 10px; }
+    #card .in { padding: 12px; }
+    #cEmoji { display: none; }
+    #card h2 { font-size: 1.7rem; margin-bottom: 6px; }
+    .pasos { gap: 6px; }
+    .paso { grid-template-columns: 84px 1fr; gap: 8px; padding: 5px 8px; }
+    .paso svg { width: 84px; height: 60px; }
+    .paso p { font-size: 0.8rem; line-height: 1.25; }
+    .paso b { font-size: 1.05rem; margin-bottom: 1px; gap: 6px; }
+    .paso b i { width: 20px; height: 20px; font-size: 0.9rem; }
+    #cBody .nota { margin-top: 6px; font-size: 0.78rem; }
+    #cBtn { margin-top: 8px; min-height: 44px; }
+  }
+  /* A phone lying down: the three steps side by side, each drawing over its words */
+  @media (max-height: 440px) and (min-width: 560px) {
+    #card .in { width: min(100%, 720px); }
+    #card h2 { display: none; }
+    .pasos { grid-template-columns: repeat(3, 1fr); }
+    .paso { grid-template-columns: 1fr; justify-items: center; align-content: start; text-align: center; padding: 8px; }
+    .paso b { justify-content: center; }
+  }
+  #cBtn {
+    margin-top: 14px; min-height: 48px; padding: 8px 28px; cursor: pointer; border: 0; border-radius: 999px;
+    font: 400 1.35rem var(--font-display); letter-spacing: 0.06em; color: #3a1200;
+    background: linear-gradient(180deg, #ffe27a, var(--yellow)); box-shadow: 0 4px 0 #9a4a00, 0 8px 22px rgba(255, 210, 63, 0.3);
+  }
+  #cBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #9a4a00; }
+  /* The breakdown, under the exits (C-19): the card's quiet list */
+  #cDetail ul { list-style: none; margin: 0; padding: 0; text-align: left; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+  #cDetail li { margin: 6px 0; }
+  /* One even gap between the result's blocks (DESIGN.md rule 7): the blocks' own margins give way to it */
+  #cAviso:not(:empty), #cExits:not(:empty), #cRank:not(:empty) { margin-top: var(--s-12); }
+  #cAviso > *, #cExits > *, #cRank > * { margin-top: 0; margin-bottom: 0; }
+  #cDetail ul { margin-top: var(--s-12); }
+  #cBody .big { margin-bottom: 0; } #cBtn { margin-top: var(--s-12); }
+</style>
+  <meta name="release" content="1.33.3-2f6f63f">
+  <script type="importmap" id="importmap">{"imports": {"../../../assets/js/arrastre.js": "../../../assets/js/arrastre.js?h=b9425a6d", "../../../assets/js/azar.js": "../../../assets/js/azar.js?h=7697e38b", "../../../assets/js/back-guard.js": "../../../assets/js/back-guard.js?h=02fdd3d6", "../../../assets/js/buzon-form.js": "../../../assets/js/buzon-form.js?h=7b4d03c2", "../../../assets/js/buzon.js": "../../../assets/js/buzon.js?h=212b6320", "../../../assets/js/chat.js": "../../../assets/js/chat.js?h=66123346", "../../../assets/js/compartir-portada.js": "../../../assets/js/compartir-portada.js?h=b6a4b9c4", "../../../assets/js/compartir.js": "../../../assets/js/compartir.js?h=35f10256", "../../../assets/js/connection.js": "../../../assets/js/connection.js?h=da923663", "../../../assets/js/controls.js": "../../../assets/js/controls.js?h=2e4c2f9a", "../../../assets/js/cover-dialogs.js": "../../../assets/js/cover-dialogs.js?h=2808af67", "../../../assets/js/cover-share.js": "../../../assets/js/cover-share.js?h=2292954f", "../../../assets/js/cuenta-regresiva.js": "../../../assets/js/cuenta-regresiva.js?h=6960f6ae", "../../../assets/js/cup-outbox.js": "../../../assets/js/cup-outbox.js?h=3cdce283", "../../../assets/js/cup-today.js": "../../../assets/js/cup-today.js?h=dad74139", "../../../assets/js/dado3d.js": "../../../assets/js/dado3d.js?h=e8bdcb08", "../../../assets/js/daily-points.js": "../../../assets/js/daily-points.js?h=8cb06b46", "../../../assets/js/daily-recap.js": "../../../assets/js/daily-recap.js?h=6579b6b0", "../../../assets/js/dato.js": "../../../assets/js/dato.js?h=92313f30", "../../../assets/js/favoritos.js": "../../../assets/js/favoritos.js?h=6c9afb09", "../../../assets/js/fin.js": "../../../assets/js/fin.js?h=41d2cef1", "../../../assets/js/firebase-config.js": "../../../assets/js/firebase-config.js?h=5d3c31ee", "../../../assets/js/flag-list.js": "../../../assets/js/flag-list.js?h=b68bc29a", "../../../assets/js/flags.js": "../../../assets/js/flags.js?h=150e9e73", "../../../assets/js/frases.js": "../../../assets/js/frases.js?h=7b82bf50", "../../../assets/js/game-icon.js": "../../../assets/js/game-icon.js?h=5c326990", "../../../assets/js/game-manifest.js": "../../../assets/js/game-manifest.js?h=a2daefc7", "../../../assets/js/game-swipe.js": "../../../assets/js/game-swipe.js?h=2f94752d", "../../../assets/js/games.js": "../../../assets/js/games.js?h=ec24e402", "../../../assets/js/handoff.js": "../../../assets/js/handoff.js?h=f12a6232", "../../../assets/js/hidden-match.js": "../../../assets/js/hidden-match.js?h=2e6cb328", "../../../assets/js/home-carousels.js": "../../../assets/js/home-carousels.js?h=a1307da2", "../../../assets/js/home-windows.js": "../../../assets/js/home-windows.js?h=661d56ed", "../../../assets/js/how-to-play-facts.js": "../../../assets/js/how-to-play-facts.js?h=34d8ea51", "../../../assets/js/i18n.js": "../../../assets/js/i18n.js?h=6c73b213", "../../../assets/js/instalable.js": "../../../assets/js/instalable.js?h=ed65c36b", "../../../assets/js/instalar.js": "../../../assets/js/instalar.js?h=3378b5ae", "../../../assets/js/jugador-firebase.js": "../../../assets/js/jugador-firebase.js?h=2cecad64", "../../../assets/js/jugador-local.js": "../../../assets/js/jugador-local.js?h=d7495e49", "../../../assets/js/jugador.js": "../../../assets/js/jugador.js?h=0d8e51a7", "../../../assets/js/keyboard.js": "../../../assets/js/keyboard.js?h=e27a429c", "../../../assets/js/lab-access.js": "../../../assets/js/lab-access.js?h=6d60f915", "../../../assets/js/lab-usage.js": "../../../assets/js/lab-usage.js?h=17f36809", "../../../assets/js/labs-idioma.js": "../../../assets/js/labs-idioma.js?h=302da30f", "../../../assets/js/labs-puerta.js": "../../../assets/js/labs-puerta.js?h=ae4ae8ca", "../../../assets/js/llegada.js": "../../../assets/js/llegada.js?h=d42edc11", "../../../assets/js/load-css.js": "../../../assets/js/load-css.js?h=4bf0403a", "../../../assets/js/manifests/battleship.js": "../../../assets/js/manifests/battleship.js?h=d2963482", "../../../assets/js/manifests/bulls-and-cows.js": "../../../assets/js/manifests/bulls-and-cows.js?h=2fd3c0ad", "../../../assets/js/manifests/cup.js": "../../../assets/js/manifests/cup.js?h=4afe9d14", "../../../assets/js/manifests/generala.js": "../../../assets/js/manifests/generala.js?h=8f4f0055", "../../../assets/js/manifests/hangman.js": "../../../assets/js/manifests/hangman.js?h=6638e78d", "../../../assets/js/manifests/labs/blackjack.js": "../../../assets/js/manifests/labs/blackjack.js?h=e6c870ff", "../../../assets/js/manifests/labs/croc.js": "../../../assets/js/manifests/labs/croc.js?h=4ad0f1ee", "../../../assets/js/manifests/labs/cryptic.js": "../../../assets/js/manifests/labs/cryptic.js?h=3f8aa120", "../../../assets/js/manifests/labs/fourth-king.js": "../../../assets/js/manifests/labs/fourth-king.js?h=e524575d", "../../../assets/js/manifests/labs/julep.js": "../../../assets/js/manifests/labs/julep.js?h=6b71237b", "../../../assets/js/manifests/labs/transfer.js": "../../../assets/js/manifests/labs/transfer.js?h=40cdb867", "../../../assets/js/manifests/labs/wobbles.js": "../../../assets/js/manifests/labs/wobbles.js?h=20347e1b", "../../../assets/js/manifests/liars-dice.js": "../../../assets/js/manifests/liars-dice.js?h=070bbec7", "../../../assets/js/manifests/timeline.js": "../../../assets/js/manifests/timeline.js?h=7b2e9b98", "../../../assets/js/month-end.js": "../../../assets/js/month-end.js?h=819f353b", "../../../assets/js/music.js": "../../../assets/js/music.js?h=32d37cd8", "../../../assets/js/name-guard.js": "../../../assets/js/name-guard.js?h=0b2c585b", "../../../assets/js/notification-sheets.js": "../../../assets/js/notification-sheets.js?h=011aed6f", "../../../assets/js/offline-cut.js": "../../../assets/js/offline-cut.js?h=bd05f823", "../../../assets/js/offline-ready.js": "../../../assets/js/offline-ready.js?h=a104533f", "../../../assets/js/offline-sheet.js": "../../../assets/js/offline-sheet.js?h=d6bf3e04", "../../../assets/js/offline-ui.js": "../../../assets/js/offline-ui.js?h=fa4e6479", "../../../assets/js/on-screen.js": "../../../assets/js/on-screen.js?h=0504b6bf", "../../../assets/js/parametros.js": "../../../assets/js/parametros.js?h=e37bd8ad", "../../../assets/js/push.js": "../../../assets/js/push.js?h=c6703034", "../../../assets/js/qr.js": "../../../assets/js/qr.js?h=e21987b2", "../../../assets/js/ranking.js": "../../../assets/js/ranking.js?h=e00c7e99", "../../../assets/js/recap.js": "../../../assets/js/recap.js?h=a4cd7233", "../../../assets/js/records.js": "../../../assets/js/records.js?h=6736616c", "../../../assets/js/region-patterns.js": "../../../assets/js/region-patterns.js?h=20d295c4", "../../../assets/js/rng.js": "../../../assets/js/rng.js?h=ba7e5a86", "../../../assets/js/room-flow.js": "../../../assets/js/room-flow.js?h=3be116ea", "../../../assets/js/room-state.js": "../../../assets/js/room-state.js?h=3f7f3b38", "../../../assets/js/screen-bands.js": "../../../assets/js/screen-bands.js?h=9a8c84c6", "../../../assets/js/search.js": "../../../assets/js/search.js?h=59d11b17", "../../../assets/js/season.js": "../../../assets/js/season.js?h=3a99c2a6", "../../../assets/js/session.js": "../../../assets/js/session.js?h=bd684e40", "../../../assets/js/share-grid.js": "../../../assets/js/share-grid.js?h=f8a42662", "../../../assets/js/site-footer.js": "../../../assets/js/site-footer.js?h=62f831cc", "../../../assets/js/sobre.js": "../../../assets/js/sobre.js?h=de580b39", "../../../assets/js/sound.js": "../../../assets/js/sound.js?h=00325dd0", "../../../assets/js/splash.js": "../../../assets/js/splash.js?h=cb092d1c", "../../../assets/js/support.js": "../../../assets/js/support.js?h=832f8adc", "../../../assets/js/teclado.js": "../../../assets/js/teclado.js?h=0905b503", "../../../assets/js/tester-badge.js": "../../../assets/js/tester-badge.js?h=9645ed45", "../../../assets/js/tester-boot.js": "../../../assets/js/tester-boot.js?h=14f26e3a", "../../../assets/js/tester-ribbon.js": "../../../assets/js/tester-ribbon.js?h=a804fbda", "../../../assets/js/time-format.js": "../../../assets/js/time-format.js?h=1921e1e4", "../../../assets/js/transport/best-effort.js": "../../../assets/js/transport/best-effort.js?h=b8f82884", "../../../assets/js/transport/cleanup.js": "../../../assets/js/transport/cleanup.js?h=8706857e", "../../../assets/js/transport/dispose.js": "../../../assets/js/transport/dispose.js?h=24e516c5", "../../../assets/js/transport/errors.js": "../../../assets/js/transport/errors.js?h=65f7809c", "../../../assets/js/transport/firebase.js": "../../../assets/js/transport/firebase.js?h=14fb2128", "../../../assets/js/transport/local.js": "../../../assets/js/transport/local.js?h=338088fa", "../../../assets/js/transport/ratelimit.js": "../../../assets/js/transport/ratelimit.js?h=026e11fc", "../../../assets/js/transport/seat.js": "../../../assets/js/transport/seat.js?h=72ee2f56", "../../../assets/js/transport/stats.js": "../../../assets/js/transport/stats.js?h=db4cd846", "../../../assets/js/uad-days.js": "../../../assets/js/uad-days.js?h=dec58d63", "../../../assets/js/uad-place.js": "../../../assets/js/uad-place.js?h=368dd032", "../../../assets/js/ui.js": "../../../assets/js/ui.js?h=f4332760", "../../../assets/js/uno-al-dia-avisos.js": "../../../assets/js/uno-al-dia-avisos.js?h=a9865afb", "../../../assets/js/uno-al-dia-red.js": "../../../assets/js/uno-al-dia-red.js?h=e9a328ea", "../../../assets/js/uno-al-dia-ui.js": "../../../assets/js/uno-al-dia-ui.js?h=063eacb3", "../../../assets/js/uno-al-dia.js": "../../../assets/js/uno-al-dia.js?h=4df1c1fc", "../../../assets/js/vapid.js": "../../../assets/js/vapid.js?h=74c138b9", "../../../assets/js/vendor/qrcode.js": "../../../assets/js/vendor/qrcode.js?h=18ae399f", "../../../assets/js/vigia.js": "../../../assets/js/vigia.js?h=1f8f6338", "../../../assets/js/waiting.js": "../../../assets/js/waiting.js?h=eb18c4b2", "../../../assets/season/templates.js": "../../../assets/season/templates.js?h=30550765", "../../../battleship/engine.js": "../../../battleship/engine.js?h=b9fdd30a", "../../../battleship/flota.js": "../../../battleship/flota.js?h=379777c5", "../../../battleship/game.js": "../../../battleship/game.js?h=9d15e6cb", "../../../battleship/rules.js": "../../../battleship/rules.js?h=e1e1dd1c", "../../../bulls-and-cows/engine.js": "../../../bulls-and-cows/engine.js?h=2a478102", "../../../bulls-and-cows/game.js": "../../../bulls-and-cows/game.js?h=ed0e0fb1", "../../../bulls-and-cows/rules.js": "../../../bulls-and-cows/rules.js?h=27740525", "../../../cup/admin.js": "../../../cup/admin.js?h=7db7f88b", "../../../cup/avisos.js": "../../../cup/avisos.js?h=0ea7ecd0", "../../../cup/clock.js": "../../../cup/clock.js?h=1e53e7d2", "../../../cup/code.js": "../../../cup/code.js?h=06f0e1c6", "../../../cup/cover/cover.js": "../../../cup/cover/cover.js?h=b153a4b3", "../../../cup/create.js": "../../../cup/create.js?h=42c96833", "../../../cup/cuenta.js": "../../../cup/cuenta.js?h=ff53f307", "../../../cup/demo.js": "../../../cup/demo.js?h=34a0b177", "../../../cup/desglose.js": "../../../cup/desglose.js?h=04bff5f1", "../../../cup/engine.js": "../../../cup/engine.js?h=fa87dc48", "../../../cup/game.js": "../../../cup/game.js?h=24d9c65e", "../../../cup/games/agents/clues-en.js": "../../../cup/games/agents/clues-en.js?h=e2b14f99", "../../../cup/games/agents/clues-pt.js": "../../../cup/games/agents/clues-pt.js?h=1b64f093", "../../../cup/games/agents/clues.js": "../../../cup/games/agents/clues.js?h=2b518b22", "../../../cup/games/agents/engine.js": "../../../cup/games/agents/engine.js?h=5cc1828e", "../../../cup/games/agents/numbers.js": "../../../cup/games/agents/numbers.js?h=81d095cf", "../../../cup/games/agents/texts.js": "../../../cup/games/agents/texts.js?h=ccb45212", "../../../cup/games/agents/ui.js": "../../../cup/games/agents/ui.js?h=d461185d", "../../../cup/games/audiencia.js": "../../../cup/games/audiencia.js?h=3938fe5f", "../../../cup/games/bridges/engine.js": "../../../cup/games/bridges/engine.js?h=3b44eef9", "../../../cup/games/bridges/neon-visitors.js": "../../../cup/games/bridges/neon-visitors.js?h=4110a7a9", "../../../cup/games/bridges/neon.js": "../../../cup/games/bridges/neon.js?h=20c67986", "../../../cup/games/bridges/physics.js": "../../../cup/games/bridges/physics.js?h=13ce59f3", "../../../cup/games/bridges/pixel.js": "../../../cup/games/bridges/pixel.js?h=585ab3d1", "../../../cup/games/bridges/scene.js": "../../../cup/games/bridges/scene.js?h=30d5de83", "../../../cup/games/bridges/texts.js": "../../../cup/games/bridges/texts.js?h=970971f6", "../../../cup/games/bridges/trains.js": "../../../cup/games/bridges/trains.js?h=bd7f14cb", "../../../cup/games/bridges/ui.js": "../../../cup/games/bridges/ui.js?h=d3ad61ec", "../../../cup/games/bridges/visitors.js": "../../../cup/games/bridges/visitors.js?h=b0f575fa", "../../../cup/games/case/engine.js": "../../../cup/games/case/engine.js?h=ef61f182", "../../../cup/games/case/ui.js": "../../../cup/games/case/ui.js?h=95246a5b", "../../../cup/games/connections/engine.js": "../../../cup/games/connections/engine.js?h=004cabe9", "../../../cup/games/connections/grillas-en.js": "../../../cup/games/connections/grillas-en.js?h=6b4d1c8f", "../../../cup/games/connections/grillas-pt.js": "../../../cup/games/connections/grillas-pt.js?h=bcea9e47", "../../../cup/games/connections/grillas.js": "../../../cup/games/connections/grillas.js?h=25c7e0d1", "../../../cup/games/connections/ui.js": "../../../cup/games/connections/ui.js?h=34482d6e", "../../../cup/games/croc/engine.js": "../../../cup/games/croc/engine.js?h=67ee8597", "../../../cup/games/croc/scene.js": "../../../cup/games/croc/scene.js?h=7b927092", "../../../cup/games/croc/texts.js": "../../../cup/games/croc/texts.js?h=34d5fc8f", "../../../cup/games/croc/ui.js": "../../../cup/games/croc/ui.js?h=8bbdb353", "../../../cup/games/deshacer.js": "../../../cup/games/deshacer.js?h=6d8e7e32", "../../../cup/games/dominorama/engine.js": "../../../cup/games/dominorama/engine.js?h=58cda08d", "../../../cup/games/dominorama/texts.js": "../../../cup/games/dominorama/texts.js?h=32b64775", "../../../cup/games/dominorama/ui.js": "../../../cup/games/dominorama/ui.js?h=84b8f764", "../../../cup/games/final/engine.js": "../../../cup/games/final/engine.js?h=37b12b4b", "../../../cup/games/final/ui.js": "../../../cup/games/final/ui.js?h=c7ba43bf", "../../../cup/games/flap/engine.js": "../../../cup/games/flap/engine.js?h=01f65501", "../../../cup/games/flap/scene.js": "../../../cup/games/flap/scene.js?h=a1714717", "../../../cup/games/flap/texts.js": "../../../cup/games/flap/texts.js?h=5a7ebc22", "../../../cup/games/flap/ui.js": "../../../cup/games/flap/ui.js?h=fe5bfaa4", "../../../cup/games/index.js": "../../../cup/games/index.js?h=7c816574", "../../../cup/games/mazos.js": "../../../cup/games/mazos.js?h=44c8fd92", "../../../cup/games/memory/engine.js": "../../../cup/games/memory/engine.js?h=a0643e24", "../../../cup/games/memory/sprites.js": "../../../cup/games/memory/sprites.js?h=a74108f8", "../../../cup/games/memory/texts.js": "../../../cup/games/memory/texts.js?h=96cabced", "../../../cup/games/memory/ui.js": "../../../cup/games/memory/ui.js?h=3b5656e4", "../../../cup/games/microgames/engine.js": "../../../cup/games/microgames/engine.js?h=3ef0bd98", "../../../cup/games/microgames/intros.js": "../../../cup/games/microgames/intros.js?h=88dde4d2", "../../../cup/games/microgames/stage.js": "../../../cup/games/microgames/stage.js?h=1efab8e9", "../../../cup/games/microgames/texts.js": "../../../cup/games/microgames/texts.js?h=d9906caa", "../../../cup/games/microgames/tr.js": "../../../cup/games/microgames/tr.js?h=8b04a61a", "../../../cup/games/microgames/ui.js": "../../../cup/games/microgames/ui.js?h=7ba8937a", "../../../cup/games/number/engine.js": "../../../cup/games/number/engine.js?h=e0dfedc1", "../../../cup/games/number/ui.js": "../../../cup/games/number/ui.js?h=5fecb9a8", "../../../cup/games/paint-mines/dibujos.js": "../../../cup/games/paint-mines/dibujos.js?h=0c7752b9", "../../../cup/games/paint-mines/engine.js": "../../../cup/games/paint-mines/engine.js?h=43481356", "../../../cup/games/paint-mines/texts.js": "../../../cup/games/paint-mines/texts.js?h=51af36dc", "../../../cup/games/paint-mines/ui.js": "../../../cup/games/paint-mines/ui.js?h=d539b2ea", "../../../cup/games/plots/engine.js": "../../../cup/games/plots/engine.js?h=2aee6dbb", "../../../cup/games/plots/texts.js": "../../../cup/games/plots/texts.js?h=15f42df2", "../../../cup/games/plots/ui.js": "../../../cup/games/plots/ui.js?h=d5272707", "../../../cup/games/queens/engine.js": "../../../cup/games/queens/engine.js?h=cfe894bd", "../../../cup/games/queens/ui.js": "../../../cup/games/queens/ui.js?h=d8729803", "../../../cup/games/routes/engine.js": "../../../cup/games/routes/engine.js?h=ddc20a85", "../../../cup/games/routes/texts.js": "../../../cup/games/routes/texts.js?h=e338a7c1", "../../../cup/games/routes/ui.js": "../../../cup/games/routes/ui.js?h=cdb5ab96", "../../../cup/games/semilla.js": "../../../cup/games/semilla.js?h=85160e6c", "../../../cup/games/solo.js": "../../../cup/games/solo.js?h=f218475c", "../../../cup/games/stack/engine.js": "../../../cup/games/stack/engine.js?h=a4d15a7f", "../../../cup/games/stack/scene.js": "../../../cup/games/stack/scene.js?h=9689042a", "../../../cup/games/stack/texts.js": "../../../cup/games/stack/texts.js?h=3a251697", "../../../cup/games/stack/ui.js": "../../../cup/games/stack/ui.js?h=eb721c23", "../../../cup/games/stick/engine.js": "../../../cup/games/stick/engine.js?h=7c052714", "../../../cup/games/stick/scene.js": "../../../cup/games/stick/scene.js?h=bfff8210", "../../../cup/games/stick/texts.js": "../../../cup/games/stick/texts.js?h=ad880609", "../../../cup/games/stick/ui.js": "../../../cup/games/stick/ui.js?h=754eefbd", "../../../cup/games/sudoku/engine.js": "../../../cup/games/sudoku/engine.js?h=429629a2", "../../../cup/games/sudoku/texts.js": "../../../cup/games/sudoku/texts.js?h=17b93e5a", "../../../cup/games/sudoku/ui.js": "../../../cup/games/sudoku/ui.js?h=d2e3144a", "../../../cup/games/tango/engine.js": "../../../cup/games/tango/engine.js?h=31d307a6", "../../../cup/games/tango/ui.js": "../../../cup/games/tango/ui.js?h=a3c24867", "../../../cup/games/timeline/engine.js": "../../../cup/games/timeline/engine.js?h=6ef6c2d4", "../../../cup/games/timeline/ui.js": "../../../cup/games/timeline/ui.js?h=aab888c9", "../../../cup/games/untangle/engine.js": "../../../cup/games/untangle/engine.js?h=f0485091", "../../../cup/games/untangle/ui.js": "../../../cup/games/untangle/ui.js?h=73ecc340", "../../../cup/games/where/ciudades.js": "../../../cup/games/where/ciudades.js?h=6f2f63cd", "../../../cup/games/where/engine.js": "../../../cup/games/where/engine.js?h=bb4d3f44", "../../../cup/games/where/globo.js": "../../../cup/games/where/globo.js?h=4cfa832e", "../../../cup/games/where/mapa.js": "../../../cup/games/where/mapa.js?h=78f414aa", "../../../cup/games/where/nombres.js": "../../../cup/games/where/nombres.js?h=10b9dfdc", "../../../cup/games/where/ui.js": "../../../cup/games/where/ui.js?h=ee8d1fc7", "../../../cup/games/word/engine.js": "../../../cup/games/word/engine.js?h=598eb701", "../../../cup/games/word/palabras.js": "../../../cup/games/word/palabras.js?h=80be5ef2", "../../../cup/games/word/ui.js": "../../../cup/games/word/ui.js?h=9e28ee63", "../../../cup/games/year/engine.js": "../../../cup/games/year/engine.js?h=9e052cca", "../../../cup/games/year/ui.js": "../../../cup/games/year/ui.js?h=fe5a7713", "../../../cup/games/zip/engine.js": "../../../cup/games/zip/engine.js?h=444881b2", "../../../cup/games/zip/ui.js": "../../../cup/games/zip/ui.js?h=a52c736f", "../../../cup/join.js": "../../../cup/join.js?h=5ef8c970", "../../../cup/planilla.js": "../../../cup/planilla.js?h=bcdb129f", "../../../cup/recap.js": "../../../cup/recap.js?h=3610e666", "../../../cup/reportes.js": "../../../cup/reportes.js?h=1604dfa6", "../../../cup/result.js": "../../../cup/result.js?h=d0f3785d", "../../../cup/rules.js": "../../../cup/rules.js?h=b7ca83e8", "../../../cup/screens.js": "../../../cup/screens.js?h=5f0b7ebd", "../../../cup/store-firebase.js": "../../../cup/store-firebase.js?h=1ed29bfa", "../../../cup/store-local.js": "../../../cup/store-local.js?h=e8671ca8", "../../../cup/store-offline.js": "../../../cup/store-offline.js?h=5ccbcfaf", "../../../cup/table-image.js": "../../../cup/table-image.js?h=85646475", "../../../cup/talk.js": "../../../cup/talk.js?h=65af7c9a", "../../../generala/engine.js": "../../../generala/engine.js?h=4fe1f3fc", "../../../generala/game.js": "../../../generala/game.js?h=ba09bf9f", "../../../generala/rules.js": "../../../generala/rules.js?h=94bad377", "../../../hangman/decks/animales.js": "../../../hangman/decks/animales.js?h=681eff68", "../../../hangman/decks/chile.js": "../../../hangman/decks/chile.js?h=4c565470", "../../../hangman/decks/cine.js": "../../../hangman/decks/cine.js?h=38dd21ad", "../../../hangman/decks/comida.js": "../../../hangman/decks/comida.js?h=f3139966", "../../../hangman/decks/deportes.js": "../../../hangman/decks/deportes.js?h=194ec9b7", "../../../hangman/decks/index.js": "../../../hangman/decks/index.js?h=f0c8c0b5", "../../../hangman/engine.js": "../../../hangman/engine.js?h=3ea7070a", "../../../hangman/game.js": "../../../hangman/game.js?h=aa3170de", "../../../hangman/rules.js": "../../../hangman/rules.js?h=c8159523", "../../../labs/artifacts/engine.js": "../../../labs/artifacts/engine.js?h=380c31ac", "../../../labs/artifacts/game.js": "../../../labs/artifacts/game.js?h=bb248198", "../../../labs/artifacts/levels.js": "../../../labs/artifacts/levels.js?h=e776d05d", "../../../labs/artifacts/scene.js": "../../../labs/artifacts/scene.js?h=94a6d881", "../../../labs/blackjack/engine.js": "../../../labs/blackjack/engine.js?h=94e4eb8a", "../../../labs/blackjack/game.js": "../../../labs/blackjack/game.js?h=421eb0f0", "../../../labs/blackjack/rules.js": "../../../labs/blackjack/rules.js?h=76035ef7", "../../../labs/bodega.js": "../../../labs/bodega.js?h=1f4cde03", "../../../labs/bridges/trains/sheet.js": "../../../labs/bridges/trains/sheet.js?h=e61ce596", "../../../labs/bridges/visitors/sheet.js": "../../../labs/bridges/visitors/sheet.js?h=df537ffa", "../../../labs/chameleon/engine.js": "../../../labs/chameleon/engine.js?h=d0138ecd", "../../../labs/chameleon/game.js": "../../../labs/chameleon/game.js?h=3e2ecd57", "../../../labs/chameleon/rules.js": "../../../labs/chameleon/rules.js?h=23971a54", "../../../labs/code/engine-palabra.js": "../../../labs/code/engine-palabra.js?h=4ea17011", "../../../labs/code/engine.js": "../../../labs/code/engine.js?h=9c6a100c", "../../../labs/code/game.js": "../../../labs/code/game.js?h=3ec35900", "../../../labs/croc/engine.js": "../../../labs/croc/engine.js?h=05aad914", "../../../labs/croc/game.js": "../../../labs/croc/game.js?h=098656be", "../../../labs/croc/rules.js": "../../../labs/croc/rules.js?h=4edbd1de", "../../../labs/croc/scene.js": "../../../labs/croc/scene.js?h=0be69b9c", "../../../labs/cryptic/clues.js": "../../../labs/cryptic/clues.js?h=e0c1268e", "../../../labs/cryptic/engine.js": "../../../labs/cryptic/engine.js?h=4487810f", "../../../labs/cryptic/flapboard.js": "../../../labs/cryptic/flapboard.js?h=8cd5f330", "../../../labs/cryptic/game.js": "../../../labs/cryptic/game.js?h=02ee3c07", "../../../labs/cryptic/propose.js": "../../../labs/cryptic/propose.js?h=2c280782", "../../../labs/cryptic/rules.js": "../../../labs/cryptic/rules.js?h=e122cdef", "../../../labs/cryptic/sealed.js": "../../../labs/cryptic/sealed.js?h=85861062", "../../../labs/dominorama/engine.js": "../../../labs/dominorama/engine.js?h=ee53a2ba", "../../../labs/dominorama/game.js": "../../../labs/dominorama/game.js?h=3b584ef4", "../../../labs/exploding-numbers/engine.js": "../../../labs/exploding-numbers/engine.js?h=680b00f7", "../../../labs/exploding-numbers/game.js": "../../../labs/exploding-numbers/game.js?h=c07efd3b", "../../../labs/flap/engine.js": "../../../labs/flap/engine.js?h=927df9e5", "../../../labs/flap/game.js": "../../../labs/flap/game.js?h=9c4fcd15", "../../../labs/flap/scene.js": "../../../labs/flap/scene.js?h=6ccfd0f0", "../../../labs/fourth-king/engine.js": "../../../labs/fourth-king/engine.js?h=44f9f09f", "../../../labs/fourth-king/game.js": "../../../labs/fourth-king/game.js?h=79167638", "../../../labs/fourth-king/rules.js": "../../../labs/fourth-king/rules.js?h=44dc9e19", "../../../labs/home/experiments.js": "../../../labs/home/experiments.js?h=c3089b12", "../../../labs/index-nav.js": "../../../labs/index-nav.js?h=7ef19804", "../../../labs/julep/engine.js": "../../../labs/julep/engine.js?h=8ff80af4", "../../../labs/julep/game.js": "../../../labs/julep/game.js?h=6468e3e7", "../../../labs/julep/rules.js": "../../../labs/julep/rules.js?h=b60ca2cc", "../../../labs/launched.js": "../../../labs/launched.js?h=b88b526f", "../../../labs/marquee/marquee.js": "../../../labs/marquee/marquee.js?h=9d19beff", "../../../labs/memory/engine.js": "../../../labs/memory/engine.js?h=bbfaa5a3", "../../../labs/memory/game.js": "../../../labs/memory/game.js?h=c25e59ee", "../../../labs/memory/rules.js": "../../../labs/memory/rules.js?h=ca8582b2", "../../../labs/memory/sprites.js": "../../../labs/memory/sprites.js?h=bcb6c4ae", "../../../labs/publish.js": "../../../labs/publish.js?h=d8aa8025", "../../../labs/stack/engine.js": "../../../labs/stack/engine.js?h=47b96079", "../../../labs/stack/game.js": "../../../labs/stack/game.js?h=741c9d29", "../../../labs/stack/scene.js": "../../../labs/stack/scene.js?h=9295e673", "../../../labs/sudoku/engine.js": "../../../labs/sudoku/engine.js?h=bc1491ff", "../../../labs/sudoku/game.js": "../../../labs/sudoku/game.js?h=2f5940f4", "../../../labs/sudoku/rules.js": "../../../labs/sudoku/rules.js?h=f44a6909", "../../../labs/transfer/engine.js": "../../../labs/transfer/engine.js?h=a56ed9dd", "../../../labs/transfer/game.js": "../../../labs/transfer/game.js?h=444b51e8", "../../../labs/transfer/rules.js": "../../../labs/transfer/rules.js?h=b56405ad", "../../../labs/wobbles/game.js": "../../../labs/wobbles/game.js?h=982e7778", "../../../labs/wobbles/rules.js": "../../../labs/wobbles/rules.js?h=566f4454", "../../../liars-dice/engine.js": "../../../liars-dice/engine.js?h=949789e4", "../../../liars-dice/game.js": "../../../liars-dice/game.js?h=8fdbcd0e", "../../../liars-dice/rules.js": "../../../liars-dice/rules.js?h=9dd26abd", "../../../panel/aggregate.js": "../../../panel/aggregate.js?h=1cf1c768", "../../../panel/campaigns.js": "../../../panel/campaigns.js?h=311e9d7b", "../../../panel/copas.js": "../../../panel/copas.js?h=bf7dfda6", "../../../panel/dominios.js": "../../../panel/dominios.js?h=337fccc0", "../../../panel/feedback.js": "../../../panel/feedback.js?h=3d7943a9", "../../../panel/game-report.js": "../../../panel/game-report.js?h=dc05b025", "../../../panel/lab-keys.js": "../../../panel/lab-keys.js?h=49a23a0f", "../../../panel/panel.js": "../../../panel/panel.js?h=60aa861e", "../../../panel/public-games.js": "../../../panel/public-games.js?h=d57ababe", "../../../panel/release-push.js": "../../../panel/release-push.js?h=e77f31af", "../../../panel/rooms-watch.js": "../../../panel/rooms-watch.js?h=6a525722", "../../../panel/rutas.js": "../../../panel/rutas.js?h=c67ac1eb", "../../../panel/timeline.js": "../../../panel/timeline.js?h=e5e2bb68", "../../../panel/wbr-view.js": "../../../panel/wbr-view.js?h=1a06eb40", "../../../panel/wbr.js": "../../../panel/wbr.js?h=5274d345", "../../../privacy/texts.js": "../../../privacy/texts.js?h=bebedda4", "../../../sw.js": "../../../sw.js?h=e0d27314", "../../../timeline/decks/brasil.js": "../../../timeline/decks/brasil.js?h=231eae24", "../../../timeline/decks/chile.js": "../../../timeline/decks/chile.js?h=a8cc1127", "../../../timeline/decks/futbol.js": "../../../timeline/decks/futbol.js?h=31b8f32e", "../../../timeline/decks/historia.js": "../../../timeline/decks/historia.js?h=a239a7dc", "../../../timeline/decks/index.js": "../../../timeline/decks/index.js?h=ab999761", "../../../timeline/decks/musica.js": "../../../timeline/decks/musica.js?h=4b5db315", "../../../timeline/decks/pop.js": "../../../timeline/decks/pop.js?h=98a53476", "../../../timeline/engine.js": "../../../timeline/engine.js?h=5d408db9", "../../../timeline/game.js": "../../../timeline/game.js?h=321d9e16", "../../../timeline/rules.js": "../../../timeline/rules.js?h=7e763516", "../../../wbr/page.js": "../../../wbr/page.js?h=f6dbb059"}}</script>
+</head>
+  <script type="module">import '../../../assets/js/instalable.js';</script>
+<body>
+<main>
+  <canvas id="cv"></canvas>
+  <div id="hud"><a href="../" aria-label="Volver a los prototipos">‹</a><span id="lives"></span><span id="score"></span><button id="mute" aria-label="Sonido">🔊</button></div>
+  <div id="card"><div class="in">
+    <div id="cEmoji"></div><h2 id="cTitle"></h2><div id="cBody"></div><button id="cBtn"></button>
+    <!-- The result's shared blocks (C-19), filled by ../game.js: rankings notice, exits, breakdown, table -->
+    <div id="cAviso"></div><div id="cExits"></div><div id="cDetail"></div><div id="cRank"></div>
+  </div></div>
+</main>
+<script>
+'use strict';
+/**
+ * ⚖️ Tembleque — lab prototype. Shapes ride a rail over a plank balanced on a rock; a tap drops the one
+ * in the claw. They never
+ * stop coming, quicker each time, and they pile up. Each one that ends in the water costs one of three
+ * lives; a plank that leans too far tips over and ends the game at once. The score is how many pieces are
+ * on the pile, plus one for each that left the plank level (a perfect one).
+ *
+ * Three parts: the physics (rigid bodies, pure), the game (the pile, the claw, the score, pure) and the
+ * view (canvas, sound, input). The first two run on a fixed step and use only + − × ÷ and sqrt, like
+ * Tren en Vilo's engine, so one seed and the same taps give the same game in every browser.
+ *
+ * The pile can grow without end because only its top is simulated piece by piece: once a piece is
+ * buried and at rest it is welded to the plank (physics: `mkPart`; game: `weld`).
+ */
+
+/* ================================================================== */
+/* Physics: convex polygons and circles, sequential impulses           */
+/* ================================================================== */
+const DT = 1 / 120, GRAV = 1100, ITER = 10, SLOP = 0.5, BETA = 0.2, MAX_BIAS = 70, REST_V = 70, ROLL = 5.5;
+const PI = 3.141592653589793, C30 = 0.8660254037844386;
+
+/** A convex polygon from its points: centred on its centroid, clockwise on screen (y down), with its outward normals. */
+function mkPoly(pts) {
+  const n = pts.length; let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < n; i++) { const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % n], k = x1 * y2 - x2 * y1; a += k; cx += (x1 + x2) * k; cy += (y1 + y2) * k; }
+  cx /= 3 * a; cy /= 3 * a; a /= 2;
+  const p = pts.map(([x, y]) => [x - cx, y - cy]);
+  if (a < 0) { p.reverse(); a = -a; }
+  let inertia = 0, r = 0; const nrm = [];
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = p[i], [x2, y2] = p[(i + 1) % n], k = x1 * y2 - x2 * y1;
+    inertia += k * (x1 * x1 + x1 * x2 + x2 * x2 + y1 * y1 + y1 * y2 + y2 * y2);
+    const ex = x2 - x1, ey = y2 - y1, l = Math.sqrt(ex * ex + ey * ey); nrm.push([ey / l, -ex / l]);
+    r = Math.max(r, Math.sqrt(x1 * x1 + y1 * y1));
+  }
+  return { kind: 'poly', p, nrm, area: a, inertia: inertia / 12, r };
+}
+const mkCircle = r => ({ kind: 'circle', r, area: PI * r * r, inertia: PI * r * r * r * r / 2 });
+const rect = (w, h) => Object.assign(mkPoly([[-w / 2, -h / 2], [w / 2, -h / 2], [w / 2, h / 2], [-w / 2, h / 2]]), { w, h });
+const tri = s => mkPoly([[0, -s * C30], [s / 2, 0], [-s / 2, 0]]);
+/** Half a disc, flat side down, in steps of 30°. */
+const dome = r => mkPoly([[-1, 0], [-C30, -0.5], [-0.5, -C30], [0, -1], [0.5, -C30], [C30, -0.5], [1, 0]].map(([x, y]) => [x * r, y * r]));
+
+/**
+ * A piece made of several convex shapes that are one rigid body (an L: no single convex shape is one).
+ * `subs`: each shape and where its centre is; `outline`: the whole piece's outline, for drawing.
+ * Everything ends up measured from the piece's centre of mass.
+ */
+function mkCompound(subs, outline) {
+  let area = 0, cx = 0, cy = 0, inertia = 0, r = 0;
+  for (const u of subs) { area += u.shape.area; cx += u.x * u.shape.area; cy += u.y * u.shape.area; }
+  cx /= area; cy /= area;
+  const out = subs.map(u => { const lx = u.x - cx, ly = u.y - cy; inertia += u.shape.inertia + u.shape.area * (lx * lx + ly * ly); return { shape: u.shape, lx, ly }; });
+  const line = outline.map(([x, y]) => { const px = x - cx, py = y - cy; r = Math.max(r, Math.sqrt(px * px + py * py)); return [px, py]; });
+  return { kind: 'compound', subs: out, outline: line, area, inertia, r };
+}
+/** An L: a bar of three squares of side a with one more at its foot, to the right or (`flip`) to the left. */
+const ele = (a, flip) => {
+  const f = flip ? -1 : 1;
+  return mkCompound([{ shape: rect(a, 3 * a), x: 0, y: 0 }, { shape: rect(a, a), x: f * a, y: a }],
+    [[-0.5, -1.5], [0.5, -1.5], [0.5, 0.5], [1.5, 0.5], [1.5, 1.5], [-0.5, 1.5]].map(([x, y]) => [f * x * a, y * a]));
+};
+
+/** A T: a bar of three squares of side a with one more standing on its middle. */
+const te = a => mkCompound([{ shape: rect(3 * a, a), x: 0, y: 0 }, { shape: rect(a, a), x: 0, y: -a }],
+  [[-1.5, 0.5], [-1.5, -0.5], [-0.5, -0.5], [-0.5, -1.5], [0.5, -1.5], [0.5, -0.5], [1.5, -0.5], [1.5, 0.5]].map(([x, y]) => [x * a, y * a]));
+/** A Z: two bars of two squares, the lower one a square to the right or (`flip`) to the left. */
+const zeta = (a, flip) => {
+  const f = flip ? -1 : 1;
+  return mkCompound([{ shape: rect(2 * a, a), x: -f * a / 2, y: -a / 2 }, { shape: rect(2 * a, a), x: f * a / 2, y: a / 2 }],
+    [[-1.5, -1], [0.5, -1], [0.5, 0], [1.5, 0], [1.5, 1], [-0.5, 1], [-0.5, 0], [-1.5, 0]].map(([x, y]) => [f * x * a, y * a]));
+};
+/** A cross: five squares of side a. */
+const cruz = a => mkCompound([{ shape: rect(3 * a, a), x: 0, y: 0 }, { shape: rect(a, a), x: 0, y: -a }, { shape: rect(a, a), x: 0, y: a }],
+  [[-0.5, -1.5], [0.5, -1.5], [0.5, -0.5], [1.5, -0.5], [1.5, 0.5], [0.5, 0.5], [0.5, 1.5], [-0.5, 1.5], [-0.5, 0.5], [-1.5, 0.5], [-1.5, -0.5], [-0.5, -0.5]].map(([x, y]) => [x * a, y * a]));
+/** A regular hexagon of radius r, resting on a flat side. */
+const hexa = r => mkPoly([[r, 0], [r / 2, r * C30], [-r / 2, r * C30], [-r, 0], [-r / 2, -r * C30], [r / 2, -r * C30]]);
+
+/** A body. Mass is density × area / 1000. One of several shapes carries them as `parts` (see mkPart), with the ids right after its own. */
+function mkBody(id, shape, x, y, { density = 1, fr = 0.35, re = 0 } = {}) {
+  const m = density * shape.area / 1000, n = shape.p ? shape.p.length : 0;
+  const b = { id, shape, x, y, vx: 0, vy: 0, c: 1, s: 0, w: 0, m, invM: 1 / m, invI: 1000 / (density * shape.inertia), fr, re,
+    wx: new Array(n), wy: new Array(n), nx: new Array(n), ny: new Array(n), minx: 0, maxx: 0, miny: 0, maxy: 0, touch: false, air: 0, dens: density };
+  if (shape.kind === 'compound') b.parts = shape.subs.map((u, k) => mkPart(b, id + 1 + k, u.shape, u.lx, u.ly, 1, 0, { fr, re }));
+  place(b); return b;
+}
+/** World points, normals and bounding box from the body's position and rotation (c, s). */
+function place(b) {
+  const sh = b.shape;
+  if (sh.kind === 'compound') {
+    // Its shapes go where it carries them; its box is the box of them all
+    let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+    for (const q of b.parts) { seat(q); if (q.minx < minx) minx = q.minx; if (q.maxx > maxx) maxx = q.maxx; if (q.miny < miny) miny = q.miny; if (q.maxy > maxy) maxy = q.maxy; }
+    b.minx = minx; b.maxx = maxx; b.miny = miny; b.maxy = maxy; return;
+  }
+  if (sh.kind === 'circle') { b.minx = b.x - sh.r; b.maxx = b.x + sh.r; b.miny = b.y - sh.r; b.maxy = b.y + sh.r; return; }
+  let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
+  for (let i = 0; i < sh.p.length; i++) {
+    const lx = sh.p[i][0], ly = sh.p[i][1], x = b.x + b.c * lx - b.s * ly, y = b.y + b.s * lx + b.c * ly;
+    b.wx[i] = x; b.wy[i] = y;
+    if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+    const mx = sh.nrm[i][0], my = sh.nrm[i][1]; b.nx[i] = b.c * mx - b.s * my; b.ny[i] = b.s * mx + b.c * my;
+  }
+  b.minx = minx; b.maxx = maxx; b.miny = miny; b.maxy = maxy;
+}
+
+/**
+ * A contact: the normal goes from a to b. A and B are what touch: a body, or a part welded to the plank,
+ * and then the body that takes the push is the plank itself (its `owner`). `fid` names the features
+ * that touch, to carry the impulse to the next step.
+ */
+const con = (A, B, nx, ny, px, py, pen, fid) => ({ a: A.owner || A, b: B.owner || B, nx, ny, px, py, pen, key: (A.id * 4096 + B.id) * 2048 + fid, pn: 0, pt: 0,
+  fr: Math.sqrt(A.fr * B.fr), re: Math.max(A.re, B.re), rax: 0, ray: 0, rbx: 0, rby: 0, mn: 0, mt: 0, bias: 0 });
+
+/** The face of A that B is furthest outside of: [separation, face]. */
+function maxSep(A, B) {
+  let best = -Infinity, bi = 0;
+  for (let i = 0; i < A.wx.length; i++) {
+    const nx = A.nx[i], ny = A.ny[i], vx = A.wx[i], vy = A.wy[i]; let m = Infinity;
+    for (let j = 0; j < B.wx.length; j++) { const d = nx * (B.wx[j] - vx) + ny * (B.wy[j] - vy); if (d < m) m = d; }
+    if (m > best) { best = m; bi = i; }
+  }
+  return [best, bi];
+}
+function clip(p, nx, ny, off) {
+  const d0 = nx * p[0][0] + ny * p[0][1] - off, d1 = nx * p[1][0] + ny * p[1][1] - off, out = [];
+  if (d0 <= 0) out.push(p[0]);
+  if (d1 <= 0) out.push(p[1]);
+  if (d0 * d1 < 0) { const t = d0 / (d0 - d1); out.push([p[0][0] + t * (p[1][0] - p[0][0]), p[0][1] + t * (p[1][1] - p[0][1])]); }
+  return out;
+}
+/** Two polygons: the reference face is the one of least penetration; the other's facing edge, clipped to it, gives up to two points. */
+function polyPoly(A, B, out) {
+  const [sa, ia] = maxSep(A, B); if (sa > 0) return;
+  const [sb, ib] = maxSep(B, A); if (sb > 0) return;
+  const flip = sb > sa + 0.05, R = flip ? B : A, I = flip ? A : B, ri = flip ? ib : ia;
+  const nx = R.nx[ri], ny = R.ny[ri], n = I.wx.length;
+  let ii = 0, md = Infinity;
+  for (let j = 0; j < n; j++) { const d = nx * I.nx[j] + ny * I.ny[j]; if (d < md) { md = d; ii = j; } }
+  const i2 = (ii + 1) % n, r2 = (ri + 1) % R.wx.length;
+  const v1x = R.wx[ri], v1y = R.wy[ri], v2x = R.wx[r2], v2y = R.wy[r2], tx = -ny, ty = nx;
+  let p = [[I.wx[ii], I.wy[ii]], [I.wx[i2], I.wy[i2]]];
+  p = clip(p, -tx, -ty, -(tx * v1x + ty * v1y)); if (p.length < 2) return;
+  p = clip(p, tx, ty, tx * v2x + ty * v2y); if (p.length < 2) return;
+  for (let k = 0; k < 2; k++) {
+    const sep = nx * (p[k][0] - v1x) + ny * (p[k][1] - v1y);
+    if (sep <= 0) out.push(con(A, B, flip ? -nx : nx, flip ? -ny : ny, p[k][0], p[k][1], -sep, (flip ? 1 : 0) + 2 * ri + 32 * ii + 512 * k));
+  }
+}
+function polyCircle(P, C, out) {
+  const r = C.shape.r, n = P.wx.length; let best = -Infinity, bi = 0;
+  for (let i = 0; i < n; i++) { const d = P.nx[i] * (C.x - P.wx[i]) + P.ny[i] * (C.y - P.wy[i]); if (d > r) return; if (d > best) { best = d; bi = i; } }
+  const j = (bi + 1) % n, v1x = P.wx[bi], v1y = P.wy[bi], v2x = P.wx[j], v2y = P.wy[j], nx = P.nx[bi], ny = P.ny[bi];
+  const u1 = (C.x - v1x) * (v2x - v1x) + (C.y - v1y) * (v2y - v1y), u2 = (C.x - v2x) * (v1x - v2x) + (C.y - v2y) * (v1y - v2y);
+  if (best > 1e-6 && (u1 <= 0 || u2 <= 0)) {
+    const vx = u1 <= 0 ? v1x : v2x, vy = u1 <= 0 ? v1y : v2y, dx = C.x - vx, dy = C.y - vy, d2 = dx * dx + dy * dy;
+    if (d2 > r * r) return;
+    const d = Math.sqrt(d2) || 1e-6;
+    out.push(con(P, C, dx / d, dy / d, vx, vy, r - d, 1));
+  } else out.push(con(P, C, nx, ny, C.x - nx * r, C.y - ny * r, r - best, 0));
+}
+function circleCircle(A, B, out) {
+  const dx = B.x - A.x, dy = B.y - A.y, rr = A.shape.r + B.shape.r, d2 = dx * dx + dy * dy;
+  if (d2 > rr * rr) return;
+  const d = Math.sqrt(d2) || 1e-6, nx = dx / d, ny = dy / d;
+  out.push(con(A, B, nx, ny, A.x + nx * A.shape.r, A.y + ny * A.shape.r, rr - d, 0));
+}
+function collide(a, b, out) {
+  const pa = a.shape.kind === 'poly', pb = b.shape.kind === 'poly';
+  if (pa && pb) polyPoly(a, b, out); else if (pa) polyCircle(a, b, out); else if (pb) polyCircle(b, a, out); else circleCircle(a, b, out);
+}
+function impulse(k, px, py) {
+  const a = k.a, b = k.b;
+  a.vx -= a.invM * px; a.vy -= a.invM * py; a.w -= a.invI * (k.rax * py - k.ray * px);
+  b.vx += b.invM * px; b.vy += b.invM * py; b.w += b.invI * (k.rbx * py - k.rby * px);
+}
+
+/**
+ * A part: a shape fixed to a body (its `owner`) at (lx, ly) from its centre, turned by (rc, rs). What touches
+ * a part pushes its owner. The plank's end stops are parts, and so is every piece of the pile once it is
+ * buried: it stops being a body of its own and becomes one more shape of the plank, which carries its weight
+ * (`m`). A piece of several shapes has them as its parts; welded, each goes to the plank as a part of its own
+ * (`sub`: not drawn), with one more that stands for the whole piece and is only drawn (`visual`).
+ */
+function mkPart(pl, id, shape, lx, ly, rc, rs, o) {
+  const n = shape.p ? shape.p.length : 0;
+  const q = Object.assign({ id, shape, owner: pl, lx, ly, rc, rs, fr: 0.6, re: 0.05, m: 0, x: 0, y: 0, c: 1, s: 0,
+    wx: new Array(n), wy: new Array(n), nx: new Array(n), ny: new Array(n), minx: 0, maxx: 0, miny: 0, maxy: 0 }, o);
+  seat(q); return q;
+}
+/** Puts a part where its owner carries it. */
+function seat(q) {
+  const o = q.owner;
+  q.x = o.x + o.c * q.lx - o.s * q.ly; q.y = o.y + o.s * q.lx + o.c * q.ly;
+  q.c = o.c * q.rc - o.s * q.rs; q.s = o.s * q.rc + o.c * q.rs;
+  if (q.shape.kind !== 'compound') place(q);
+}
+
+/**
+ * One step of the world W: { bodies, plank, prev, K, D, smax }. `bodies` are the loose pieces. The plank
+ * cannot move, only turn about its centre (invM = 0), with its parts: a spring (K) pulls it level and a
+ * damper (D) calms it; `load` is the weight welded to it, as mass × arm, and `mass` how much that is;
+ * `smax` is the sine of the angle where it stops.
+ *
+ * The spring and the damper grow with the welded mass (× 1 + mass / SPRING_M). With a fixed spring a
+ * big pile would tip at the slightest thing: its lean would go by its weight times how far off centre
+ * it is. Like this the lean goes by how far off centre the pile's weight is, whatever its size, so the
+ * thing to watch stays the same from the first piece to the hundredth.
+ */
+function stepWorld(W) {
+  const bs = W.bodies, pl = W.plank;
+  for (const b of bs) { b.touch = false; b.vy += GRAV * DT; if (b.air) b.vx += b.air * DT; }
+  pl.w += ((-W.K * pl.s - W.D * pl.w) * PLANK_I * (1 + pl.mass / SPRING_M) + GRAV * pl.load * pl.c) * pl.invI * DT;
+
+  // What can touch: the plank and its parts against each loose piece, and the loose pieces among themselves; a piece of several shapes, shape by shape
+  const cs = [], ground = [pl];
+  for (const q of pl.parts) if (!q.visual) ground.push(q);
+  const meet = (A, B) => { for (const p of A) for (const q of B) if (!(p.maxx < q.minx || q.maxx < p.minx || p.maxy < q.miny || q.maxy < p.miny)) collide(p, q, cs); };
+  for (let i = 0; i < bs.length; i++) {
+    const b = bs[i], mine = b.parts || [b];
+    meet(ground, mine);
+    for (let j = i + 1; j < bs.length; j++) {
+      const a = bs[j];
+      if (!(a.maxx < b.minx || b.maxx < a.minx || a.maxy < b.miny || b.maxy < a.miny)) meet(mine, a.parts || [a]);
+    }
+  }
+  const now = new Map();
+  for (const k of cs) { const o = W.prev.get(k.key); if (o) { k.pn = o.pn; k.pt = o.pt; } now.set(k.key, k); }
+  W.prev = now;
+
+  for (const k of cs) {
+    const a = k.a, b = k.b, tx = -k.ny, ty = k.nx;
+    k.rax = k.px - a.x; k.ray = k.py - a.y; k.rbx = k.px - b.x; k.rby = k.py - b.y;
+    const rna = k.rax * k.ny - k.ray * k.nx, rnb = k.rbx * k.ny - k.rby * k.nx, rta = k.rax * ty - k.ray * tx, rtb = k.rbx * ty - k.rby * tx;
+    k.mn = 1 / (a.invM + b.invM + a.invI * rna * rna + b.invI * rnb * rnb);
+    k.mt = 1 / (a.invM + b.invM + a.invI * rta * rta + b.invI * rtb * rtb);
+    k.bias = Math.min(MAX_BIAS, BETA / DT * Math.max(0, k.pen - SLOP));
+    const vn = (b.vx - b.w * k.rby - a.vx + a.w * k.ray) * k.nx + (b.vy + b.w * k.rbx - a.vy - a.w * k.rax) * k.ny;
+    if (vn < -REST_V && -k.re * vn > k.bias) k.bias = -k.re * vn;
+    impulse(k, k.pn * k.nx + k.pt * tx, k.pn * k.ny + k.pt * ty);
+  }
+  for (let it = 0; it < ITER; it++) for (const k of cs) {
+    const a = k.a, b = k.b, tx = -k.ny, ty = k.nx;
+    let dvx = b.vx - b.w * k.rby - a.vx + a.w * k.ray, dvy = b.vy + b.w * k.rbx - a.vy - a.w * k.rax;
+    let d = k.mn * (k.bias - (dvx * k.nx + dvy * k.ny)); const pn0 = k.pn;
+    k.pn = Math.max(pn0 + d, 0); d = k.pn - pn0;
+    impulse(k, d * k.nx, d * k.ny);
+    dvx = b.vx - b.w * k.rby - a.vx + a.w * k.ray; dvy = b.vy + b.w * k.rbx - a.vy - a.w * k.rax;
+    d = -k.mt * (dvx * tx + dvy * ty); const pt0 = k.pt, max = k.fr * k.pn;
+    k.pt = Math.max(-max, Math.min(max, pt0 + d)); d = k.pt - pt0;
+    impulse(k, d * tx, d * ty);
+  }
+  for (const k of cs) if (k.pn > 0) { k.a.touch = true; k.b.touch = true; }
+
+  if ((pl.s >= W.smax && pl.w > 0) || (pl.s <= -W.smax && pl.w < 0)) pl.w = 0;
+  {
+    const c = pl.c - pl.s * pl.w * DT, s = pl.s + pl.c * pl.w * DT, l = 1 / Math.sqrt(c * c + s * s);
+    pl.c = c * l; pl.s = s * l;
+    if (pl.s > W.smax || pl.s < -W.smax) { pl.s = pl.s > 0 ? W.smax : -W.smax; pl.c = Math.sqrt(1 - pl.s * pl.s); }
+    place(pl);
+    for (const q of pl.parts) seat(q);
+  }
+  for (const b of bs) {
+    // A ball that touches something loses spin (rolling resistance): on a nearly level surface it stays put
+    if (b.shape.kind === 'circle' && b.touch) { const dw = ROLL * DT; b.w = b.w > dw ? b.w - dw : b.w < -dw ? b.w + dw : 0; }
+    // What touches something settles quickly instead of tumbling on: a piece mostly stays where it lands
+    { const k = b.touch ? 4 : 0.05; b.w *= 1 - (b.touch ? 8 : 0.5) * DT; b.vx *= 1 - k * DT; b.vy *= 1 - k * DT; }
+    b.x += b.vx * DT; b.y += b.vy * DT;
+    const c = b.c - b.s * b.w * DT, s = b.s + b.c * b.w * DT, l = 1 / Math.sqrt(c * c + s * s);
+    b.c = c * l; b.s = s * l;
+    place(b);
+  }
+}
+
+/* ================================================================== */
+/* The game: an endless pile, the claw, the score                      */
+/* ================================================================== */
+const VW = 400, VH = 600, PIV = { x: 200, y: 440 }, RAIL_Y = 64, CLAW = 48, WATER_Y = 552;
+const PLANK_H = 12, PLANK_I = 60000, SPRING_M = 12, HALF = 165, JUDGE_S = 1.4, PERFECT = 0.03;
+/**
+ * Too unbalanced (the owner: a little is enough): the level under the plank shows `lean`, the plank's lean
+ * followed a little behind (LEAN_T seconds), as the bubble of a real level does, so the jolt of a landing does
+ * not throw it. When it reaches TIP (a sine: about 9°), the end of the level's red, the plank tips over, and that
+ * is the end.
+ */
+const TIP = 0.16, LEAN_T = 0.3;
+/** How many pieces stay loose on top of the pile (the ones under them are welded to the plank), how far above the pile the claw rides, how tall the stops at the plank's ends are, and how many pieces ahead are drawn (two wait in sight, one more comes in). */
+const LOOSE = 3, CLEAR = 220, LIP = 16, QUEUE = 3;
+
+/**
+ * The pieces: ten kinds, each a shape of its own (the owner: no two that look alike and only behave differently,
+ * so no ice, rubber or bubble any more). Their names are in the texts (`bzCubo`…). They all weigh the same (MASS),
+ * whatever their size, and grip the same.
+ */
+const MASS = 1.8;
+const KINDS = {
+  cubo: { color: '#2ee6d6', shape: k => rect(42 * k, 42 * k) },
+  ladrillo: { color: '#ff2e88', shape: k => rect(76 * k, 24 * k) },
+  triangulo: { color: '#9dff3a', shape: k => tri(54 * k) },
+  ele: { color: '#6aa8ff', shape: (k, flip) => ele(22 * k, flip) },
+  bola: { color: '#ffd23f', shape: k => mkCircle(19 * k), fr: 0.5 },
+  te: { color: '#b07cff', shape: k => te(22 * k) },
+  domo: { color: '#ff7a1a', shape: k => dome(28 * k) },
+  hexagono: { color: '#8fe3ff', shape: k => hexa(25 * k) },
+  zeta: { color: '#e9e4ff', shape: (k, flip) => zeta(22 * k, flip) },
+  cruz: { color: '#ff8fbd', shape: k => cruz(20 * k) },
+};
+/** A piece's shape from its spec { kind, k (scale), flip (an L or a Z the other way round) }. */
+const shapeFor = spec => KINDS[spec.kind].shape(spec.k, spec.flip);
+/**
+ * When each kind comes (the owner's schedule: new shapes one at a time and well apart).
+ * The first pieces are only the three everyday ones: squares to begin with, the brick from the 3rd piece and the
+ * triangle from the 6th. The special ones come one at a time, each on a turn of its own, and no other piece is one:
+ * the first two a little early (the 8th and the 12th piece), then a new kind every fifth piece (the 17th, 22nd… 37th),
+ * in SPECIAL's order. Once all have come they keep taking a turn every fifth piece, in the same order.
+ *
+ * Among the everyday ones a triangle is one in eight (WEIGHT: a little over 1 in 8 by the draw, which the squares
+ * that are forced bring down to it), and a square is never far: after NO_SQUARE pieces in a row without one, the next
+ * everyday piece is a square.
+ */
+const EVERYDAY = { cubo: 0, ladrillo: 2, triangulo: 5 }, WEIGHT = { cubo: 4, ladrillo: 3, triangulo: 1.15 }, NO_SQUARE = 3;
+const SPECIAL = ['ele', 'bola', 'te', 'domo', 'hexagono', 'zeta', 'cruz'], SPECIAL_AT = [8, 12, 17, 22, 27, 32, 37], EVERY = 5;
+function specialAt(i) {
+  const n = i + 1, k = SPECIAL_AT.indexOf(n), last = SPECIAL_AT[SPECIAL_AT.length - 1];
+  if (k >= 0) return { kind: SPECIAL[k], debut: true };
+  if (n > last && (n - last) % EVERY === 0) return { kind: SPECIAL[((n - last) / EVERY - 1) % SPECIAL.length], debut: false };
+  return null;
+}
+
+/** How hard the n-th piece is (n from 0): there are no rounds, everything tightens a little with every piece. */
+function params(n) {
+  const u = Math.min(1, n / 60);
+  return {
+    speed: Math.min(340, 100 + 3.4 * n),                      // the claw, px/s: quicker with every piece
+    hold: Math.max(2, 6 - 0.075 * n),                         // seconds until the claw lets go by itself
+    gap: Math.max(0.25, 0.6 - 0.007 * n),                     // the wait for the next piece
+    range: 115 + 70 * u,                                      // how far from the centre the claw goes: past the plank's ends later on
+    K: 48 - 12 * u, D: 10,                                    // the plank's spring: a little softer, so it tips more
+    spin: n < 20 ? 0 : Math.min(2.6, 0.8 + 0.04 * (n - 20)),  // the piece turns in the claw: the tap picks how it lands
+    wind: n < 56 ? 0 : Math.min(150, 50 + 3 * (n - 56)),
+    guide: n < 9,                                             // the dashed line under the piece
+  };
+}
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/**
+ * The i-th piece, the same for everyone with the seed: a special one on its turn, the new everyday kind on the piece
+ * it starts, a square if there has been none for a while, else drawn from the everyday ones seen so far.
+ * Pieces are asked for in order: `S.noSq` counts the ones since the last square.
+ */
+function pieceAt(S, i) {
+  const sp = specialAt(i);
+  let spec;
+  if (sp) spec = { kind: sp.kind, k: 0.9 + 0.2 * S.rngSeq(), flip: S.rngSeq() < 0.5, debut: sp.debut };
+  else {
+    const pool = Object.keys(EVERYDAY).filter(k => EVERYDAY[k] <= i), newest = pool[pool.length - 1], debut = EVERYDAY[newest] === i;
+    let kind = newest;
+    if (!debut) {
+      if (S.noSq >= NO_SQUARE) kind = 'cubo';
+      else {
+        let x = S.rngSeq() * pool.reduce((s, k) => s + WEIGHT[k], 0);
+        for (const k of pool) { x -= WEIGHT[k]; if (x < 0) { kind = k; break; } }
+      }
+    }
+    spec = { kind, k: i < 4 ? 1 : 0.9 + 0.25 * S.rngSeq(), flip: false, debut: debut && i > 0 };
+  }
+  S.noSq = spec.kind === 'cubo' ? 0 : S.noSq + 1;
+  return spec;
+}
+
+/** `skip` (lab only): starts as hard as if that many pieces were already down, on an empty plank. */
+function newGame(seed, skip = 0) {
+  const pl = mkBody(0, rect(HALF * 2, PLANK_H), PIV.x, PIV.y, { fr: 0.8 });
+  pl.invM = 0; pl.inertia = PLANK_I; pl.invI = 1 / PLANK_I; pl.parts = []; pl.load = 0; pl.mass = 0;
+  const S = { seed, skip, rngSeq: mulberry(seed), rngCar: mulberry(seed ^ 0x9e3779b9), t: 0, ids: 2, phase: 'play', P: params(skip),
+    lives: 3, score: 0, landed: 0, perfects: 0, streak: 0, best: 0, done: false, overAt: 0, lean: 0, tipped: false,
+    plank: pl, bodies: [], prev: new Map(), K: 0, D: 10, smax: 0.45, lip: 0, top: PIV.y - PLANK_H / 2, peak: 0, railY: RAIL_Y,
+    queue: [], gen: skip, noSq: 0, held: null, car: { x: PIV.x, dir: 1 }, released: 0, spawnT: 0.7, gap: 0.7, wind: 0, ev: [] };
+  S.K = S.P.K; setLips(S, LIP);
+  while (S.queue.length < QUEUE) S.queue.push(pieceAt(S, S.gen++));
+  S.car.x = PIV.x - S.P.range;
+  return S;
+}
+/** The plank's end stops, of height h: its parts 1 and 2. */
+function setLips(S, h) {
+  const pl = S.plank;
+  pl.parts = pl.parts.filter(q => !q.lip); S.lip = h;
+  if (h) for (const side of [-1, 1]) pl.parts.push(mkPart(pl, side < 0 ? 1 : 2, rect(8, h), side * (HALF - 4), -(PLANK_H + h) / 2, 1, 0, { lip: true, fr: 0.3 }));
+}
+/** The next piece goes into the claw, which waits for it at the left end of its rail (where the queue comes in) and sets off to the right. */
+function takeNext(S) {
+  const P = S.P, spec = S.queue.shift(), r = S.rngCar;
+  while (S.queue.length < QUEUE) S.queue.push(pieceAt(S, S.gen++));
+  S.car.x = PIV.x - P.range; S.car.dir = 1;
+  S.wind = P.wind ? (r() < 0.5 ? -1 : 1) * P.wind * (0.5 + 0.5 * r()) : 0;
+  const h = S.held = { spec, shape: shapeFor(spec), c: 1, s: 0, spin: P.spin * (r() < 0.5 ? -1 : 1), fuse: P.hold, hold: P.hold };
+  if (P.spin) for (let q = Math.floor(r() * 4); q > 0; q--) { const c = -h.s; h.s = h.c; h.c = c; }   // starts at any quarter turn
+  if (spec.debut) S.ev.push({ type: 'debut', kind: spec.kind });
+}
+function release(S, auto) {
+  const h = S.held, K = KINDS[h.spec.kind], b = mkBody(++S.ids, h.shape, S.car.x, S.railY + CLAW, { density: MASS * 1000 / h.shape.area, fr: K.fr, re: K.re });
+  if (b.parts) S.ids += b.parts.length;
+  b.c = h.c; b.s = h.s; b.kind = h.spec.kind; b.tc = null; b.judged = false; b.counted = false; b.auto = auto; b.air = S.wind / (0.6 + b.m); place(b);
+  S.bodies.push(b); S.held = null; S.released++; S.spawnT = S.gap = S.P.gap;
+  S.ev.push({ type: 'drop', auto });
+  // The next piece is a little harder
+  S.P = params(S.released + S.skip); S.K = S.P.K;
+}
+/** A buried piece stops being a body and becomes a part of the plank, where it is: the plank takes its weight and gets harder to turn. */
+function weld(S, b) {
+  const pl = S.plank, at = q => { const dx = q.x - pl.x, dy = q.y - pl.y; return [dx * pl.c + dy * pl.s, dy * pl.c - dx * pl.s, q.c * pl.c + q.s * pl.s, q.s * pl.c - q.c * pl.s]; };
+  const [lx, ly, rc, rs] = at(b);
+  if (b.parts) for (const q of b.parts) { const t = at(q); pl.parts.push(mkPart(pl, q.id, q.shape, t[0], t[1], t[2], t[3], { fr: b.fr, re: b.re, sub: true })); }
+  pl.parts.push(mkPart(pl, b.id, b.shape, lx, ly, rc, rs, { fr: b.fr, re: b.re, m: b.m, kind: b.kind, dens: b.dens, visual: !!b.parts }));
+  pl.load += b.m * lx; pl.mass += b.m; pl.inertia += b.m * (lx * lx + ly * ly) + 1 / b.invI; pl.invI = 1 / pl.inertia;
+  S.bodies = S.bodies.filter(x => x !== b);
+}
+
+/**
+ * The plank tips over: its spring lets go, its stops come off and everything welded to it comes loose,
+ * so the whole pile slides into the water. The game is over; the count stays as it was.
+ */
+function tip(S) {
+  const pl = S.plank;
+  S.phase = 'over'; S.tipped = true; S.held = null; S.overAt = S.t + 2.6; S.K = 0; S.smax = 0.86;
+  for (const q of pl.parts) {
+    if (q.lip || q.sub) continue;
+    const b = mkBody(q.id, q.shape, q.x, q.y, { density: q.dens, fr: q.fr, re: q.re });
+    b.c = q.c; b.s = q.s; b.kind = q.kind; b.tc = 0; b.judged = true; b.counted = true; b.auto = false; b.air = 0;
+    b.vx = -pl.w * (q.y - pl.y); b.vy = pl.w * (q.x - pl.x); b.w = pl.w; place(b);
+    S.bodies.push(b);
+  }
+  pl.parts = []; S.lip = 0; pl.load = 0; pl.mass = 0; pl.inertia = PLANK_I; pl.invI = 1 / PLANK_I; S.prev = new Map();
+  pl.w += pl.s > 0 ? 1.2 : -1.2;
+  S.ev.push({ type: 'tip' });
+}
+
+/**
+ * One fixed step of the game. `tap`: the player pressed since the last step, which drops the piece where the claw
+ * is. Left alone, the claw drops it by itself when its fuse runs out, wherever it is then, and it counts like any other.
+ */
+function advance(S, tap) {
+  S.t += DT;
+  const P = S.P, car = S.car, pl = S.plank;
+  if (S.phase === 'play') {
+    if (S.held) {
+      const h = S.held, lo = PIV.x - P.range, hi = PIV.x + P.range;
+      car.x += car.dir * P.speed * DT;
+      if (car.x > hi) { car.x = hi; car.dir = -1; } else if (car.x < lo) { car.x = lo; car.dir = 1; }
+      if (h.spin) { const c = h.c - h.s * h.spin * DT, s = h.s + h.c * h.spin * DT, l = 1 / Math.sqrt(c * c + s * s); h.c = c * l; h.s = s * l; }
+      h.fuse -= DT;
+      if (tap || h.fuse <= 0) release(S, !tap);
+    } else {
+      // The empty claw goes back to the left end in the time the next piece takes to come
+      car.x += (PIV.x - P.range - car.x) * (S.spawnT > DT ? DT / S.spawnT : 1);
+      S.spawnT -= DT; if (S.spawnT <= 0) takeNext(S);
+    }
+  }
+  stepWorld(S);
+
+  // The top of the pile: of what is welded and of what has stayed
+  let top = PIV.y - PLANK_H / 2, loose = 0, low = null;
+  for (const q of pl.parts) if (!q.lip && !q.visual && q.miny < top) top = q.miny;
+  for (const b of S.bodies.slice()) {
+    if (b.tc == null && b.touch) { b.tc = S.t; b.air = 0; S.ev.push({ type: 'hit', x: b.x, y: b.maxy, m: b.m, kind: b.kind }); }
+    if (b.y > WATER_Y + 12) {
+      // In the water: a life, and one piece less on the pile if it had been counted (a point for a perfect one is kept)
+      S.bodies = S.bodies.filter(x => x !== b);
+      if (S.phase !== 'play') { S.ev.push({ type: 'fall', x: b.x, kind: b.kind, lives: null }); continue; }
+      if (b.counted) { S.landed--; S.score = S.landed + S.perfects; }
+      S.lives--; S.streak = 0;
+      S.ev.push({ type: 'fall', x: b.x, kind: b.kind, lives: S.lives });
+      if (S.lives <= 0) { S.phase = 'over'; S.held = null; S.overAt = S.t + 1.6; }
+      continue;
+    }
+    if (S.phase === 'play' && b.tc != null && !b.judged && S.t - b.tc >= JUDGE_S) {
+      // It stayed: one more on the pile (also one the claw let go by itself), which is a point; and a point more if it
+      // is a perfect one: the plank level and still
+      b.judged = true; b.counted = true; S.landed++;
+      const perfect = pl.s < PERFECT && pl.s > -PERFECT && pl.w < 0.2 && pl.w > -0.2;
+      if (perfect) { S.streak++; S.perfects++; if (S.streak > S.best) S.best = S.streak; } else S.streak = 0;
+      S.score = S.landed + S.perfects;
+      S.ev.push({ type: 'score', id: b.id, x: b.x, y: b.y, perfect, streak: S.streak });
+    }
+    if (b.judged) {
+      if (b.miny < top) top = b.miny;
+      loose++;
+      // The lowest one at rest is the next to be welded
+      if (b.touch && b.vx * b.vx + b.vy * b.vy < 36 && b.w < 0.15 && b.w > -0.15 && (!low || b.y > low.y)) low = b;
+    }
+  }
+  S.top = top;
+  if (PIV.y - PLANK_H / 2 - top > S.peak) S.peak = PIV.y - PLANK_H / 2 - top;
+  if (S.phase === 'play' && loose > LOOSE && low) weld(S, low);
+  // The claw's rail rides above the pile, so a piece always falls about as far
+  S.railY += (Math.min(RAIL_Y, top - CLEAR) - S.railY) * 2.5 * DT;
+  // The level's bubble follows the lean; at the end of its red, the plank tips over
+  S.lean += (pl.s - S.lean) * DT / LEAN_T;
+  if (S.phase === 'play' && (S.lean >= TIP || S.lean <= -TIP)) tip(S);
+  if (S.phase === 'over' && S.t >= S.overAt) S.done = true;
+}
+
+/* ================================================================== */
+/* The view: canvas, effects, sound, input                             */
+/* ================================================================== */
+const $ = s => document.querySelector(s);
+/* ---------- texts: Spanish, English and Portuguese ---------- */
+/**
+ * In the shape of the site's texts files (cup/games/<game>/texts.js), ready to be lifted there: `juego` is the game's
+ * entry in `juegos`; `ui`, the keys its screen reads, all prefixed `bz`. Plural forms are [none, one, many]. A value
+ * 'a|b' is a title and its line: the steps of the start card, and each piece's name with what is said when it first comes.
+ */
+const ES = {
+  juego: {
+    nombre: 'Tembleque', habilidad: 'reflejos',
+    como: [
+      'La garra pasea la pieza sola: toca la pantalla para soltarla sobre la tabla.',
+      'Mantén la tabla nivelada: si la burbuja del nivel llega al final del rojo, la tabla se vuelca y se acaba.',
+      'Tienes 3 vidas: cada pieza que cae al agua te cuesta una. Las piezas llegan cada vez más rápido.',
+    ],
+    puntaje: 'Cada pieza colocada vale 1 punto, y cada turno balanceado (¡Perfecto!) suma 1 más.',
+    puntajeFinal: 'En la final cuentan tus puntos tal cual, hasta un máximo de 100.',
+    desempate: 'Si empatas, gana quien tardó menos.',
+  },
+  ui: {
+    bzTap: 'Toca para soltar',
+    bzTapDesk: 'Clic o Espacio para soltar',
+    bzPaused: 'En pausa',
+    bzResume: 'Toca para seguir',
+    bzPerfect: '¡Perfecto!',
+    bzPerfects: ['¡Perfecto!', '¡Impecable!', '¡Clavado!', '¡Exacto!', '¡Genial!', '¡Tremendo!', '¡Maestro!', '¡Bravo!', '¡Increíble!'],
+    bzWater: '¡Al agua!',
+    bzLastLife: '¡Al agua! ¡Última vida!',
+    bzAuto: '¡Se soltó sola!',
+    bzTipped: '¡Se volcó!',
+    bzOver: 'Fin del juego',
+    bzNew: 'Nueva: {n}',
+    bzPlay: '▶ Jugar',
+    bzAgain: '↻ Otra vez',
+    bzStep1: 'Suelta|La garra pasea la pieza. Toca para soltarla.',
+    bzStep2: 'Equilibra|Mantén la tabla nivelada. Si la burbuja llega al final del rojo, se vuelca y pierdes.',
+    bzStep3: 'Cuida tus vidas|Cada pieza que cae al agua cuesta una de tus 3 vidas.',
+    bzScoreNote: '⭐ Puntaje: piezas colocadas + turnos balanceados',
+    bzLivesNote: '❤️ Cada pieza que cae al agua cuesta una vida',
+    bzBdPieces: ['🧱 Ninguna pieza en la pila.', '🧱 1 pieza en la pila: +1.', '🧱 {n} piezas en la pila: +{n}.'],
+    bzBdPerfects: ['', '✨ 1 vez la dejaste perfecta: +1.', '✨ {n} veces la dejaste perfecta: +{n}.'],
+    bzBdHeight: '📏 Tu pila llegó a {m} m de alto.',
+    bzBdTime: '⏱️ Tiempo: {t}.',
+    bzLivesAria: ['Sin vidas', 'Te queda 1 vida', 'Te quedan {n} vidas'],
+    bzBack: 'Volver',
+    bzSound: 'Sonido',
+    bzCubo: 'Cuadrado|firme y parejo',
+    bzLadrillo: 'Ladrillo|ancho y estable',
+    bzTriangulo: 'Triángulo|nada se queda en su punta',
+    bzEle: 'Ele|deja un escalón',
+    bzBola: 'Bola|rueda',
+    bzTe: 'Te|una barra con un tope',
+    bzDomo: 'Domo|se mece',
+    bzHexagono: 'Hexágono|casi rueda',
+    bzZeta: 'Zeta|hace escalera',
+    bzCruz: 'Cruz|cuatro puntas',
+  },
+};
+
+const EN = {
+  juego: {
+    nombre: 'The Wobbles', habilidad: 'reflexes',
+    como: [
+      'The claw carries the piece back and forth by itself: tap the screen to drop it on the plank.',
+      'Keep the plank level: if the bubble of the level reaches the end of the red, the plank tips over and the game ends.',
+      'You have 3 lives: each piece that falls in the water costs you one. The pieces come faster and faster.',
+    ],
+    puntaje: 'Each piece placed is worth 1 point, and each balanced turn (Perfect!) adds 1 more.',
+    puntajeFinal: 'In the final your points count as they are, up to a maximum of 100.',
+    desempate: 'If tied, whoever took less time wins.',
+  },
+  ui: {
+    bzTap: 'Tap to drop',
+    bzTapDesk: 'Click or Space to drop',
+    bzPaused: 'Paused',
+    bzResume: 'Tap to continue',
+    bzPerfect: 'Perfect!',
+    bzPerfects: ['Perfect!', 'Flawless!', 'Nailed it!', 'Spot on!', 'Great!', 'Awesome!', 'Masterful!', 'Bravo!', 'Amazing!'],
+    bzWater: 'In the water!',
+    bzLastLife: 'In the water! Last life!',
+    bzAuto: 'It dropped by itself!',
+    bzTipped: 'It tipped over!',
+    bzOver: 'Game over',
+    bzNew: 'New: {n}',
+    bzPlay: '▶ Play',
+    bzAgain: '↻ Play again',
+    bzStep1: 'Drop|The claw carries the piece. Tap to drop it.',
+    bzStep2: 'Balance|Keep the plank level. If the bubble reaches the end of the red, it tips over and you lose.',
+    bzStep3: 'Mind your lives|Each piece that falls in the water costs one of your 3 lives.',
+    bzScoreNote: '⭐ Score: pieces placed + balanced turns',
+    bzLivesNote: '❤️ Each piece that falls in the water costs a life',
+    bzBdPieces: ['🧱 No pieces on the pile.', '🧱 1 piece on the pile: +1.', '🧱 {n} pieces on the pile: +{n}.'],
+    bzBdPerfects: ['', '✨ You left it perfect once: +1.', '✨ You left it perfect {n} times: +{n}.'],
+    bzBdHeight: '📏 Your pile reached {m} m high.',
+    bzBdTime: '⏱️ Time: {t}.',
+    bzLivesAria: ['No lives left', '1 life left', '{n} lives left'],
+    bzBack: 'Back',
+    bzSound: 'Sound',
+    bzCubo: 'Square|steady and even',
+    bzLadrillo: 'Brick|wide and stable',
+    bzTriangulo: 'Triangle|nothing stays on its tip',
+    bzEle: 'L-piece|leaves a step',
+    bzBola: 'Ball|it rolls',
+    bzTe: 'T-piece|a bar with a bump',
+    bzDomo: 'Dome|it rocks',
+    bzHexagono: 'Hexagon|it almost rolls',
+    bzZeta: 'Z-piece|makes a staircase',
+    bzCruz: 'Cross|four points',
+  },
+};
+
+const PT = {
+  juego: {
+    nombre: 'Tremelique', habilidad: 'reflexos',
+    como: [
+      'A garra leva a peça de um lado para o outro sozinha: toque na tela para soltá-la sobre a tábua.',
+      'Mantenha a tábua nivelada: se a bolha do nível chegar ao fim do vermelho, a tábua vira e o jogo acaba.',
+      'Você tem 3 vidas: cada peça que cai na água custa uma. As peças chegam cada vez mais rápido.',
+    ],
+    puntaje: 'Cada peça colocada vale 1 ponto, e cada turno equilibrado (Perfeito!) soma mais 1.',
+    puntajeFinal: 'Na final seus pontos contam como estão, até no máximo 100.',
+    desempate: 'Se empatar, ganha quem demorou menos.',
+  },
+  ui: {
+    bzTap: 'Toque para soltar',
+    bzTapDesk: 'Clique ou Espaço para soltar',
+    bzPaused: 'Pausado',
+    bzResume: 'Toque para continuar',
+    bzPerfect: 'Perfeito!',
+    bzPerfects: ['Perfeito!', 'Impecável!', 'Cravou!', 'Exato!', 'Genial!', 'Demais!', 'Mandou bem!', 'Bravo!', 'Incrível!'],
+    bzWater: 'Na água!',
+    bzLastLife: 'Na água! Última vida!',
+    bzAuto: 'Soltou sozinha!',
+    bzTipped: 'Virou!',
+    bzOver: 'Fim de jogo',
+    bzNew: 'Nova: {n}',
+    bzPlay: '▶ Jogar',
+    bzAgain: '↻ De novo',
+    bzStep1: 'Solte|A garra leva a peça. Toque para soltá-la.',
+    bzStep2: 'Equilibre|Mantenha a tábua nivelada. Se a bolha chegar ao fim do vermelho, ela vira e você perde.',
+    bzStep3: 'Cuide das vidas|Cada peça que cai na água custa uma das suas 3 vidas.',
+    bzScoreNote: '⭐ Pontuação: peças colocadas + turnos equilibrados',
+    bzLivesNote: '❤️ Cada peça que cai na água custa uma vida',
+    bzBdPieces: ['🧱 Nenhuma peça na pilha.', '🧱 1 peça na pilha: +1.', '🧱 {n} peças na pilha: +{n}.'],
+    bzBdPerfects: ['', '✨ 1 vez você a deixou perfeita: +1.', '✨ {n} vezes você a deixou perfeita: +{n}.'],
+    bzBdHeight: '📏 Sua pilha chegou a {m} m de altura.',
+    bzBdTime: '⏱️ Tempo: {t}.',
+    bzLivesAria: ['Sem vidas', 'Resta 1 vida', 'Restam {n} vidas'],
+    bzBack: 'Voltar',
+    bzSound: 'Som',
+    bzCubo: 'Quadrado|firme e certinho',
+    bzLadrillo: 'Tijolo|largo e estável',
+    bzTriangulo: 'Triângulo|nada fica na sua ponta',
+    bzEle: 'Ele|deixa um degrau',
+    bzBola: 'Bola|rola',
+    bzTe: 'Tê|uma barra com um ressalto',
+    bzDomo: 'Cúpula|balança',
+    bzHexagono: 'Hexágono|quase rola',
+    bzZeta: 'Zê|faz uma escada',
+    bzCruz: 'Cruz|quatro pontas',
+  },
+};
+const TEXTS = { es: ES, en: EN, pt: PT };
+/** The language: `?lang=en` in the address, else the one the site saved on this phone, else Spanish. */
+const LANG = (() => {
+  try { const l = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('juegos-de-salon:lang') || 'es').toLowerCase().slice(0, 2); return TEXTS[l] ? l : 'es'; } catch (_) { return 'es'; }
+})();
+const GAME = TEXTS[LANG].juego, UI = TEXTS[LANG].ui;
+// A balanced drop says one of the cheers (the owner, 2026-11-18), never the same twice in a row, while flag wobbles-cheers is on (../game.js); off, ¡Perfecto!
+let lastCheer = -1;
+const cheer = list => { if (!window.__wobblesCheers) return list[0]; const free = lastCheer >= 0 ? list.length - 1 : list.length; let i = Math.floor(Math.random() * free); if (lastCheer >= 0 && i >= lastCheer) i++; lastCheer = i; return list[i]; };
+/** A text with its {blanks} filled in. */
+const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k]);
+/** A piece's [name, line]. */
+const kindText = kind => UI['bz' + kind[0].toUpperCase() + kind.slice(1)].split('|');
+document.documentElement.lang = LANG; document.title = `⚖️ ${GAME.nombre}`;
+
+const DISPLAY = "Bangers, Impact, 'Arial Black', sans-serif", BODY = "Nunito, system-ui, -apple-system, sans-serif";
+const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const rgba = (h, a = 1) => `rgba(${hex(h).join(',')},${a})`;
+/* ---------- drawing speed (the easy level of docs/games/wobbles.md, "Performance") ----------
+ * A glow (shadowBlur) is a blur, the dearest thing a canvas does. Everything that glows and always looks the
+ * same is drawn once, with its glow, into a small canvas of its own (a sprite), and then only stamped; what
+ * changes shape every frame glows with wide faint strokes under a thin bright one, without a blur. */
+const cv = $('#cv');
+/** `c` is the screen canvas, or for a moment a sprite's while it is made. */
+let c = cv.getContext('2d');
+/** The room the top row takes over the scene, in screen pixels. */
+const TOP = 52;
+const qp = new URLSearchParams(location.search);
+/** At most 2 device pixels per CSS pixel (lab: `?dpr=3` lifts it); `quality` (1, 0.75, 0.5) lowers it further when frames come slow (lab: `?quality=0.5` fixes it). */
+const DPR_MAX = Number(qp.get('dpr')) || 2, QUALITY_FIXED = Number(qp.get('quality')) || 0;
+let quality = QUALITY_FIXED || 1;
+let dpr = 1, sc = 1, ox = 0, oy = 0, vw = 0, vh = 0, zoom = 1;
+/** Device pixels per scene unit at zoom 1: the resolution sprites are made at. */
+let RES = 1;
+const SPR = new Map();
+function resize() {
+  const r = cv.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, DPR_MAX) * quality; vw = r.width; vh = r.height;
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  sc = Math.min(vw / VW, (vh - TOP) / VH); ox = (vw - VW * sc) / 2; oy = TOP + (vh - TOP - VH * sc) / 2;
+  RES = dpr * sc; SPR.clear(); bgKey = null;
+}
+/** How many blurs were drawn outside a sprite (the lab's check: 0 while playing). */
+let blurs = 0, inSprite = false;
+/** A glow in the shape's own color (the house style's `brilla`). Only while a sprite is made; anywhere else it counts in `blurs`. */
+let spriteZ = 1;
+function glow(color, blur, fn) { if (!inSprite) blurs++; c.save(); c.shadowColor = color; c.shadowBlur = blur * (inSprite ? RES * spriteZ : sc * dpr * zoom); fn(); c.restore(); }
+const reach = blur => blur * 1.5 + 3;
+/** The sprite under `key`, made once: `box` = [x0, y0, x1, y1] around its origin, glow included; `draw` paints it at the origin. */
+function sprite(key, box, draw) {
+  let sp = SPR.get(key);
+  if (!sp) {
+    const [x0, y0, x1, y1] = box, el = document.createElement('canvas');
+    el.width = Math.max(1, Math.ceil((x1 - x0) * RES)); el.height = Math.max(1, Math.ceil((y1 - y0) * RES));
+    const main = c; c = el.getContext('2d'); inSprite = true;
+    c.setTransform(RES, 0, 0, RES, -x0 * RES, -y0 * RES);
+    try { draw(); } finally { c = main; inSprite = false; }
+    SPR.set(key, sp = { el, x: x0, y: y0, w: el.width / RES, h: el.height / RES });
+  }
+  return sp;
+}
+function stamp(sp, x = 0, y = 0) { c.drawImage(sp.el, x + sp.x, y + sp.y, sp.w, sp.h); }
+/** A glow without a blur, for what changes shape every frame: the path already made, stroked wide and faint, then thin and bright. */
+function strokeGlow(color, w, spread = 3, strength = 0.7) {
+  const a = c.globalAlpha;
+  c.strokeStyle = color;
+  c.lineWidth = w * spread; c.globalAlpha = a * 0.2 * strength; c.stroke();
+  c.lineWidth = w * (1 + spread) / 2; c.globalAlpha = a * 0.35 * strength; c.stroke();
+  c.lineWidth = w; c.globalAlpha = a; c.stroke();
+}
+/** A round glowing dot, as a sprite. */
+const dotSprite = (color, r, blur) => sprite(`dot|${color}|${r}|${blur}`, [-r - reach(blur), -r - reach(blur), r + reach(blur), r + reach(blur)],
+  () => glow(color, blur, () => { c.fillStyle = color; c.beginPath(); c.arc(0, 0, r, 0, 7); c.fill(); }));
+// A text made before the fonts arrived has the stand-in font: made again once they are here
+if (document.fonts) document.fonts.ready.then(() => SPR.clear());
+function line(ax, ay, bx, by, color, w) { c.strokeStyle = color; c.lineWidth = w; c.lineCap = 'round'; c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke(); }
+function txt(s, x, y, size, color = '#fff', body = false, align = 'center') {
+  c.font = body ? `900 ${size}px ${BODY}` : `${size}px ${DISPLAY}`;
+  c.textAlign = align; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(s, x, y);
+}
+/** Words over the scene: a dark outline under a glow, so they read over whatever is behind. */
+function shout(s, x, y, size, color, blur = 14, body = false) {
+  const font = body ? `900 ${size}px ${BODY}` : `${size}px ${DISPLAY}`;
+  c.font = font; const hw = c.measureText(s).width / 2 + reach(blur) + size * 0.2, hh = size * 0.75 + reach(blur);
+  stamp(sprite(`shout|${s}|${size}|${color}|${blur}|${body}`, [-hw, -hh, hw, hh], () => {
+    c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    c.strokeStyle = 'rgba(21,7,38,0.85)'; c.lineWidth = Math.max(3, size * 0.18); c.strokeText(s, 0, 0);
+    if (blur) glow(color, blur, () => { c.fillStyle = color; c.fillText(s, 0, 0); }); else { c.fillStyle = color; c.fillText(s, 0, 0); }
+  }), x, y);
+}
+/** A glowing text as a sprite, made at `size` and stamped `k` times as big. */
+function glowText(s, x, y, size, color, blur, k = 1) {
+  c.font = `${size}px ${DISPLAY}`; const hw = c.measureText(s).width / 2 + reach(blur), hh = size * 0.7 + reach(blur);
+  const sp = sprite(`gt|${s}|${size}|${color}|${blur}`, [-hw, -hh, hw, hh], () => glow(color, blur, () => txt(s, 0, 0, size, color)));
+  c.drawImage(sp.el, x + sp.x * k, y + sp.y * k, sp.w * k, sp.h * k);
+}
+function pathOf(sh, k = 1) {
+  c.beginPath();
+  if (sh.kind === 'circle') c.arc(0, 0, sh.r * k, 0, 7);
+  else { (sh.p || sh.outline).forEach(([x, y], i) => (i ? c.lineTo(x * k, y * k) : c.moveTo(x * k, y * k))); c.closePath(); }
+}
+/** A piece: a dark tinted body, a glowing outline in its color with a white core, and a mark of its own inside. */
+const pieceKeys = new WeakMap();
+/** A shape's sprite key: its kind and its outline, so pieces of the same shape share one sprite. */
+function pieceKey(kind, sh) {
+  let k = pieceKeys.get(sh);
+  if (!k) {
+    const pts = sh.kind === 'circle' ? [] : (sh.p || sh.outline);
+    k = kind + '|' + (sh.kind === 'circle' ? 'r' + sh.r.toFixed(2) : pts.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(';'));
+    pieceKeys.set(sh, k);
+  }
+  return k;
+}
+function pieceBox(sh) {
+  const m = reach(12) + 2;
+  if (sh.kind === 'circle') return [-sh.r - m, -sh.r - m, sh.r + m, sh.r + m];
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const [x, y] of (sh.p || sh.outline)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+  return [x0 - m, y0 - m, x1 + m, y1 + m];
+}
+function drawPiece(kind, sh, x, y, co, si, k = 1, alpha = 1) {
+  const sp = sprite(pieceKey(kind, sh), pieceBox(sh), () => paintPiece(kind, sh));
+  c.save(); c.globalAlpha *= alpha; c.transform(co * k, si * k, -si * k, co * k, x, y); stamp(sp); c.restore();
+}
+function paintPiece(kind, sh) {
+  const col = KINDS[kind].color, soft = rgba(col, 0.55);
+  c.save(); c.lineJoin = 'round';
+  pathOf(sh);
+  c.fillStyle = rgba(col, 0.17); c.fill();
+  glow(col, 12, () => { c.strokeStyle = col; c.lineWidth = 3; c.stroke(); });
+  c.strokeStyle = 'rgba(255,255,255,0.8)'; c.lineWidth = 1; c.stroke();
+  c.lineWidth = 1.5; c.strokeStyle = soft;
+  if (kind === 'bola') { line(-sh.r * 0.62, 0, sh.r * 0.62, 0, soft, 2); c.fillStyle = col; c.beginPath(); c.arc(0, 0, 2.5, 0, 7); c.fill(); }
+  else if (kind === 'ladrillo') { line(-sh.w / 6, -sh.h / 2 + 4, -sh.w / 6, sh.h / 2 - 4, soft, 1.5); line(sh.w / 6, -sh.h / 2 + 4, sh.w / 6, sh.h / 2 - 4, soft, 1.5); }
+  else if (sh.kind === 'compound') {
+    // The lines between its squares
+    const a = Math.min(sh.subs[0].shape.w, sh.subs[0].shape.h);
+    c.lineWidth = 1.1; c.beginPath();
+    for (const u of sh.subs) {
+      const w = u.shape.w, h = u.shape.h, nx = Math.round(w / a), ny = Math.round(h / a);
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) c.rect(u.lx - w / 2 + i * a + 2.5, u.ly - h / 2 + j * a + 2.5, a - 5, a - 5);
+    }
+    c.stroke();
+  }
+  else { pathOf(sh, 0.5); c.stroke(); }
+  c.restore();
+}
+
+/* ---------- effects (only what is seen: they never touch the game) ---------- */
+let S = null, state = 'ready', tapQ = false, acc = 0, clock = 0;
+let parts = [], floats = [], says = [], banner = null, shake = 0, ring = 0;
+/** A perfect drop: the plank's green flash (1 → 0) and the pieces that pulse green ({ id, t }). The warning beep's clock. */
+let flash = 0, pulses = [], warnT = 0;
+/** A piece in the water: the rings it leaves ({ x, t }); and, when it cost a life, the broken heart that rises from there and the red that flushes the screen's edges (1 → 0). */
+let ripples = [], lost = [], hurt = 0;
+const QUIETO = matchMedia('(prefers-reduced-motion: reduce)').matches, FINE = matchMedia('(pointer: fine)').matches;
+/** How much each loose piece is slipping (0 to 1), eased so its red halo does not flicker. */
+const slip = new WeakMap();
+/** The level's reading (the game's `lean`) where its red and the warnings start and where they are at their fullest: the tipping point, which is each end of the level. */
+const DANGER_FROM = 0.07, DANGER_FULL = TIP, GAUGE = TIP;
+const dangerOf = s => Math.max(0, Math.min(1, ((s < 0 ? -s : s) - DANGER_FROM) / (DANGER_FULL - DANGER_FROM)));
+const STARS = Array.from({ length: 260 }, (_, i) => { const n = k => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); }; return { x: -700 + n(1) * 1800, y: -1500 + n(2) * 1890, r: 0.5 + n(3) * 1.1, f: 0.6 + n(4) * 2, p: n(5) * 6 }; });
+function sparks(x, y, color, n, speed = 160, up = 0) {
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, v = speed * (0.3 + Math.random() * 0.7); parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - up, g: 500, life: 0.35 + Math.random() * 0.45, t: 0, color, r: 1.2 + Math.random() * 1.6 }); }
+}
+const say = (text, color = '#ffd23f', size = 34) => { says = says.filter(s => s.t < 0.4); says.push({ text, color, size, t: 0 }); };
+
+/* ---------- sound: synthesized, like the site's sound.js ---------- */
+const MUTE_KEY = 'balanza-lab:muted';
+let actx = null, muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) { /* no storage */ }
+function audio() {
+  if (muted) return null;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    return actx;
+  } catch (_) { return null; }
+}
+function tone({ freq = 440, to = null, type = 'sine', dur = 0.15, gain = 0.2, delay = 0 }) {
+  const a = audio(); if (!a) return;
+  const t0 = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+let noiseBuf = null;
+function noise({ dur = 0.3, gain = 0.2, from = 900, to = 200 }) {
+  const a = audio(); if (!a) return;
+  if (!noiseBuf) { noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t0 = a.currentTime, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.setValueAtTime(from, t0); f.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(f).connect(g).connect(a.destination); src.start(t0); src.stop(t0 + dur + 0.05);
+}
+const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568];
+const SFX = {
+  drop: () => tone({ freq: 620, to: 330, dur: 0.09, gain: 0.07 }),
+  hit: m => tone({ freq: Math.max(70, 190 - m * 38), to: 55, dur: 0.16, gain: Math.min(0.3, 0.1 + m * 0.07) }),
+  tick: () => tone({ freq: 660, dur: 0.05, gain: 0.05, type: 'triangle' }),
+  perfect: n => { const i = Math.min(n - 1, 5); tone({ freq: SCALE[i], dur: 0.12, gain: 0.12, type: 'triangle' }); tone({ freq: SCALE[i + 2], dur: 0.2, gain: 0.12, type: 'triangle', delay: 0.08 }); },
+  fall: () => { noise({ dur: 0.4, gain: 0.25, from: 1400, to: 250 }); tone({ freq: 300, to: 80, dur: 0.35, gain: 0.12, type: 'sawtooth' }); },
+  pop: i => tone({ freq: SCALE[Math.min(i, 8)], dur: 0.1, gain: 0.09, type: 'triangle' }),
+  round: () => { tone({ freq: 392, dur: 0.12, gain: 0.1, type: 'square' }); tone({ freq: 523, dur: 0.12, gain: 0.1, type: 'square', delay: 0.11 }); tone({ freq: 784, dur: 0.25, gain: 0.1, type: 'square', delay: 0.22 }); },
+  warn: () => tone({ freq: 740, to: 620, dur: 0.09, gain: 0.05, type: 'square' }),
+  over: () => { tone({ freq: 392, to: 196, dur: 0.5, gain: 0.14, type: 'sawtooth' }); tone({ freq: 196, to: 98, dur: 0.7, gain: 0.14, type: 'sawtooth', delay: 0.35 }); },
+};
+
+/** What the game says happened, turned into light and sound. */
+function onEvent(e) {
+  const col = e.kind ? KINDS[e.kind].color : '#fff';
+  if (e.type === 'drop') { SFX.drop(); if (e.auto) say(UI.bzAuto, '#ffd23f', 28); }
+  else if (e.type === 'tip') { shake = 0.6; say(UI.bzTipped, '#ff2e88', 44); SFX.over(); if (navigator.vibrate) navigator.vibrate(120); }
+  else if (e.type === 'hit') { sparks(e.x, e.y, col, 7, 120, 40); SFX.hit(e.m); }
+  else if (e.type === 'score') {
+    floats.push({ x: e.x, y: e.y - 24, text: e.perfect ? '+2' : '+1', color: e.perfect ? '#9dff3a' : '#ffd23f', t: 0 });
+    if (e.perfect) {
+      // Balanced, and it must show: the plank flashes green from end to end, the piece pulses, the level lights up
+      say(cheer(UI.bzPerfects), '#9dff3a', 42); SFX.perfect(e.streak);
+      ring = 1; flash = 1; pulses.push({ id: e.id, t: 0 });
+      const pl = S.plank; sparks(PIV.x, PIV.y, '#9dff3a', 12, 220);
+      for (const sd of [-1, 1]) sparks(PIV.x + sd * HALF * pl.c, PIV.y + sd * HALF * pl.s, '#9dff3a', 10, 180, 60);
+    } else SFX.tick();
+  } else if (e.type === 'fall') {
+    for (let i = 0; i < 16; i++) parts.push({ x: e.x + (Math.random() - 0.5) * 24, y: WATER_Y, vx: (Math.random() - 0.5) * 160, vy: -140 - Math.random() * 220, g: 700, life: 0.5 + Math.random() * 0.4, t: 0, color: '#2ee6d6', r: 1.5 + Math.random() * 2 });
+    ripples.push({ x: e.x, t: 0 });
+    SFX.fall();
+    if (e.lives == null) return;
+    // A life gone: its heart breaks in the top row, a broken one rises from where the piece went in, the screen's edges flush red
+    breakHeart(e.lives); lost.push({ x: e.x, t: 0 }); hurt = 1;
+    shake = 0.45; if (navigator.vibrate) navigator.vibrate(e.lives ? 60 : 90);
+    if (e.lives) say(e.lives === 1 ? UI.bzLastLife : UI.bzWater, '#ff2e88', 32); else { say(UI.bzWater, '#ff2e88', 44); SFX.over(); }
+  } else if (e.type === 'debut') { banner = { kind: e.kind, t: 0 }; SFX.round(); }
+}
+function fx(dt) {
+  for (const p of parts) { p.t += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; }
+  parts = parts.filter(p => p.t < p.life);
+  for (const f of floats) f.t += dt; floats = floats.filter(f => f.t < 0.9);
+  for (const s of says) s.t += dt; says = says.filter(s => s.t < 1.3);
+  if (banner && (banner.t += dt) > 2.4) banner = null;
+  shake = Math.max(0, shake - dt); ring = Math.max(0, ring - dt * 1.6); flash = Math.max(0, flash - dt * 1.3);
+  for (const p of pulses) p.t += dt; pulses = pulses.filter(p => p.t < 0.7);
+  for (const r of ripples) r.t += dt; ripples = ripples.filter(r => r.t < 1.6);
+  for (const h of lost) h.t += dt; lost = lost.filter(h => h.t < 1.3);
+  hurt = Math.max(0, hurt - dt * 1.7);
+  // Leaning too far: a beep that gets faster with the lean
+  if (S && state === 'play' && S.phase === 'play') {
+    const d = dangerOf(S.lean);
+    if (d > 0.35 && (warnT -= dt) <= 0) { SFX.warn(); warnT = 0.6 - 0.35 * d; }
+  }
+  // The camera pulls back as the pile grows, so the claw's rail stays at the top and the plank in sight
+  if (S) zoom += (Math.max(0.42, Math.min(1, (VH - RAIL_Y) / (VH - S.railY))) - zoom) * Math.min(1, dt * 4);
+}
+
+/* ---------- the scene ---------- */
+/** What is right under x: the top of the highest thing there, or the plank, or the water. */
+function under(x) {
+  const pl = S.plank, dx = x - PIV.x;
+  let y = dx > -HALF * pl.c && dx < HALF * pl.c ? PIV.y + dx * pl.s / pl.c - PLANK_H / 2 : WATER_Y;
+  for (const b of S.bodies) if (b.tc != null && b.minx <= x && b.maxx >= x && b.miny < y) y = b.miny;
+  for (const q of pl.parts) if (!q.visual && q.minx <= x && q.maxx >= x && q.miny < y) y = q.miny;
+  return y;
+}
+/** The far hills' top at x: a star below it is hidden by them. */
+const hillTop = (x, base, h, k) => base - h * (0.55 + 0.25 * Math.sin(x * 0.011 * k + k) + 0.2 * Math.sin(x * 0.027 * k + 2 * k));
+for (const s of STARS) s.behind = s.y + s.r > hillTop(s.x, WATER_Y, 120, 1);
+let bgEl = null, bgKey = null, bgZ = 0;
+/** The still night (moon, hills, water) in a canvas the size of the screen's, painted again only when the zoom moved past 0.004. */
+function background(z, L, R, T, B) {
+  if (bgKey !== null && Math.abs(z - bgZ) <= 0.004) return bgEl;
+  if (!bgEl || bgEl.width !== cv.width || bgEl.height !== cv.height) { bgEl = document.createElement('canvas'); bgEl.width = cv.width; bgEl.height = cv.height; }
+  bgKey = 1; bgZ = z;
+  const main = c; c = bgEl.getContext('2d'); inSprite = true; spriteZ = z;
+  try {
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, bgEl.width, bgEl.height);
+    c.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy); c.translate(200, VH); c.scale(z, z); c.translate(-200, -VH);
+    const mh = c.createRadialGradient(338, 196, 4, 338, 196, 46); mh.addColorStop(0, 'rgba(255,210,63,0.22)'); mh.addColorStop(1, 'rgba(255,210,63,0)');
+    c.fillStyle = mh; c.beginPath(); c.arc(338, 196, 46, 0, 7); c.fill();
+    c.save(); c.beginPath(); c.arc(338, 196, 14, 0, 7); c.clip();
+    c.fillStyle = 'rgba(255,233,168,0.08)'; c.fillRect(322, 180, 32, 32);
+    c.fillStyle = '#ffe9a8'; c.beginPath(); c.rect(322, 180, 32, 32); c.arc(344.5, 193, 12.5, 0, 7); c.fill('evenodd');
+    c.restore();
+    const hills = (base, h, color, k, edge) => {
+      c.beginPath(); c.moveTo(L, B);
+      for (let x = L; x <= R + 8; x += 8) c.lineTo(x, hillTop(x, base, h, k));
+      c.lineTo(R + 8, B); c.closePath(); c.fillStyle = color; c.fill(); c.strokeStyle = edge; c.lineWidth = 1; c.stroke();
+    };
+    hills(WATER_Y, 120, '#2e1258', 1, 'rgba(190,160,255,0.16)'); hills(WATER_Y, 62, '#1e0a3c', 1.7, 'rgba(190,160,255,0.12)');
+    const wg = c.createLinearGradient(0, WATER_Y, 0, B); wg.addColorStop(0, '#173f7a'); wg.addColorStop(1, '#0a1a3a');
+    c.fillStyle = wg; c.fillRect(L, WATER_Y, R - L, B - WATER_Y + 2);
+    glow('#2ee6d6', 10, () => line(L, WATER_Y, R, WATER_Y, 'rgba(46,230,214,0.8)', 1.5));
+  } finally { c = main; inSprite = false; spriteZ = 1; }
+  return bgEl;
+}
+function render() {
+  // The whole scene is drawn through the camera, which zooms about the bottom centre
+  const z = S ? zoom : 1, L0 = -ox / sc, R0 = (vw - ox) / sc, T0 = -oy / sc, B0 = (vh - oy) / sc;
+  const L = 200 + (L0 - 200) / z, R = 200 + (R0 - 200) / z, T = VH + (T0 - VH) / z, B = VH + (B0 - VH) / z, t = clock;
+  // The night: the moon, the hills and the water are still, so they are painted once into their own canvas
+  // (again only when the camera's zoom moved); the stars, which twinkle, and the water's streaks go on top
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
+  c.drawImage(background(z, L, R, T, B), 0, 0);
+  c.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy); c.save(); c.translate(200, VH); c.scale(z, z); c.translate(-200, -VH);
+  c.fillStyle = '#fff';
+  for (const s of STARS) { if (s.x < L || s.x > R || s.y < T || s.behind) continue; c.globalAlpha = 0.35 + 0.45 * Math.sin(t * s.f + s.p) ** 2; c.beginPath(); c.arc(s.x, s.y, s.r, 0, 7); c.fill(); }
+  c.globalAlpha = 1;
+  for (let i = 0; i < 9; i++) { const y = WATER_Y + 8 + i * 6, w = 14 + (i * 37) % 30, x = L + ((i * 131 + t * (10 + i * 3)) % (R - L + 80)) - 40; line(x, y, x + w, y, 'rgba(46,230,214,0.22)', 1.2); }
+
+  if (!S) { c.restore(); return; }
+  const P = S.P, pl = S.plank, railY = S.railY, holdY = railY + CLAW;
+  c.save();
+  if (shake > 0 && !QUIETO) c.translate((Math.random() - 0.5) * 14 * shake / 0.5, (Math.random() - 0.5) * 14 * shake / 0.5);
+
+  // The rock the plank rests on
+  const rg = c.createLinearGradient(0, PIV.y, 0, WATER_Y); rg.addColorStop(0, '#2a1458'); rg.addColorStop(1, '#0a0320');
+  c.beginPath(); c.moveTo(PIV.x - 7, PIV.y + 4); c.lineTo(PIV.x + 7, PIV.y + 4); c.lineTo(PIV.x + 30, WATER_Y + 40); c.lineTo(PIV.x - 30, WATER_Y + 40); c.closePath();
+  c.fillStyle = rg; c.fill(); strokeGlow('rgba(46,230,214,0.55)', 1.5);
+
+  // The rail and the claw, with its fuse and the piece it holds
+  line(PIV.x - P.range - 16, railY, PIV.x + P.range + 16, railY, 'rgba(190,160,255,0.35)', 3);
+  for (const s of [-1, 1]) line(PIV.x + s * (P.range + 16), railY - 6, PIV.x + s * (P.range + 16), railY + 6, 'rgba(190,160,255,0.6)', 3);
+  if (S.held) {
+    const h = S.held, x = S.car.x, kind = h.spec.kind, f = Math.max(0, h.fuse / h.hold), hurry = h.fuse < 1.2;
+    if (P.guide) { const y1 = under(x); c.setLineDash([5, 7]); line(x, holdY + h.shape.r + 6, x, y1 - 4, 'rgba(255,255,255,0.3)', 1.5); c.setLineDash([]); }
+    line(x, railY, x, holdY, 'rgba(46,230,214,0.6)', 1.5);
+    drawPiece(kind, h.shape, x, holdY, h.c, h.s);
+    const fc = hurry ? '#ff2e88' : '#ffd23f';
+    c.lineCap = 'round'; c.beginPath(); c.arc(x, railY, 15 + (hurry ? Math.sin(t * 22) : 0), -1.5708, -1.5708 + 6.2832 * f); strokeGlow(fc, 3);
+    if (S.wind) {
+      const d = S.wind > 0 ? 1 : -1, n = Math.abs(S.wind) > 100 ? 3 : 2;
+      for (let i = 0; i < n; i++) { const wx = x + d * (34 + i * 12 + (t * 30) % 12), a = 0.7 - i * 0.2; line(wx - d * 5, holdY - 6, wx, holdY, `rgba(255,255,255,${a})`, 2); line(wx - d * 5, holdY + 6, wx, holdY, `rgba(255,255,255,${a})`, 2); }
+    }
+  }
+  // The claw's carriage, there even when empty (it goes back to the left for the next piece)
+  if (S.phase === 'play') stamp(sprite('car', [-11 - reach(8), -6 - reach(8), 11 + reach(8), 6 + reach(8)], () => glow('#2ee6d6', 8, () => { c.fillStyle = '#2ee6d6'; c.beginPath(); c.roundRect(-11, -6, 22, 12, 5); c.fill(); })), S.car.x, railY);
+
+  // The plank: the title's yellow → pink. A perfect drop flashes it green; leaning too far turns it a pulsing red
+  const danger = dangerOf(S.lean), beat = 0.5 + 0.5 * Math.sin(t * (8 + 8 * danger)), low = S.lean > 0 ? 1 : -1;
+  c.save(); c.transform(pl.c, pl.s, -pl.s, pl.c, PIV.x, PIV.y);
+  const pg = c.createLinearGradient(-HALF, 0, HALF, 0); pg.addColorStop(0, '#ffd23f'); pg.addColorStop(1, '#ff2e88');
+  const plank = () => { c.beginPath(); c.roundRect(-HALF, -PLANK_H / 2, HALF * 2, PLANK_H, 6); c.fill(); };
+  // Three sprites: the plank with its usual glow, and a red and a green glow laid over it for the warnings
+  const plankSprite = (color, blur, fill) => sprite(`plank|${color}|${blur}`, [-HALF - reach(blur), -PLANK_H / 2 - reach(blur), HALF + reach(blur), PLANK_H / 2 + reach(blur)],
+    () => glow(color, blur, () => { c.fillStyle = fill === 'pg' ? pg : fill; plank(); }));
+  stamp(plankSprite('#ff7a4a', 14, 'pg'));
+  if (danger > 0.02) { c.globalAlpha = danger * beat; stamp(plankSprite('#ff2e4a', 28, 'pg')); c.globalAlpha = 1; }
+  if (S.lip) for (const s of [-1, 1]) {
+    const col = s < 0 ? '#ffd23f' : '#ff2e88', b = reach(10);
+    stamp(sprite(`lip|${col}|${S.lip}`, [-4 - b, -S.lip - b, 4 + b, 4 + b], () => glow(col, 10, () => { c.fillStyle = col; c.beginPath(); c.roundRect(-4, -S.lip, 8, S.lip + 4, 3); c.fill(); })), s * (HALF - 4), -PLANK_H / 2);
+  }
+  if (danger > 0) { c.fillStyle = `rgba(255,46,74,${danger * (0.35 + 0.5 * beat)})`; plank(); }
+  if (flash > 0) { c.globalAlpha = Math.min(1, flash * 1.3); stamp(plankSprite('#9dff3a', 22, '#9dff3a')); c.globalAlpha = 1; }
+  line(-HALF + 6, -PLANK_H / 2 + 2.5, HALF - 6, -PLANK_H / 2 + 2.5, 'rgba(255,255,255,0.55)', 1.2);
+  c.restore();
+  // Past the low end, arrows that point down: this is the side things will go off
+  if (danger > 0) for (let i = 0; i < 3; i++) {
+    const ex = PIV.x + low * (HALF + 16) * pl.c, ey = PIV.y + low * (HALF + 16) * pl.s + 14 + i * 13, a = danger * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 12 - i * 1.3)));
+    c.globalAlpha = a; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(ex - 8, ey); c.lineTo(ex, ey + 7); c.lineTo(ex + 8, ey); strokeGlow('rgb(255,90,110)', 3); c.globalAlpha = 1;
+  }
+  const level = pl.s < PERFECT && pl.s > -PERFECT, kc = level ? '#9dff3a' : danger > 0 ? '#ff5a6e' : '#ffffff';
+  stamp(dotSprite(kc, 6.5, level ? 16 : 6), PIV.x, PIV.y);
+  if (ring > 0) { c.globalAlpha = ring; c.strokeStyle = '#9dff3a'; c.lineWidth = 3 + 3 * ring; c.beginPath(); c.arc(PIV.x, PIV.y, 10 + (1 - ring) * 150, 0, 7); c.stroke(); c.globalAlpha = 1; }
+  // The level, on the rock: a bubble that sits in the green middle when the plank is balanced and runs to a red end when it leans
+  {
+    const gx = PIV.x, gy = PIV.y + 31, w = 46, bx = gx + Math.max(-1, Math.min(1, S.lean / GAUGE)) * (w - 6);
+    c.fillStyle = 'rgba(10,3,32,0.85)'; c.strokeStyle = 'rgba(255,255,255,0.28)'; c.lineWidth = 1; c.beginPath(); c.roundRect(gx - w - 3, gy - 8, w * 2 + 6, 16, 8); c.fill(); c.stroke();
+    for (const s of [-1, 1]) { c.fillStyle = `rgba(255,46,74,${0.3 + 0.45 * (s === low ? danger * beat : 0)})`; c.beginPath(); c.roundRect(gx + s * (w - 6) * DANGER_FROM / GAUGE - (s < 0 ? (w - 6) * (1 - DANGER_FROM / GAUGE) + 3 : -0), gy - 4, (w - 6) * (1 - DANGER_FROM / GAUGE) + 3, 8, 4); c.fill(); }
+    const zw = Math.max(5, (w - 6) * PERFECT / GAUGE);
+    if (level) { c.globalAlpha = 0.75 + 0.25 * flash; stamp(sprite(`zone|${zw}`, [-zw - reach(10), -5 - reach(10), zw + reach(10), 5 + reach(10)], () => glow('#9dff3a', 10, () => { c.fillStyle = '#9dff3a'; c.beginPath(); c.roundRect(-zw, -5, zw * 2, 10, 5); c.fill(); })), gx, gy); c.globalAlpha = 1; }
+    else { c.fillStyle = 'rgba(157,255,58,0.3)'; c.beginPath(); c.roundRect(gx - zw, gy - 5, zw * 2, 10, 5); c.fill(); }
+    stamp(dotSprite(kc, 4.5, 8), bx, gy);
+  }
+
+  // The pile: what is welded to the plank a touch dimmer than the loose pieces on top
+  const halo = (b, color, grow, a, w) => { c.save(); c.globalAlpha = a; c.transform(b.c, b.s, -b.s, b.c, b.x, b.y); pathOf(b.shape, grow); c.lineJoin = 'round'; strokeGlow(color, w, 4); c.restore(); };
+  const pulse = b => { for (const p of pulses) if (p.id === b.id) halo(b, '#9dff3a', 1 + 0.55 * p.t / 0.7, 1 - p.t / 0.7, 4); };
+  for (const q of pl.parts) if (!q.lip && !q.sub) { drawPiece(q.kind, q.shape, q.x, q.y, q.c, q.s, 1, 0.72); pulse(q); }
+  for (const b of S.bodies) {
+    drawPiece(b.kind, b.shape, b.x, b.y, b.c, b.s);
+    // About to go: it is sliding or rolling while it rests on something, or the plank leans so far that it soon will
+    const moving = b.tc != null && b.touch && S.t - b.tc > 0.5 && b.vx * b.vx + b.vy * b.vy > 16;
+    const k = (slip.get(b) || 0) + ((moving ? 1 : b.tc != null ? danger * 0.7 : 0) - (slip.get(b) || 0)) * 0.2;
+    slip.set(b, k);
+    if (k > 0.08) halo(b, '#ff2e4a', 1.12, k * (0.45 + 0.55 * beat), 3);
+    pulse(b);
+  }
+
+  c.globalCompositeOperation = 'lighter';
+  for (const p of parts) { c.globalAlpha = 1 - p.t / p.life; c.fillStyle = p.color; c.beginPath(); c.arc(p.x, p.y, p.r, 0, 7); c.fill(); }
+  c.globalCompositeOperation = 'source-over'; c.globalAlpha = 1;
+  // Where a piece went in: rings that open on the water. If it cost a life, a broken heart rises from there (kept in sight if it fell off to a side)
+  for (const r of ripples) for (let k = 0; k < 3; k++) {
+    const u = r.t / 1.1 - k * 0.2; if (u <= 0 || u >= 1) continue;
+    c.globalAlpha = (1 - u) * 0.85; c.strokeStyle = '#2ee6d6'; c.lineWidth = 1.6 / z;
+    c.beginPath(); c.ellipse(r.x, WATER_Y + 1, 8 + 50 * u, 2 + 8 * u, 0, 0, 7); c.stroke();
+  }
+  for (const h of lost) {
+    const u = h.t / 1.3, e = 1 - (1 - u) * (1 - u), x = Math.max(L + 26 / z, Math.min(R - 26 / z, h.x));
+    c.globalAlpha = u < 0.65 ? Math.min(1, u * 8) : (1 - u) / 0.35; c.fillStyle = '#fff';
+    c.font = `${(20 + 16 * e) / z}px ${BODY}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('💔', x + Math.sin(u * 10) * 5 / z, WATER_Y - (18 + 80 * e) / z);
+  }
+  c.globalAlpha = 1;
+  for (const f of floats) { c.globalAlpha = 1 - f.t / 0.9; glowText(f.text, f.x, f.y - f.t * 40, 22, f.color, 8, 1 / z); }
+  c.globalAlpha = 1;
+  c.restore();
+  c.restore();
+
+  // From here on, drawn on the screen itself, not through the camera.
+  // What is coming: the next pieces hang in a row on the left, on the claw's own rail, and are fed into it.
+  // While the claw goes back for the next one, the first slides into it and the rest move up a place.
+  if (S.phase === 'play') {
+    const railS = VH + (S.railY - VH) * z, xL = 200 - P.range * z, pick = [xL, VH + (S.railY + CLAW - VH) * z];
+    const xa = Math.max(xL - 34, 50), slot = j => [xa - j * 31, railS + 22], ALPHA = [1, 0.7, 0];
+    const u = S.held ? 0 : Math.max(0, Math.min(1, 1 - S.spawnT / S.gap)), e = u * u * (3 - 2 * u);
+    c.setLineDash([3, 6]); line(Math.min(L0, 0), railS, xL - 16 * z, railS, 'rgba(190,160,255,0.4)', 2); c.setLineDash([]);
+    for (let j = QUEUE - 1; j >= 0; j--) {
+      const nx = S.queue[j]; if (!nx) continue;
+      const sh = nx.sh || (nx.sh = shapeFor(nx)), k0 = Math.min(0.62, 14 / sh.r), from = slot(j), to = j ? slot(j - 1) : pick;
+      const x = from[0] + (to[0] - from[0]) * e, y = from[1] + (to[1] - from[1]) * e, a = ALPHA[j] + ((j ? ALPHA[j - 1] : 1) - ALPHA[j]) * e;
+      if (a < 0.02) continue;
+      line(x, railS, x, y, `rgba(46,230,214,${0.5 * a})`, 1.2);
+      drawPiece(nx.kind, sh, x, y, 1, 0, j ? k0 : k0 + (z - k0) * e, a);
+    }
+  }
+
+  if (hurt > 0 && !QUIETO) {
+    const g = c.createRadialGradient(200, 300, 150, 200, 300, 430); g.addColorStop(0, 'rgba(255,46,74,0)'); g.addColorStop(1, `rgba(255,46,74,${0.42 * hurt})`);
+    c.fillStyle = g; c.fillRect(L0, T0, R0 - L0, B0 - T0);
+  }
+  // A new kind's name sits right under the claw; what just happened (perfect, in the water) in the strip below it
+  if (banner) {
+    const b = banner, [name, line_] = kindText(b.kind), a = Math.min(1, b.t * 5) * Math.min(1, (2.4 - b.t) * 2.5);
+    c.globalAlpha = a;
+    shout(fmt(UI.bzNew, { n: name }), 200, 158, 34, KINDS[b.kind].color);
+    shout(line_, 200, 186, 14, 'rgba(255,255,255,0.9)', 0, true);
+    c.globalAlpha = 1;
+  }
+  for (const s of says) { c.globalAlpha = Math.min(1, (1.3 - s.t) * 3); shout(s.text, 200, 232 - s.t * 10, Math.min(s.size, 38), s.color); }
+  c.globalAlpha = 1;
+  if (state === 'play' && S.landed < 2 && S.released < 3) txt(FINE ? UI.bzTapDesk : UI.bzTap, 200, 585, 14, 'rgba(255,255,255,0.72)', true);
+  if (state === 'pause') { c.fillStyle = 'rgba(21,7,38,0.72)'; c.fillRect(L0, T0, R0 - L0, B0 - T0); txt(UI.bzPaused, 200, 270, 44); txt(UI.bzResume, 200, 316, 17, 'rgba(255,255,255,0.72)', true); }
+}
+/** The top row: the three lives (a lost one stays in its place, dimmed) and the score. Empty under a card, which says it itself. */
+let shown = '';
+const livesEl = $('#lives');
+function hud() {
+  const on = S && state !== 'ready' && state !== 'over', now = on ? `${S.lives}|${S.score}` : '';
+  if (now === shown) return;
+  shown = now;
+  if (!on) { livesEl.innerHTML = ''; livesEl.removeAttribute('aria-label'); $('#score').textContent = ''; return; }
+  // The hearts are made once and only switched after that, so one in the middle of breaking is left alone
+  if (livesEl.children.length !== 3) livesEl.innerHTML = '<i><span>❤️</span></i>'.repeat(3);
+  [...livesEl.children].forEach((h, i) => h.classList.toggle('off', i >= S.lives));
+  livesEl.classList.toggle('last', S.lives === 1);
+  livesEl.setAttribute('role', 'img'); livesEl.setAttribute('aria-label', fmt(plural(S.lives, UI.bzLivesAria), { n: S.lives }));
+  $('#score').textContent = S.score;
+}
+/** The i-th heart breaks (see the styles): two halves and a ring are put over it and taken away when they are done. */
+function breakHeart(i) {
+  const h = livesEl.children[i]; if (!h) return;
+  for (const b of h.querySelectorAll('b')) b.remove();
+  h.classList.add('roto'); h.insertAdjacentHTML('beforeend', '<b class="iz">❤️</b><b class="de">❤️</b><b class="onda"></b>');
+  setTimeout(() => { for (const b of h.querySelectorAll('b')) b.remove(); h.classList.remove('roto'); }, 1100);
+}
+
+/* ---------- the flow ---------- */
+/** Shown small on the start card: which build this is (the lab went through several in a row, and a browser can show a saved one). */
+const BUILD = 'v13';
+const card = $('#card');
+function showCard(emoji, title, html, btn) { $('#cEmoji').textContent = emoji; $('#cTitle').textContent = title; $('#cBody').innerHTML = html; $('#cBtn').textContent = btn; card.hidden = false; }
+function ready() {
+  const paso = n => { const [a, b] = UI[`bzStep${n}`].split('|'); return `<p><b><i>${n}</i>${a}</b>${b}</p>`; };
+  showCard('⚖️', GAME.nombre, `<div class="pasos">
+  <div class="paso"><svg viewBox="0 0 112 80" aria-hidden="true">
+    <defs><linearGradient id="tabla1"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff2e88"/></linearGradient></defs>
+    <line x1="8" y1="10" x2="104" y2="10" stroke="#8f7bd6" stroke-width="2" stroke-linecap="round"/>
+    <g class="a-vaiven">
+      <rect x="49" y="6" width="14" height="8" rx="3" fill="#2ee6d6"/><line x1="56" y1="14" x2="56" y2="22" stroke="#2ee6d6" stroke-width="1.2"/>
+      <rect class="neon" x="47" y="22" width="18" height="18" rx="2" fill="rgba(46,230,214,0.18)" stroke="#2ee6d6" stroke-width="2"/>
+      <line x1="56" y1="44" x2="56" y2="59" stroke="rgba(255,255,255,0.5)" stroke-width="1.2" stroke-dasharray="3 4"/>
+    </g>
+    <rect x="14" y="62" width="84" height="6" rx="3" fill="url(#tabla1)"/><path d="M52 68h8l5 12h-18z" fill="#1a0b38" stroke="#2ee6d6" stroke-width="1"/>
+    <circle cx="94" cy="42" r="5" fill="#fff"/><circle class="a-onda" cx="94" cy="42" r="5" fill="none" stroke="#fff" stroke-width="1.5"/>
+  </svg>${paso(1)}</div>
+  <div class="paso"><svg viewBox="0 0 112 80" aria-hidden="true">
+    <defs><linearGradient id="tabla3"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff2e88"/></linearGradient></defs>
+    <g class="a-vuelca">
+      <rect x="14" y="44" width="84" height="6" rx="3" fill="url(#tabla3)"/><rect class="a-verde" x="14" y="44" width="84" height="6" rx="3" fill="#9dff3a"/><rect class="a-rojo" x="14" y="44" width="84" height="6" rx="3" fill="#ff2e4a"/>
+      <rect class="neon" x="26" y="29" width="15" height="15" rx="2" fill="rgba(46,230,214,0.18)" stroke="#2ee6d6" stroke-width="2"/>
+      <rect class="neon" x="48" y="29" width="15" height="15" rx="2" fill="rgba(46,230,214,0.18)" stroke="#2ee6d6" stroke-width="2"/>
+      <rect class="neon" x="44" y="18" width="24" height="9" rx="2" fill="rgba(255,46,136,0.18)" stroke="#ff2e88" stroke-width="2"/>
+      <circle class="neon a-rueda" cx="80" cy="36" r="8" fill="rgba(255,210,63,0.18)" stroke="#ffd23f" stroke-width="2"/>
+    </g>
+    <path d="M52 50h8l6 30h-20z" fill="#1a0b38" stroke="#2ee6d6" stroke-width="1"/>
+    <rect x="34" y="57" width="44" height="9" rx="4.5" fill="#0a0320" stroke="rgba(255,255,255,0.35)" stroke-width="1"/><rect x="51" y="59" width="10" height="5" rx="2.5" fill="rgba(157,255,58,0.6)"/>
+    <circle class="a-burbuja" cx="56" cy="61.5" r="3" fill="#fff"/>
+  </svg>${paso(2)}</div>
+  <div class="paso"><svg viewBox="0 0 112 80" aria-hidden="true">
+    <defs><linearGradient id="tabla2"><stop offset="0" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff2e88"/></linearGradient></defs>
+    <path d="M36 36h8l6 34h-20z" fill="#1a0b38" stroke="#2ee6d6" stroke-width="1"/>
+    <g transform="rotate(9 40 33)"><rect x="6" y="30" width="64" height="6" rx="3" fill="url(#tabla2)"/>
+      <rect class="neon" x="22" y="15" width="15" height="15" rx="2" fill="rgba(46,230,214,0.18)" stroke="#2ee6d6" stroke-width="2"/></g>
+    <rect x="0" y="69" width="112" height="11" fill="rgba(23,63,122,0.7)"/><line x1="0" y1="69" x2="112" y2="69" stroke="#2ee6d6" stroke-width="1.5"/>
+    <ellipse class="a-salpica" cx="84" cy="69" rx="6" ry="2" fill="none" stroke="#2ee6d6" stroke-width="1.5"/>
+    <rect class="neon a-cae" x="74" y="24" width="14" height="14" rx="2" fill="rgba(255,46,136,0.18)" stroke="#ff2e88" stroke-width="2"/>
+    <text x="70" y="13" font-size="10">❤️❤️</text><text class="a-vida" x="94" y="13" font-size="10">❤️</text>
+  </svg>${paso(3)}</div>
+</div>
+<p class="nota">${UI.bzScoreNote}</p><p class="nota">${UI.bzLivesNote}</p><p class="build">${BUILD}</p>`, UI.bzPlay);
+}
+const query = new URLSearchParams(location.search), seedParam = query.get('seed');
+/** Lab only: `?from=30` starts as hard as if 30 pieces were already down (on an empty plank), to try the late pieces. */
+const fromParam = Math.max(0, Math.floor(Number(query.get('from')) || 0));
+/* ---------- Lab: the pieces a game starts with (the «T» tester tab) ---------- */
+/**
+ * A tester sets on the cover's «T» tab, with − and +, how many pieces the plank starts with; the next game (▶ Jugar or ↻ Otra vez)
+ * starts with them. The same number as the hard level's (one key on the phone). They are the game's own
+ * first pieces, in their order: the claw stops over spots spread along the plank (from the middle out, 24 px
+ * apart, one side then the other, swapped to the high side when the plank leans) and lets each go, with the real
+ * physics. The plank keeps its first stiffness and the claw its first speed while they are laid; they count
+ * as nothing (no points, no lives, the time starts after them), and the game goes on as hard as a new one.
+ */
+const START_KEY = 'balanza-lab:start-pieces', START_MAX = 40;
+let startPieces = 0, timeFrom = 0;
+try { startPieces = Math.max(0, Math.min(START_MAX, parseInt(localStorage.getItem(START_KEY), 10) || 0)); } catch (_) { /* no storage */ }
+function seedPile(S, n) {
+  const firm = () => { S.P = params(0); S.K = S.P.K; S.wind = 0; }, R = 100;
+  const go = (tap) => { firm(); advance(S, tap); S.ev.length = 0; };
+  for (let i = 0; i < n && S.phase === 'play'; i++) {
+    for (let k = 0; k < 600 && !S.held && S.phase === 'play'; k++) go(false);
+    if (!S.held) break;
+    // The i-th spot: the middle first, then out, one side and the other; on the low side, the one opposite
+    const step = Math.ceil(i / 2), side = i % 2 ? 1 : -1;
+    let x = PIV.x + side * Math.min(R, step * 24);
+    if ((x - PIV.x) * S.lean > 0) x = 2 * PIV.x - x;
+    for (let k = 0; k < 1200 && S.held && Math.abs(S.car.x - x) > 3; k++) go(false);
+    if (S.held) go(true);
+    for (let k = 0; k < 180 && S.phase === 'play'; k++) go(false);
+  }
+  for (let k = 0; k < 360 && S.phase === 'play'; k++) go(false);
+  if (S.phase !== 'play') return false;
+  // They were set up, not played: the game starts from here, as hard as a new one
+  S.score = 0; S.landed = 0; S.perfects = 0; S.streak = 0; S.best = 0; S.lives = 3; S.ev.length = 0;
+  for (const b of S.bodies) { b.judged = true; b.counted = false; }
+  S.released = 0; S.P = params(S.skip); S.K = S.P.K;
+  timeFrom = S.t;
+  return true;
+}
+
+function start() {
+  const seed = seedParam != null ? Number(seedParam) | 0 : Date.now() | 0;
+  S = newGame(seed, fromParam);
+  timeFrom = 0;
+  // More pieces than the plank holds tip it while they are laid: then it starts over with fewer, down to what fits
+  for (let n = startPieces; n > 0 && !seedPile(S, n); n -= 2) S = newGame(seed, fromParam);
+  if (S.phase !== 'play') S = newGame(seed, fromParam);
+  state = 'play'; acc = 0; tapQ = false; parts = []; floats = []; says = []; banner = null; pulses = []; flash = 0; ripples = []; lost = []; hurt = 0; zoom = 1; card.hidden = true; document.dispatchEvent(new Event('wobbles:clear'));
+}
+const plural = (n, f) => f[n === 1 ? 1 : n ? 2 : 0];
+function finish() {
+  state = 'over';
+  const s = Math.round(S.t - timeFrom), t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`, m = (S.peak / 40).toLocaleString(LANG, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const lines = [fmt(plural(S.landed, UI.bzBdPieces), { n: S.landed }), fmt(plural(S.perfects, UI.bzBdPerfects), { n: S.perfects }), fmt(UI.bzBdHeight, { m }), fmt(UI.bzBdTime, { t })];
+  showCard('⚖️', S.tipped ? UI.bzTipped : UI.bzOver, `<p class="big">${S.score}</p>`, UI.bzAgain);
+  // The rankings, the exits and the breakdown come from ../game.js, in C-19's order
+  document.dispatchEvent(new CustomEvent('wobbles:over', { detail: { score: S.score, ms: Math.round(S.t * 1000), lines: lines.filter(Boolean) } }));
+}
+
+let last = 0;
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts; clock += dt;
+  if (S && state === 'play') {
+    acc += dt;
+    for (let n = 0; acc >= DT && n < 8; n++) { advance(S, tapQ); tapQ = false; acc -= DT; for (const e of S.ev) onEvent(e); S.ev.length = 0; }
+    if (acc > DT * 8) acc = 0;
+    if (S.done) finish();
+  }
+  fx(dt);
+  // Under a card the scene only shows through the veil: drawn 4 times a second instead of every frame
+  const under = !card.hidden && S;
+  if (!under || ts - drawnAt > 250) { drawnAt = ts; render(); }
+  hud(); watchSpeed(ts); requestAnimationFrame(frame);
+}
+let drawnAt = 0;
+/** Adaptive quality: while playing, frames under 48 a second for 1.5 s lower the sharpness one step (1 → 0.75 → 0.5).
+ * Two seconds later it is judged: no 15 % gain undoes it and it is not tried again (a screen held at 30 fps
+ * to save battery gains nothing from fewer pixels). It never goes back up by itself. */
+const speed = { n: 0, from: 0, slowSince: 0, trial: null, done: !!QUALITY_FIXED, fps: 0, worst: 0, worstNow: 0, lastTs: 0 };
+function watchSpeed(ts) {
+  const gap = speed.lastTs ? ts - speed.lastTs : 0; speed.lastTs = ts;
+  if (gap > 0 && gap < 400) speed.worstNow = Math.max(speed.worstNow, gap);
+  speed.n++;
+  if (ts - speed.from < 500) return;
+  speed.fps = speed.n * 1000 / (ts - speed.from); speed.worst = speed.worstNow; speed.n = 0; speed.from = ts; speed.worstNow = 0;
+  if (speed.done || state !== 'play' || document.hidden) { speed.slowSince = 0; return; }
+  if (speed.trial) {
+    if (ts - speed.trial.at < 2000) return;
+    if (speed.fps < speed.trial.fps * 1.15) { quality = speed.trial.q; resize(); speed.done = true; }
+    speed.trial = null; return;
+  }
+  if (speed.fps >= 48) { speed.slowSince = 0; return; }
+  if (!speed.slowSince) { speed.slowSince = ts; return; }
+  if (ts - speed.slowSince < 1500 || quality <= 0.5) return;
+  speed.trial = { at: ts, fps: speed.fps, q: quality }; quality = quality > 0.75 ? 0.75 : 0.5; speed.slowSince = 0; resize();
+}
+
+/* ---------- input: a touch or a click anywhere, or Space ---------- */
+function press() {
+  audio();
+  if (!card.hidden) return $('#cBtn').click();
+  if (state === 'pause') { state = 'play'; return; }
+  if (state === 'play') tapQ = true;
+}
+cv.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+window.addEventListener('keydown', e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); if (!e.repeat) press(); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') state = 'pause'; });
+$('#cBtn').addEventListener('click', e => { e.currentTarget.blur(); audio(); start(); });
+const muteBtn = $('#mute'), paintMute = () => { muteBtn.textContent = muted ? '🔇' : '🔊'; };
+muteBtn.addEventListener('click', () => { muted = !muted; try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) { /* no storage */ } paintMute(); muteBtn.blur(); });
+window.addEventListener('resize', resize);
+$('#hud a').setAttribute('aria-label', UI.bzBack); muteBtn.setAttribute('aria-label', UI.bzSound);
+paintMute(); resize(); ready(); requestAnimationFrame(frame);
+window.__balanza = { get startPieces() { return startPieces; }, seedPile, QUEUE, TIP, tip, breakHeart, LANG, TEXTS, SPECIAL_AT, get S() { return S; }, get state() { return state; }, finish, newGame, advance, stepWorld, mkBody, weld, place, rect, params, KINDS, EVERYDAY, SPECIAL, MASS, shapeFor, specialAt, pieceAt, PIV, DT, HALF, CLAW, WATER_Y,
+  show(s, st = 'play') { S = s; state = st; card.hidden = true; for (const e of s.ev) onEvent(e); s.ev.length = 0; }, fx, render, hud,
+  get blurs() { return blurs; }, set blurs(v) { blurs = v; }, get quality() { return quality; }, get speed() { return speed; }, get sprites() { return SPR.size; } };
+</script>
+<!-- The result's shared blocks: rankings, exits, feedback (C-19) -->
+<script type="module">import '../game.js';</script>
+</body>
+</html>
