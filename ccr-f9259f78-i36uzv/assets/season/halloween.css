@@ -1,0 +1,9 @@
+/* Halloween (templates.js, D-457): the background glows pumpkin and purple instead of pink. No cobweb in the corner any
+   more: on every page (D-622) it sat over the top bar's buttons. Where things sit and move is in assets/css/season.css. */
+:root.season-halloween {
+  --fondo:
+    radial-gradient(1200px 600px at 10% -10%, rgba(255, 122, 26, 0.32), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(157, 255, 58, 0.12), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(138, 77, 255, 0.4), transparent 60%),
+    linear-gradient(160deg, #12051f, #2a0a3e 55%, #0b1630);
+}

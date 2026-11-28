@@ -1,0 +1,101 @@
+/* ==========================================================
+   Tembleque: the cover's own styles. The shell (screens, the hero, modes) lives once in base.css
+   (DESIGN.md §2); this file keeps the level lever (Sudoku's, which is Pintaminas' hard-mode switch,
+   copied as is) and the two levels' pictures.
+   ========================================================== */
+
+/* Its thematic colours (DESIGN.md §4): the level lever's metal, the same as Sudoku's and Pintaminas' */
+:root {
+  --wb-plate-light: #4a4f5c; --wb-plate-dark: #23262e; --wb-plate-edge: #6b7180;
+  --wb-axle-light: #d9dde5; --wb-axle-dark: #7b8190;
+  --wb-arm-1: #aeb4c0; --wb-arm-2: #e6e9ef; --wb-arm-3: #9aa0ad;
+  --wb-knob-easy: #c8ff8a; --wb-knob-hard: #ff8a8a; --wb-knob-shade-easy: #3f8f12; --wb-knob-shade-hard: #c4142b;
+}
+
+.how { margin: 0; padding-left: 1.3em; display: grid; gap: var(--s-6); }
+
+/* ---------- The level: a lever on a metal plate (Pintaminas' hard-mode switch). Down and green is easy, up and red is hard ---------- */
+.wb-lever { display: grid; grid-template-columns: 74px 1fr; gap: var(--s-14); align-items: center; width: 100%; text-align: left; cursor: pointer;
+  padding: var(--s-10) var(--s-14); border-radius: var(--r-16); border: 2px solid rgb(var(--lime-rgb) / 0.6); background: rgb(var(--lime-rgb) / 0.08);
+  box-shadow: 0 0 14px rgb(var(--lime-rgb) / 0.25); color: var(--ink); font: inherit; -webkit-tap-highlight-color: transparent; transition: border-color 0.25s, background 0.25s, box-shadow 0.25s; }
+.wb-lever { position: relative; }
+/* On, the whole rectangle glows and flickers at random like a bad contact: game.js moves --glow (0 to 1) */
+.wb-lever.on { --glow: 0.7; border-color: rgb(var(--red-rgb) / calc(0.4 + 0.6 * var(--glow))); background: rgb(var(--red-rgb) / calc(0.06 + 0.1 * var(--glow)));
+  box-shadow: 0 0 calc(4px + 26px * var(--glow)) rgb(var(--red-rgb) / calc(0.2 + 0.6 * var(--glow))), 0 0 calc(2px + 6px * var(--glow)) rgb(var(--yellow-rgb) / calc(0.4 * var(--glow))) inset;
+  transition: box-shadow 0.05s, border-color 0.05s, background 0.05s; }
+.wb-label { display: grid; gap: var(--s-2); min-width: 0; }
+.wb-label b { font: var(--fs-120) var(--font-display); letter-spacing: 0.05em; color: var(--lime); }
+.wb-lever.on .wb-label b { color: var(--wb-knob-hard); }
+.wb-label .muted { font-size: var(--fs-85); }
+.wb-plate { position: relative; width: 74px; height: 64px; border-radius: var(--r-12); background: linear-gradient(160deg, var(--wb-plate-light), var(--wb-plate-dark));
+  border: 2px solid var(--wb-plate-edge); box-shadow: inset 0 2px 4px rgb(var(--ink-rgb) / 0.15), inset 0 -3px 6px rgb(var(--well-rgb) / 0.5); }
+/* The groove is an arc around the lever's base with the ball's radius (39 px), as in Pintaminas */
+.wb-track { position: absolute; inset: 0; pointer-events: none; }
+.wb-track svg { width: 100%; height: 100%; display: block; }
+.wb-groove { fill: none; stroke: rgb(var(--well-rgb) / 0.5); stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 1px 0 rgb(var(--ink-rgb) / 0.18)); }
+.wb-axle { position: absolute; left: 50%; bottom: 4.75px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--wb-axle-light), var(--wb-axle-dark)); box-shadow: 0 1px 2px rgb(var(--well-rgb) / 0.6); }
+.wb-arm { position: absolute; left: 50%; bottom: 12.75px; width: 8px; height: 38px; margin-left: -4px; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--wb-arm-1), var(--wb-arm-2), var(--wb-arm-3)); transform-origin: 50% 100%; transform: rotate(-38deg);
+  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.wb-knob { position: absolute; left: 50%; top: -9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--wb-knob-easy), var(--wb-knob-shade-easy)); box-shadow: 0 2px 3px rgb(var(--well-rgb) / 0.5); }
+.wb-lever.on .wb-arm { transform: rotate(38deg); }
+.wb-lever.on .wb-knob { background: radial-gradient(circle at 35% 35%, var(--wb-knob-hard), var(--wb-knob-shade-hard)); }
+.wb-lever:active { transform: scale(0.98); }
+.wb-lever:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+
+/* The sparks on the plate, while hard is on */
+.wb-bolt { position: absolute; font-size: var(--fs-100); opacity: 0; pointer-events: none; z-index: 1; }
+.wb-bolt.b1 { top: -10px; left: -8px; } .wb-bolt.b2 { top: 6px; right: -12px; } .wb-bolt.b3 { bottom: -8px; left: 6px; }
+.wb-lever.on .wb-bolt { animation: wb-spark 1.6s ease-out infinite; }
+.wb-lever.on .b2 { animation-delay: 0.45s; } .wb-lever.on .b3 { animation-delay: 0.9s; }
+.wb-lever.on .wb-plate { border-color: var(--wb-knob-hard); }
+@keyframes wb-spark { 0% { opacity: 0; transform: scale(0.4) rotate(-20deg); } 10% { opacity: 1; transform: scale(1.2) rotate(10deg); } 25%, 100% { opacity: 0; transform: scale(0.8); } }
+
+/* The electric wave: a ring that leaves the plate on every flip (green to easy, red and yellow to hard), and the plate jolts */
+.wb-wave { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; pointer-events: none;
+  border: 3px solid var(--wb-knob-easy); box-shadow: 0 0 16px var(--wb-knob-easy), inset 0 0 12px var(--wb-knob-easy); animation: wb-wave 0.85s ease-out forwards; }
+.wb-wave.hard { border-color: var(--wb-knob-hard); box-shadow: 0 0 18px var(--wb-knob-hard), 0 0 6px var(--yellow), inset 0 0 14px var(--yellow); }
+@keyframes wb-wave { 0% { opacity: 1; transform: scale(0.6); } 100% { opacity: 0; transform: scale(5.5); } }
+.wb-lever.zap .wb-plate { animation: wb-jolt 0.5s ease-out; }
+@keyframes wb-jolt { 0% { transform: translateX(-2px); } 20% { transform: translateX(3px); } 40% { transform: translateX(-2px); } 100% { transform: none; } }
+
+/* The flash over the whole view when switching to hard */
+.wb-flash { position: fixed; inset: 0; z-index: 60; pointer-events: none; animation: wb-flash 0.55s ease-out forwards;
+  background: radial-gradient(circle at 50% 70%, rgb(var(--ink-rgb) / 0.95), rgb(var(--red-rgb) / 0.7) 45%, rgb(var(--yellow-rgb) / 0.3)); }
+@keyframes wb-flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Hard turns the whole page over: a charged red-violet panel with a yellow spark, like switching on a light */
+body.wb-hard {
+  --bg1: #1c020a; --bg1-rgb: 28 2 10; --bg2: #3a0618; --bg2-rgb: 58 6 24; --bg3: #200836; --bg3-rgb: 32 8 54;
+  --fondo:
+    radial-gradient(1100px 600px at 10% -10%, rgba(255, 70, 100, 0.34), transparent 60%),
+    radial-gradient(900px 500px at 110% 15%, rgba(255, 210, 63, 0.18), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(160, 60, 255, 0.32), transparent 60%),
+    linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+}
+body.wb-hard .wb-title { background: linear-gradient(90deg, var(--wb-knob-hard), var(--yellow), var(--wb-knob-hard)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ---------- The cover's picture: the level the lever shows, a loop of its real play (2D: the claw and the plank; 3D: the disc) ---------- */
+/* On a short phone (320×568) the picture shrinks with the height, so the lever and ¡A jugar! stay above the fold (U-39) */
+.wb-pic { position: relative; width: min(82vw, 300px, 36svh); aspect-ratio: 10 / 7; margin: var(--s-10) auto var(--s-6); }
+.wb-pic video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; border-radius: var(--r-16);
+  box-shadow: 0 0 0 1px var(--glass-border), var(--shadow-panel); transition: opacity 0.35s, transform 0.35s; }
+.wb-pic .wb-3d { opacity: 0; transform: scale(0.92); }
+/* A short phone (320×568): a smaller icon and picture, so ¡A jugar! stays above the fold with either level
+   on the lever (the player agent found it 35 px under, 50 px with hard, U-39) */
+@media (max-height: 620px) {
+  #screen-intro .intro-hero .icon { font-size: var(--fs-200); }
+  .wb-pic { width: min(82vw, 300px, 26svh); }
+}
+.wb-pic.hard .wb-2d { opacity: 0; transform: scale(0.92); }
+.wb-pic.hard .wb-3d { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-arm, .wb-lever { transition: none; }
+  .wb-lever.on .wb-bolt { animation: none; opacity: 1; }
+  .wb-lever.zap .wb-plate { animation: none; }
+  .wb-pic video { transition: none; }
+}

@@ -1,0 +1,133 @@
+/* The news strip (lab: #seccion-marquee): a band above the home page's top bar that cycles through the
+   campaigns; a tap opens that campaign's splash. This sheet is loaded into the real home page by the
+   lab demo (index.html), so every treatment is drawn with the site's own tokens, fonts and column.
+   Each strip carries its family (.mq--a, .mq--b, .mq--f), its own id (.mq--a1 …) and, when it is a calm
+   sub-variant, .mq--calma: no band, grey letters, soft fades and no sliding title. The strip is 44 px tall: one tap target (U-10). */
+
+/* --- Shared --- */
+.mq {
+  position: relative; z-index: 2; height: 44px; overflow: hidden;
+  font: 800 var(--fs-90)/1.2 var(--font-body); color: var(--ink);
+  -webkit-user-select: none; user-select: none;
+}
+.mq button {
+  appearance: none; background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.mq-emoji { flex: none; font-size: var(--fs-100); line-height: 1; }
+.mq-emoji img { width: 1.1em; height: 1.1em; vertical-align: -0.15em; }
+.mq-titulo { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mq-titulo.largo { text-overflow: clip; }
+.mq-titulo.largo .mq-texto { display: inline-block; animation: mq-asoma var(--mq-paso, 4.5s) ease-in-out both; }
+@keyframes mq-asoma { 0%, 20% { transform: none; } 65%, 100% { transform: translateX(var(--mq-sobra)); } }
+.mq-kicker { flex: none; white-space: nowrap; }
+.mq-ir { flex: none; margin-left: auto; color: var(--muted); font-size: var(--fs-120); line-height: 1; }
+
+/* A ticker: one row that runs to the left without a seam (the list twice, moved by half its width) */
+.mq-cinta {
+  display: flex; height: 100%; align-items: center;
+  -webkit-mask-image: linear-gradient(90deg, transparent, black var(--s-24), black calc(100% - var(--s-24)), transparent);
+  mask-image: linear-gradient(90deg, transparent, black var(--s-24), black calc(100% - var(--s-24)), transparent);
+}
+.mq-pista { display: flex; align-items: center; width: max-content; height: 100%; animation: mq-corre var(--mq-dur, 40s) linear infinite; }
+.mq-cinta .mq-item { display: inline-flex; align-items: center; gap: var(--s-6); height: 100%; padding: 0 var(--s-14); white-space: nowrap; }
+.mq-sep { flex: none; font-size: var(--fs-75); }
+.mq.pausa .mq-pista { animation-play-state: paused; }
+@media (hover: hover) { .mq-cinta:hover .mq-pista { animation-play-state: paused; } }
+@keyframes mq-corre { to { transform: translateX(-50%); } }
+
+/* A rotator: one news item at a time, in the home page's own column (560 px, 18 px of side margin) */
+.mq-giro { position: relative; height: 100%; max-width: 560px; margin: 0 auto; box-sizing: border-box; }
+.mq-giro .mq-item {
+  position: absolute; inset: 0 var(--s-18); display: flex; align-items: center; gap: var(--s-8);
+  text-align: left; opacity: 0; pointer-events: none;
+}
+.mq-giro .mq-item.on { opacity: 1; pointer-events: auto; }
+
+/* --- A · Cinta de vidrio: the glass of the filters, the list running under the finger --- */
+.mq--a { background: var(--glass); border-bottom: 1px solid var(--glass-border); }
+.mq--a .mq-sep { color: var(--yellow); }
+
+/* --- B · Titular que sube: one at a time, its kicker in a yellow chip, a cyan line counting the time --- */
+.mq--b { background: var(--well); border-bottom: 1px solid var(--glass-border); }
+.mq--b .mq-kicker {
+  padding: var(--s-2) var(--s-8); border-radius: var(--r-pill); background: var(--yellow); color: var(--ink-on-yellow);
+  font-weight: 900; font-size: var(--fs-75);
+}
+.mq--b .mq-item.on { animation: mq-sube-entra 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.mq--b .mq-item.sale { animation: mq-sube-sale 0.35s ease-in both; }
+.mq-tiempo { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; background: var(--cyan); animation: mq-llena var(--mq-paso, 4.5s) linear both; }
+@keyframes mq-sube-entra { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes mq-sube-sale { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
+@keyframes mq-llena { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* --- F · Historias: one segment per news item on top, the current one filling, the emoji in a rainbow ring --- */
+.mq--f .mq-segmentos { position: absolute; top: var(--s-4); left: var(--s-18); right: var(--s-18); display: flex; gap: var(--s-4); z-index: 1; }
+.mq--f .mq-seg { flex: 1; height: 2px; border-radius: var(--r-pill); background: var(--line-faint); overflow: hidden; }
+.mq--f .mq-seg.hecho::after, .mq--f .mq-seg.ahora::after { content: ''; display: block; height: 100%; background: var(--ink); transform-origin: left; }
+.mq--f .mq-seg.ahora::after { animation: mq-llena var(--mq-paso, 4.5s) linear both; }
+.mq--f .mq-giro .mq-item { top: var(--s-6); }
+.mq--f .mq-anillo {
+  flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; padding: var(--s-2); box-sizing: border-box;
+  background: conic-gradient(var(--pink), var(--yellow), var(--lime), var(--cyan), var(--purple), var(--pink));
+}
+.mq--f .mq-anillo .mq-emoji { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--bg2); font-size: var(--fs-85); }
+.mq--f .mq-kicker { color: var(--muted); font-size: var(--fs-75); font-weight: 900; }
+.mq--f .mq-item.on { animation: mq-entra-lado 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.mq--f .mq-item.sale { opacity: 1; animation: mq-sale-lado 0.3s ease-in both; }
+@keyframes mq-entra-lado { from { transform: translateX(var(--s-24)); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes mq-sale-lado { to { transform: translateX(calc(-1 * var(--s-24))); opacity: 0; } }
+
+/* --- The calm sub-variants: the news is there, the page is not taken over --- */
+.mq--calma { background: none; border-bottom: 1px solid var(--line-faint); font-weight: 700; font-size: var(--fs-85); }
+.mq--calma .mq-kicker { padding: 0; background: none; color: var(--muted); font-weight: 800; font-size: var(--fs-75); }
+.mq--calma .mq-ir { font-size: var(--fs-100); }
+.mq--calma .mq-giro .mq-item.on { animation: mq-aparece 0.6s ease-out both; }
+.mq--calma .mq-giro .mq-item.sale { opacity: 1; animation: mq-desaparece 0.4s ease-in both; }
+@keyframes mq-aparece { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mq-desaparece { to { opacity: 0; } }
+
+/* A1 · Cinta tenue, A2 · a pasos, A3 · de una vuelta: grey words; the speed is set by marquee.js */
+.mq--a.mq--calma { color: var(--muted); }
+.mq--a.mq--calma .mq-sep { color: var(--line-faint); }
+.mq--a2 .mq-pista { animation: none; }
+.mq--a2 .mq-pista.desliza { transition: transform 0.9s cubic-bezier(0.4, 0, 0.2, 1); }
+.mq--a3 .mq-pista { animation-iteration-count: 1; }
+.mq--a3.quieta .mq-pista { animation: none; }
+.mq--a3.quieta .mq-cinta { overflow-x: auto; scrollbar-width: none; }
+.mq--a3.quieta .mq-cinta::-webkit-scrollbar { display: none; }
+
+/* F1 · Historias suaves: faint segments, a grey ring */
+.mq--f1 .mq-seg.hecho::after, .mq--f1 .mq-seg.ahora::after { background: var(--muted); }
+.mq--f1 .mq-anillo { background: var(--glass-border); }
+.mq--f1 .mq-titulo, .mq--b.mq--calma .mq-titulo { font-weight: 700; }
+.mq--b2.quieta .mq-item.on, .mq--b2.quieta .mq-item.sale { animation: none; }
+
+/* F2 · Burbujas quietas: nothing moves; one bubble per news item, its ring in colour until it is opened */
+.mq-burbujas {
+  display: flex; align-items: center; gap: var(--s-14); height: 100%; max-width: 560px; margin: 0 auto;
+  padding: 0 var(--s-18); box-sizing: border-box; overflow-x: auto; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, black calc(100% - var(--s-24)), transparent);
+  mask-image: linear-gradient(90deg, black calc(100% - var(--s-24)), transparent);
+}
+.mq-burbujas::-webkit-scrollbar { display: none; }
+.mq-burbujas .mq-item { flex: none; display: inline-flex; align-items: center; gap: var(--s-6); max-width: 11em; height: 100%; }
+.mq--f2 .mq-anillo { width: 24px; height: 24px; }
+.mq--f2 .mq-item.vista .mq-anillo { background: var(--glass-border); }
+.mq--f2 .mq-item.vista { color: var(--muted); }
+
+/* The tap: the strip answers under the finger */
+.mq .mq-item:active { transform: scale(0.97); }
+
+/* Without motion: the ticker stands still and scrolls by hand; the rotators change without sliding */
+@media (prefers-reduced-motion: reduce) {
+  .mq-pista { animation: none; }
+  .mq-pista.desliza { transition: none; }
+  .mq-cinta { overflow-x: auto; }
+  .mq-giro .mq-item.on, .mq-giro .mq-item.sale, .mq-tiempo, .mq--f .mq-seg.ahora::after, .mq-titulo.largo .mq-texto { animation: none; }
+  .mq-titulo.largo { text-overflow: ellipsis; }
+  .mq-titulo.largo .mq-texto { display: inline; }
+}
+
+/* While a splash is open the strip waits, its timers too */
+.mq.pausa .mq-tiempo, .mq.pausa .mq-seg.ahora::after, .mq.pausa .mq-texto { animation-play-state: paused; }

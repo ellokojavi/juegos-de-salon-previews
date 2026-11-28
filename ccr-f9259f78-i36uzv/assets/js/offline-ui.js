@@ -1,0 +1,310 @@
+/**
+ * What offline mode shows (D-538, docs/OFFLINE.md, PR 4), on every page while the flag `offline` is
+ * on and connection.js says offline. Nothing is added while online.
+ *
+ * - **Dimmed, tagged "📡 Solo con señal"**: every link to a page of the site the phone does not keep
+ *   offline (La Copa, Rankings, /privacy/…; the kept ones are the offline-capable games and the home
+ *   page) and every game's two-phone mode (`.mode[data-mode="online"]`). They stay in place; a tap
+ *   says in one line why, instead of opening.
+ * - **The chip** "📴 Sin conexión · 2 por subir": a sticker like the cards' "Nuevo", stuck on the page's
+ *   title (the home page's "Juegos de Salón", a game cover's name; the owner, 2026-11-07). It is
+ *   positioned absolutely at the end of the title's text, so it moves nothing on the page; a page with
+ *   no title gets it floating at the bottom. With how
+ *   many finished games wait to upload (jugador.js's pending queue). A tap on it opens the sheet that
+ *   explains offline mode (offline-sheet.js), as often as the player wants.
+ *
+ * - **Extended offline mode** (flag `extended-offline`, the owner 2026-11-23; lab: #seccion-extended-offline):
+ *   the sticker goes. On the home page a still plate, 📴 over «SIN CONEXIÓN», takes the place of the hero's
+ *   dancing emoji (same box: nothing moves), and a tap on it opens the same sheet; every other page
+ *   says it is offline with the Candlelight palette alone. What waits to upload is told apart from it:
+ *   on the home page a line at the bottom, «⏳ 2 partidas esperan señal para subir», for a few seconds.
+ *
+ * The page's own code is not touched: one class on <html> and the CSS in offline.css do the dimming,
+ * and one click listener in the capture phase stops the taps.
+ */
+import { COMMON, getLang } from './i18n.js';
+import { offlineOk, OFFLINE_PAGES, ALL_GAMES } from './games.js';
+import { loadCss } from './load-css.js';
+import { pendingCupDays, OUTBOX_KEY } from './cup-outbox.js';
+import { flag, flagGuess } from './flags.js';
+
+export const PENDING_KEY = 'juegos-de-salon:jugador:pendientes';
+// The offline sheet, told whether La Copa plays offline here (its own flag, D-544, lab: #seccion-cup-offline): then it says so
+const withCup = open => Promise.all([import('./offline-sheet.js'), import('./flags.js').then(f => f.flag('cup-offline')).catch(() => false)])
+  .then(([m, cup]) => open({ ...m, cup: !!cup })).catch(() => {});
+
+const ROOT = new URL('../../', import.meta.url);
+
+/** The site's paths a phone keeps offline: the home page, OFFLINE_PAGES (Uno al día) and each offline-capable game's page. */
+export const KEPT = new Set(['', ...OFFLINE_PAGES.map(p => p.replace(/\/$/, '')), ...ALL_GAMES.filter(g => offlineOk(g) && g.path).map(g => g.path.replace(/\/$/, ''))]);
+/** The games whose whole folder is kept, sub-pages too (Tembleque's easy/ and hard/; precache.mjs). A tournament keeps only its own files. */
+const KEPT_FOLDERS = ALL_GAMES.filter(g => offlineOk(g) && g.path && !g.torneo && !g.path.startsWith('labs/')).map(g => g.path.replace(/\/$/, ''));
+
+/** The games' own pages: while playing (not on the cover) the "Sin conexión" sticker steps aside. */
+export const GAME_PATHS = new Set(ALL_GAMES.filter(g => g.path).map(g => g.path.replace(/^\/|\/$/g, '')));
+/** Whether `pathname` is a game's page, under the site's root. */
+export function isGamePage(pathname = globalThis.location?.pathname || '/', root = ROOT) {
+  const p = pathname.startsWith(root.pathname) ? pathname.slice(root.pathname.length) : pathname.replace(/^\//, '');
+  const path = p.replace(/index\.html$/, '').replace(/\/$/, '');
+  return [...GAME_PATHS].some(g => g && (path === g || path.startsWith(`${g}/`)));
+}
+
+/**
+ * A game's cover (the owner, 2026-11-07): its first screen, before playing. Party games show it as
+ * `#screen-intro` or `#screen-setup`. A minigame's own page (Shinobi, Zip, Babel…) draws its cover
+ * inside `#screen-jugar` with an `.intro-hero`, which Start replaces with the board; `body.antesala`
+ * is only La Copa's day cover, never a standalone minigame's. Offline, every screen takes the offline
+ * palette, covers and play screens alike (the owner, 2026-11-23: "the whole game's palette changes");
+ * the cover only decides where the sticker goes: on its title, and away while playing.
+ */
+export const COVER = '#screen-intro.active, #screen-setup.active, #screen-jugar.active .intro-hero, body.antesala';
+export const onCover = (doc = globalThis.document) => !!doc.querySelector(COVER);
+
+/** The page's title the "Sin conexión" sticker sticks to: the home page's, a party game's cover, a minigame's cover. */
+export const TITLE = '.hero > h1, #screen-intro.active h1, #screen-setup.active h1, #screen-setup.active > h2, #screen-jugar.active .intro-hero h1, #screen-jugar.active .intro-hero h2';
+
+/** Whether a link needs signal: a page of this site that is not kept offline. Anchors and other sites never. */
+export function needsSignal(href, { root = ROOT, base = root } = {}) {
+  let u;
+  try { u = new URL(href, base); } catch (_) { return false; }
+  if (u.origin !== root.origin || !u.pathname.startsWith(root.pathname)) return false;
+  const path = u.pathname.slice(root.pathname.length).replace(/index\.html$/, '').replace(/\/$/, '');
+  if (/\.\w+$/.test(path)) return false;   // a file, not a page
+  return !KEPT.has(path) && !KEPT_FOLDERS.some(k => path.startsWith(`${k}/`));
+}
+
+/** Finished games waiting to upload: the rankings' queue and La Copa's days played offline (D-544). */
+export function pendingCount(storage = globalThis.localStorage) {
+  let n = 0;
+  try { n = (JSON.parse(storage?.getItem(PENDING_KEY) || '[]') || []).length; } catch (_) { /* none */ }
+  return n + pendingCupDays(storage);
+}
+
+export function chipText(n, lang = getLang()) {
+  const T = (COMMON[lang] || COMMON.es).offline;
+  return n > 0 ? `📴 ${T.chip} · ${T.pending.replace('{n}', n)}` : `📴 ${T.chip}`;
+}
+
+/** Extended offline mode: the line that says how many finished games wait for the signal, apart from «Sin conexión». */
+export function waitingText(n, lang = getLang()) {
+  const T = (COMMON[lang] || COMMON.es).offline;
+  return `⏳ ${n === 1 ? T.waiting1 : T.waiting.replace('{n}', n)}`;
+}
+
+/**
+ * The toast when queued games upload (D-538, PR 5): how many went, and if any did not, how many and
+ * why. Empty when there is nothing to say. `r` is jugador.js's `pendientes-subidas` detail.
+ */
+export function uploadText(r, lang = getLang()) {
+  const T = (COMMON[lang] || COMMON.es).offline;
+  const out = [];
+  if (r?.sent) out.push(r.sent === 1 ? T.uploaded1 : T.uploaded.replace('{n}', r.sent));
+  // La Copa's days played offline (D-544, cup/outbox.js): one that reached the server after its day closed counts as not played
+  if (r?.cupSent) out.push(r.cupSent === 1 ? T.cupUploaded1 : T.cupUploaded.replace('{n}', r.cupSent));
+  for (const [k, t] of [['old', T.lostOld], ['full', T.lostFull], ['refused', T.lostRefused], ['cupLate', T.cupLate], ['cupDup', T.cupDup]]) if (r?.[k]) out.push(t.replace('{n}', r[k]));
+  return out.join(' ');
+}
+
+/** Marks what needs signal under `scope`: `.needs-signal` and the tag text, read by offline.css. */
+export function mark(scope, { lang = getLang(), root = ROOT } = {}) {
+  const tag = `📡 ${(COMMON[lang] || COMMON.es).offline.tag}`;
+  const found = [];
+  for (const a of scope.querySelectorAll('a[href]')) if (needsSignal(a.getAttribute('href'), { root, base: a.baseURI || root }) && !a.closest('.offline-chip')) found.push(a);
+  for (const b of scope.querySelectorAll('.mode[data-mode="online"]')) found.push(b);
+  // Any control a page marks as needing the server (La Copa's Create, D-544)
+  for (const b of scope.querySelectorAll('[data-signal]')) found.push(b);
+  for (const e of found) {
+    e.classList.add('needs-signal');
+    // The tag only on the outermost dimmed thing, and only where it fits: a round icon button (🏅)
+    // or a button inside a dimmed card is dimmed without a tag of its own
+    const inside = e.parentElement?.closest('.needs-signal');
+    const wide = !e.getBoundingClientRect || e.getBoundingClientRect().width >= 140;
+    if (!inside && wide) e.dataset.signalTag = tag; else delete e.dataset.signalTag;
+  }
+  return found;
+}
+
+let started = null;
+export function startOfflineUi({
+  connection, doc = globalThis.document, win = globalThis.window, storage = globalThis.localStorage, lang = getLang(),
+  extendedGuess = () => flagGuess('extended-offline', { store: storage }), extendedFlag = () => flag('extended-offline'),
+} = {}) {
+  if (started) return started;   // once per page, however many times it is asked
+  loadCss(new URL('../css/offline.css', import.meta.url));
+  const html = doc.documentElement;
+  let chip = null;
+  let plate = null;
+  // Extended offline mode: what this phone saw last time first, so an offline home page draws the plate at once; the flag decides
+  let extended = !!extendedGuess();
+  let observer = null;
+  let toastTimer = null;
+
+  const drawChip = () => { if (chip) chip.textContent = chipText(pendingCount(storage), lang); };
+  // The sticker goes on the title in view (a cover's name changes with the screen); none: floating
+  const stick = () => {
+    if (!chip) return;
+    const title = [...doc.querySelectorAll(TITLE)].find(t => t.getClientRects?.().length);
+    const host = title || doc.body;
+    chip.classList.toggle('offline-chip--float', !title);
+    if (chip.parentElement !== host) host.append(chip);
+    // Floating, the place measured on a title before goes: a `top` left over with the float's `bottom`
+    // stretched the sticker into a tall dark bar over the setup screen (2026-11-23)
+    if (!title) { chip.style.left = ''; chip.style.top = ''; return; }
+    // At the end of the title's text, whatever the title's layout (a centred line, or a minigame's flex
+    // row with its emoji): measured, since an absolute child of a flex row would sit at its start
+    if (win.getComputedStyle(title).position === 'static') title.style.position = 'relative';
+    const range = doc.createRange();
+    range.selectNodeContents(title);
+    range.setEndBefore(chip);
+    const end = [...range.getClientRects()].filter(r => r.width).pop();
+    const box = title.getBoundingClientRect();
+    if (!end) return;
+    let left = end.right - box.left;
+    chip.style.left = `${left}px`; chip.style.top = `${end.top - box.top}px`;
+    // A short title's sticker rises onto the game's icon above it (Tembleque's scale, 2026-11-23): it
+    // moves right, past the icon, as far as the screen allows
+    // The icon's drawing, not its box (a block as wide as the screen): its contents measured
+    const above = title.previousElementSibling;
+    let icon = null;
+    if (above) { const r = doc.createRange(); r.selectNodeContents(above); icon = r.getBoundingClientRect(); }
+    const c = chip.getBoundingClientRect();
+    const room = (win.innerWidth || doc.documentElement.clientWidth) - 8 - c.right;
+    if (icon && icon.width && c.left < icon.right && c.right > icon.left && c.top < icon.bottom && c.bottom > icon.top && room > 0) {
+      left += Math.min(icon.right + 4 - c.left, room);
+      chip.style.left = `${left}px`;
+    }
+  };
+  win.addEventListener('resize', () => stick());
+
+  function toast(text = (COMMON[lang] || COMMON.es).offline.needsSignal, ms = 3200, kind = 'needs-signal') {
+    let t = doc.querySelector('.offline-toast');
+    if (!t) { t = doc.createElement('div'); t.className = 'offline-toast'; t.setAttribute('role', 'status'); doc.body.append(t); }
+    t.textContent = text;
+    t.dataset.kind = kind;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+  }
+  // Queued games uploaded (jugador.js): one toast, online or not, and the chip's count goes down
+  win.addEventListener('pendientes-subidas', e => {
+    drawChip();
+    if (extended) doc.querySelector('.offline-toast[data-kind="waiting"]')?.remove();
+    const text = uploadText(e.detail, lang);
+    if (text) toast(text, 5000, 'uploaded');
+  });
+
+  // A tap on something that needs signal says why, in the capture phase so the page never sees it
+  doc.addEventListener('click', e => {
+    if (!html.classList.contains('offline')) return;
+    const hit = e.target.closest?.('.needs-signal');
+    if (!hit) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toast();
+  }, true);
+
+  // The palette on every page and every screen while offline (the owner, 2026-11-23); `offline-play`
+  // marks a game's page while playing, where the sticker steps aside so it covers nothing of the board
+  const shell = () => {
+    const off = html.classList.contains('offline');
+    html.classList.toggle('offline-shell', off);
+    html.classList.toggle('offline-play', off && isGamePage(win.location?.pathname) && !onCover(doc));
+  };
+  const screens = new win.MutationObserver(() => { shell(); if (html.classList.contains('offline')) stick(); });
+  // Classes (a screen turning active) and children (a minigame's Start swaps its cover for the board
+  // without any class changing)
+  screens.observe(doc.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  // A switch while the page is open crossfades (~600 ms, offline.css) instead of jumping: the browser's
+  // View Transitions where it has them, a plain switch where it does not or with reduced motion. The
+  // first apply never animates: a page opened offline already painted the palette (its inline script)
+  let first = true;
+  const smooth = f => {
+    const still = first || !doc.startViewTransition || win.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    first = false;
+    if (still) f(); else doc.startViewTransition(f);
+  };
+  function apply(mode) { smooth(() => paint(mode)); }
+  // A tap on the sticker or the plate opens the sheet that explains offline mode, as often as wanted
+  const opens = el => {
+    Object.entries({ role: 'button', tabindex: '0', 'aria-haspopup': 'dialog' }).forEach(([k, v]) => el.setAttribute(k, v));
+    const open = e => {
+      e.preventDefault(); e.stopPropagation();
+      withCup(m => m.openOfflineSheet({ doc, lang, cup: m.cup }));
+    };
+    el.addEventListener('click', open);
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') open(e); });
+    return el;
+  };
+  // Extended offline mode, on the home page: the plate goes inside the hero's emoji box, over the
+  // hidden emoji, so the hero keeps its height and nothing below it moves
+  const placePlate = () => {
+    const box = doc.querySelector('.hero .emoji');
+    if (!box) return false;
+    if (!plate) {
+      plate = opens(doc.createElement('span'));
+      plate.className = 'offline-plate';
+      const T = (COMMON[lang] || COMMON.es).offline;
+      plate.setAttribute('aria-label', T.chip);
+      plate.innerHTML = '<span class="offline-plate-icon" aria-hidden="true">📴</span><span class="offline-plate-label"></span>';
+      plate.lastChild.textContent = T.chip;
+    }
+    if (plate.parentElement !== box) box.append(plate);
+    html.classList.add('offline-plate-on');
+    return true;
+  };
+  const dropPlate = () => { plate?.remove(); plate = null; html.classList.remove('offline-plate-on'); };
+  const dropChip = () => { chip?.remove(); chip = null; };
+  // How many games wait to upload, apart from the plate: one line at the bottom for a few seconds
+  const tellWaiting = () => {
+    const n = pendingCount(storage);
+    if (n > 0) toast(waitingText(n, lang), 5000, 'waiting');
+  };
+  function paint(mode) {
+    const off = mode === 'offline';
+    html.classList.toggle('offline', off);
+    shell();
+    if (off) {
+      mark(doc, { lang });
+      if (extended) {
+        // No sticker: the plate on the home page, the palette alone everywhere else
+        dropChip();
+        if (placePlate()) tellWaiting();
+      } else {
+        dropPlate();
+        chip ||= doc.querySelector('.offline-chip');
+        if (!chip) {
+          chip = opens(doc.createElement('span')); chip.className = 'offline-chip';
+          chip.setAttribute('aria-live', 'polite');
+        }
+        stick();
+        drawChip();
+      }
+      // The first time on this phone, one sheet says what works and what happens to the scores (PR 6)
+      withCup(m => m.showOfflineSheetOnce({ doc, storage, lang, cup: m.cup }));
+      // Screens drawn later (a game's modes, the home page's cards) are marked as they appear
+      observer ||= new win.MutationObserver(() => mark(doc, { lang }));
+      // Once the page has settled: a link drawn before its layout (a card's hidden overlay) loses a tag it has no room for
+      setTimeout(() => mark(doc, { lang }), 1200);
+      observer.observe(doc.body, { childList: true, subtree: true });
+    } else {
+      observer?.disconnect();
+      dropChip();
+      dropPlate();
+      doc.querySelector('.offline-toast[data-kind="waiting"]')?.remove();
+      // Only the "needs signal" line goes with the mode: an upload toast may land before this paint,
+      // which a crossfade runs a frame later (the end-to-end test caught it removing "Se subió 1 partida ✓")
+      doc.querySelector('.offline-toast[data-kind="needs-signal"]')?.remove();
+    }
+  }
+
+  win.addEventListener('storage', e => { if (e.key === PENDING_KEY || e.key === OUTBOX_KEY) drawChip(); });
+  connection.onChange(apply);
+  apply(connection.mode());
+  // The flag's real answer: drawn again only if it differs from what this phone saw last time
+  Promise.resolve().then(extendedFlag).then(on => {
+    if (!!on === extended) return;
+    extended = !!on;
+    paint(connection.mode());
+  }).catch(() => {});
+  return (started = { apply, drawChip });
+}

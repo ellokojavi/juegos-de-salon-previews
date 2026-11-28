@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#150726">
+<title>⚖️ Tembleque</title>
+  <!-- Out of the lab (D-517's way): no lab door and no noindex; until flags/wobbles is on for this visitor,
+       ../game.js sends them to the home page. The game below is the owner's prototype as delivered, kept
+       whole: the hard level of docs/games/wobbles.md -->
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <script>
+    // The chosen language's manifest, before the browser reads it (D-222)
+    (function () {
+      try {
+        var l = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('juegos-de-salon:lang') || '').toLowerCase();
+        var m = document.querySelector('link[rel="manifest"]');
+        if (m && /^(en|pt)$/.test(l)) m.href = m.href.replace(/manifest\.webmanifest$/, 'manifest.' + l + '.webmanifest');
+      } catch (_) { /* the Spanish one stays */ }
+    })();
+    // Offline mode (D-538): a phone already offline paints its first frame in the offline palette,
+    // with no flash of the normal one (offline-ui.js takes over once the page has loaded)
+    (function () {
+      try {
+        var f = localStorage.getItem('juegos-de-salon:offline-forced');
+        if (localStorage.getItem('juegos-de-salon:offline-flag') === '1' && f !== '0' && (f === '1' || navigator.onLine === false)) document.documentElement.classList.add('offline', 'offline-shell');
+      } catch (_) { /* no storage: it paints as always */ }
+    })();
+  </script>
+  <link rel="icon" href="../../assets/icon.svg" type="image/svg+xml">
+  <script src="../../assets/js/vigia.js?h=3ea83b0d"></script>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Juegos de Salón">
+  <link rel="apple-touch-icon" href="../../assets/icons/apple-touch-icon.png">
+<link rel="preload" href="../../assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../assets/fonts/bangers-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../assets/css/base.css?h=c6134fca">
+<link rel="stylesheet" href="../../assets/css/ranking.css?h=b3c19fbc">
+<style>
+  /* The site's fonts and palette (assets/css/base.css), copied here so the prototype stands alone */
+  @font-face { font-family: 'Bangers'; font-weight: 400; font-display: swap; src: url('../../assets/fonts/bangers-latin.woff2') format('woff2'); }
+  @font-face { font-family: 'Nunito'; font-weight: 400 900; font-display: swap; src: url('../../assets/fonts/nunito-latin.woff2') format('woff2'); }
+  :root {
+    --bg1: #150726; --bg2: #2a0a4a; --bg3: #0b1e3f;
+    --pink: #ff2e88; --yellow: #ffd23f; --cyan: #2ee6d6; --lime: #9dff3a; --purple: #8a4dff;
+    --ink: #fff; --muted: rgba(255, 255, 255, 0.72); --glass: rgba(255, 255, 255, 0.08); --glass-border: rgba(255, 255, 255, 0.16);
+    --font-display: 'Bangers', 'Impact', 'Arial Black', sans-serif; --font-body: 'Nunito', system-ui, -apple-system, sans-serif;
+    --fondo:
+      radial-gradient(1200px 600px at 10% -10%, rgba(255, 46, 136, 0.35), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(46, 230, 214, 0.22), transparent 60%),
+      radial-gradient(800px 600px at 50% 120%, rgba(138, 77, 255, 0.35), transparent 60%),
+      linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; margin: 0; overscroll-behavior: none; }
+  body {
+    height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+    background: var(--bg1); background-image: var(--fondo); color: var(--ink); font-family: var(--font-body);
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  header {
+    display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 6px;
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) 10px 2px; width: 100%; max-width: 560px; margin: 0 auto;
+  }
+  header a, header button {
+    width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; text-decoration: none;
+    font: 900 1.2rem var(--font-body); color: var(--ink); background: var(--glass); border: 1px solid var(--glass-border); border-radius: 999px;
+  }
+  h1 { margin: 0; text-align: center; font: 400 1.7rem var(--font-display); letter-spacing: 0.05em; }
+  h1 span {
+    background: linear-gradient(90deg, var(--yellow), var(--pink), var(--cyan), var(--lime), var(--yellow)); background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent; padding: 0.2em 0.12em 0; animation: shimmer 6s linear infinite;
+  }
+  @keyframes shimmer { to { background-position: 300% 0; } }
+  @media (prefers-reduced-motion: reduce) { h1 span { animation: none; } }
+  main { position: relative; flex: 1; min-height: 0; }
+  #hud {
+    position: absolute; top: 0; left: 0; right: 0; height: 40px; max-width: 560px; margin: 0 auto; padding: 0 14px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; pointer-events: none; font-weight: 900;
+  }
+  #count { font-size: 0.95rem; color: var(--muted); }
+  #chip { font-size: 0.85rem; padding: 4px 12px; border-radius: 999px; background: rgba(0, 0, 0, 0.3); white-space: nowrap; }
+  #chip { grid-column: 2; }
+  #score { grid-column: 3; justify-self: end; font: 400 2rem var(--font-display); color: var(--yellow); letter-spacing: 0.04em; text-shadow: 0 0 14px rgba(255, 210, 63, 0.5); }
+  canvas { position: absolute; left: 0; top: 40px; width: 100%; height: calc(100% - 40px); touch-action: none; display: block; }
+  #card {
+    position: absolute; inset: 0; display: grid; place-items: center; padding: 14px;
+    background: rgba(21, 7, 38, 0.6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  }
+  #card .in {
+    width: min(100%, 400px); max-height: 100%; overflow: auto; text-align: center; padding: 18px;
+    background: rgba(42, 10, 74, 0.82); border: 1px solid var(--glass-border); border-radius: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 26px rgba(46, 230, 214, 0.15);
+  }
+  #cEmoji { font-size: 2.6rem; line-height: 1.1; }
+  #card h2 { margin: 2px 0 8px; font: 400 2.1rem var(--font-display); letter-spacing: 0.05em; text-transform: uppercase; }
+  #cBody { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+  #cBody ol { margin: 0; padding-left: 1.3em; } #cBody li { margin: 6px 0; }
+  #cBody ul { list-style: none; margin: 0; padding: 0; }
+  #cBody .big { text-align: center; font: 400 3.4rem/1 var(--font-display); color: var(--yellow); margin: 0 0 8px; text-shadow: 0 0 18px rgba(255, 210, 63, 0.5); }
+  #cBody .nota { margin: 10px 0 0; font-size: 0.85rem; }
+  #cBtn {
+    margin-top: 14px; min-height: 48px; padding: 8px 28px; cursor: pointer; border: 0; border-radius: 999px;
+    font: 400 1.35rem var(--font-display); letter-spacing: 0.06em; color: #3a1200;
+    background: linear-gradient(180deg, #ffe27a, var(--yellow)); box-shadow: 0 4px 0 #9a4a00, 0 8px 22px rgba(255, 210, 63, 0.3);
+  }
+  #cBtn:active { transform: translateY(3px); box-shadow: 0 1px 0 #9a4a00; }
+  #chip { background: none; padding: 0; width: 106px; height: 28px; }
+  /* The three hearts: a canvas of their own over the middle of the top bar, tall enough for the pieces of a broken one to fall */
+  #hearts { position: absolute; left: 50%; top: 0; width: 240px; height: 150px; margin-left: -120px; pointer-events: none; }
+  #cBody .lema { margin: 0 0 10px; text-align: center; color: var(--ink); font: 400 1.25rem var(--font-display); letter-spacing: 0.04em; }
+  #cBody .steps { list-style: none; margin: 0; padding: 0; }
+  #cBody .steps li { display: grid; grid-template-columns: 92px 1fr; gap: 10px; align-items: center; margin: 0 0 6px; padding: 4px 8px 4px 6px; border-radius: 14px; background: rgba(0, 0, 0, 0.24); }
+  #cBody .steps svg { width: 92px; height: 64px; display: block; overflow: visible; }
+  #cBody .steps b { display: flex; align-items: center; gap: 7px; margin-bottom: 2px; color: var(--ink); font: 400 1.1rem var(--font-display); letter-spacing: 0.04em; }
+  #cBody .steps .n { display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; border-radius: 50%; background: var(--yellow); color: #3a1200; font-size: 0.95rem; }
+  #cBody .steps p { margin: 0; font-size: 0.82rem; line-height: 1.22; }
+  #cBody .pie { margin: 8px 0 0; text-align: center; font-size: 0.82rem; line-height: 1.5; }
+  /* The pictures move: 1, the piece is carried across and dropped; 2, it turns under a held finger; 3, the board turns under two fingertips; 4, the disc rocks, a second piece levels it, and the hoop goes green */
+  .il-move { animation: ilMove 3.4s ease-in-out infinite; } .il-drop { animation: ilDrop 3.4s ease-in infinite; } .il-finger { animation: ilFinger 3.4s linear infinite; }
+  @keyframes ilMove { 0% { transform: translateX(-16px); } 50%, 100% { transform: translateX(14px); } }
+  @keyframes ilDrop { 0%, 58% { transform: translateY(0); } 76%, 100% { transform: translateY(30px); } }
+  @keyframes ilFinger { 0%, 52% { opacity: 1; } 62%, 100% { opacity: 0; } }
+  .il-turn { transform-origin: 60px 32px; animation: ilTurn 3.2s ease-in-out infinite; } .il-hold { animation: ilHold 3.2s ease-in-out infinite; }
+  @keyframes ilTurn { 0%, 25% { transform: rotate(0deg); } 55% { transform: rotate(38deg); } 85%, 100% { transform: rotate(-30deg); } }
+  @keyframes ilHold { 0%, 25% { transform: translateX(0); } 55% { transform: translateX(22px); } 85%, 100% { transform: translateX(-18px); } }
+  .il-spin { animation: ilSpin 7s linear infinite; } .il-twist { animation: ilSpin 7s linear infinite; } .il-thumb { animation: ilThumb 3.5s ease-in-out infinite alternate; }
+  @keyframes ilThumb { from { transform: translateX(-20px); } to { transform: translateX(20px); } }
+  @keyframes ilSpin { to { transform: rotate(-360deg); } }
+  .il-rock { transform-origin: 60px 52px; animation: ilRock 4s ease-in-out infinite; } .il-second { animation: ilSecond 4s linear infinite; }
+  .il-hoop { animation: ilHoop 4s linear infinite; } .il-ok { animation: ilOk 4s linear infinite; }
+  @keyframes ilRock { 0%, 38% { transform: rotate(-9deg); } 56% { transform: rotate(3deg); } 70%, 100% { transform: rotate(0deg); } }
+  @keyframes ilSecond { 0%, 38% { opacity: 0; transform: translateY(-14px); } 46%, 100% { opacity: 1; transform: translateY(0); } }
+  @keyframes ilHoop { 0%, 68% { stroke: #fff; } 74%, 100% { stroke: #9dff3a; } }
+  @keyframes ilOk { 0%, 68% { opacity: 0; } 74%, 100% { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { #cBody .steps svg * { animation: none !important; } }
+  /* On a touch screen the card does not blur what is behind it (a full-screen blur cost most of a phone's frame): a darker veil instead */
+  /* The breakdown, under the exits (C-19): the card's quiet list */
+  #cDetail ul { list-style: none; margin: 0; padding: 0; text-align: left; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+  #cDetail li { margin: 6px 0; }
+  /* One even gap between the result's blocks (DESIGN.md rule 7): the blocks' own margins give way to it */
+  #cAviso:not(:empty), #cExits:not(:empty), #cRank:not(:empty) { margin-top: var(--s-12); }
+  #cAviso > *, #cExits > *, #cRank > * { margin-top: 0; margin-bottom: 0; }
+  #cDetail ul { margin-top: var(--s-12); }
+  #cBody .big { margin-bottom: 0; } #cBtn { margin-top: var(--s-12); }
+  @media (pointer: coarse) { #card { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(21, 7, 38, 0.84); } }
+</style>
+  <meta name="release" content="1.54.20-b5c2f6d">
+  <script type="importmap" id="importmap">{"imports": {"../../assets/js/achievement-window.js": "../../assets/js/achievement-window.js?h=b85e68f8", "../../assets/js/arrastre.js": "../../assets/js/arrastre.js?h=b9425a6d", "../../assets/js/azar.js": "../../assets/js/azar.js?h=7697e38b", "../../assets/js/back-guard.js": "../../assets/js/back-guard.js?h=02fdd3d6", "../../assets/js/badges.js": "../../assets/js/badges.js?h=b3cd3abb", "../../assets/js/bulls-and-cows-tabs.js": "../../assets/js/bulls-and-cows-tabs.js?h=4f9f7959", "../../assets/js/buzon-form.js": "../../assets/js/buzon-form.js?h=7b4d03c2", "../../assets/js/buzon.js": "../../assets/js/buzon.js?h=212b6320", "../../assets/js/chat.js": "../../assets/js/chat.js?h=66123346", "../../assets/js/compartir-portada.js": "../../assets/js/compartir-portada.js?h=45560858", "../../assets/js/compartir.js": "../../assets/js/compartir.js?h=6a4d1e28", "../../assets/js/connection.js": "../../assets/js/connection.js?h=37696a55", "../../assets/js/controls.js": "../../assets/js/controls.js?h=2e4c2f9a", "../../assets/js/cover-dialogs.js": "../../assets/js/cover-dialogs.js?h=2808af67", "../../assets/js/cover-share.js": "../../assets/js/cover-share.js?h=46765480", "../../assets/js/cuenta-regresiva.js": "../../assets/js/cuenta-regresiva.js?h=6960f6ae", "../../assets/js/cup-outbox.js": "../../assets/js/cup-outbox.js?h=a587e75f", "../../assets/js/cup-today.js": "../../assets/js/cup-today.js?h=dad74139", "../../assets/js/dado3d.js": "../../assets/js/dado3d.js?h=e8bdcb08", "../../assets/js/daily-points.js": "../../assets/js/daily-points.js?h=8cb06b46", "../../assets/js/daily-recap.js": "../../assets/js/daily-recap.js?h=6579b6b0", "../../assets/js/dato.js": "../../assets/js/dato.js?h=92313f30", "../../assets/js/duel-challenge.js": "../../assets/js/duel-challenge.js?h=9dcf6024", "../../assets/js/duels-demo.js": "../../assets/js/duels-demo.js?h=b78f8163", "../../assets/js/duels-home.js": "../../assets/js/duels-home.js?h=1842e042", "../../assets/js/duels-texts.js": "../../assets/js/duels-texts.js?h=c5c3872e", "../../assets/js/duels-ui.js": "../../assets/js/duels-ui.js?h=b080d846", "../../assets/js/duels.js": "../../assets/js/duels.js?h=8e063cdd", "../../assets/js/favoritos.js": "../../assets/js/favoritos.js?h=6c9afb09", "../../assets/js/fin.js": "../../assets/js/fin.js?h=41d2cef1", "../../assets/js/firebase-config.js": "../../assets/js/firebase-config.js?h=5d3c31ee", "../../assets/js/flag-list.js": "../../assets/js/flag-list.js?h=9095684a", "../../assets/js/flags.js": "../../assets/js/flags.js?h=0b449934", "../../assets/js/frases.js": "../../assets/js/frases.js?h=7b82bf50", "../../assets/js/game-icon.js": "../../assets/js/game-icon.js?h=5c326990", "../../assets/js/game-manifest.js": "../../assets/js/game-manifest.js?h=a2daefc7", "../../assets/js/games.js": "../../assets/js/games.js?h=d7c2d182", "../../assets/js/handoff.js": "../../assets/js/handoff.js?h=f12a6232", "../../assets/js/hidden-match.js": "../../assets/js/hidden-match.js?h=2e6cb328", "../../assets/js/home-carousels.js": "../../assets/js/home-carousels.js?h=68c9522e", "../../assets/js/home-windows.js": "../../assets/js/home-windows.js?h=661d56ed", "../../assets/js/how-to-play-facts.js": "../../assets/js/how-to-play-facts.js?h=34d8ea51", "../../assets/js/i18n.js": "../../assets/js/i18n.js?h=300af688", "../../assets/js/instalable.js": "../../assets/js/instalable.js?h=ed65c36b", "../../assets/js/instalar.js": "../../assets/js/instalar.js?h=3378b5ae", "../../assets/js/jugador-firebase.js": "../../assets/js/jugador-firebase.js?h=0265bd91", "../../assets/js/jugador-local.js": "../../assets/js/jugador-local.js?h=2557ee89", "../../assets/js/jugador.js": "../../assets/js/jugador.js?h=ca05f108", "../../assets/js/keyboard.js": "../../assets/js/keyboard.js?h=e27a429c", "../../assets/js/lab-access.js": "../../assets/js/lab-access.js?h=6d60f915", "../../assets/js/lab-usage.js": "../../assets/js/lab-usage.js?h=f24729a7", "../../assets/js/labs-idioma.js": "../../assets/js/labs-idioma.js?h=302da30f", "../../assets/js/labs-puerta.js": "../../assets/js/labs-puerta.js?h=ae4ae8ca", "../../assets/js/llegada.js": "../../assets/js/llegada.js?h=d42edc11", "../../assets/js/load-css.js": "../../assets/js/load-css.js?h=4bf0403a", "../../assets/js/manifests/battleship.js": "../../assets/js/manifests/battleship.js?h=d2963482", "../../assets/js/manifests/bulls-and-cows.js": "../../assets/js/manifests/bulls-and-cows.js?h=2fd3c0ad", "../../assets/js/manifests/cup.js": "../../assets/js/manifests/cup.js?h=4afe9d14", "../../assets/js/manifests/generala.js": "../../assets/js/manifests/generala.js?h=8f4f0055", "../../assets/js/manifests/hangman.js": "../../assets/js/manifests/hangman.js?h=6638e78d", "../../assets/js/manifests/labs/blackjack.js": "../../assets/js/manifests/labs/blackjack.js?h=e6c870ff", "../../assets/js/manifests/labs/cosmic-marble.js": "../../assets/js/manifests/labs/cosmic-marble.js?h=26b24b05", "../../assets/js/manifests/labs/cryptic.js": "../../assets/js/manifests/labs/cryptic.js?h=3f8aa120", "../../assets/js/manifests/labs/drift.js": "../../assets/js/manifests/labs/drift.js?h=c32c55d9", "../../assets/js/manifests/labs/fourth-king.js": "../../assets/js/manifests/labs/fourth-king.js?h=e524575d", "../../assets/js/manifests/labs/julep.js": "../../assets/js/manifests/labs/julep.js?h=6b71237b", "../../assets/js/manifests/labs/transfer.js": "../../assets/js/manifests/labs/transfer.js?h=40cdb867", "../../assets/js/manifests/labs/twins.js": "../../assets/js/manifests/labs/twins.js?h=47345c65", "../../assets/js/manifests/liars-dice.js": "../../assets/js/manifests/liars-dice.js?h=070bbec7", "../../assets/js/manifests/timeline.js": "../../assets/js/manifests/timeline.js?h=7b2e9b98", "../../assets/js/manifests/wobbles.js": "../../assets/js/manifests/wobbles.js?h=8b3a5b54", "../../assets/js/month-end.js": "../../assets/js/month-end.js?h=1aa2f452", "../../assets/js/music.js": "../../assets/js/music.js?h=32d37cd8", "../../assets/js/name-guard.js": "../../assets/js/name-guard.js?h=0b2c585b", "../../assets/js/notification-sheets.js": "../../assets/js/notification-sheets.js?h=011aed6f", "../../assets/js/offline-cut.js": "../../assets/js/offline-cut.js?h=bd05f823", "../../assets/js/offline-ready.js": "../../assets/js/offline-ready.js?h=418d1375", "../../assets/js/offline-sheet.js": "../../assets/js/offline-sheet.js?h=d6bf3e04", "../../assets/js/offline-ui.js": "../../assets/js/offline-ui.js?h=74ed0ba4", "../../assets/js/on-screen.js": "../../assets/js/on-screen.js?h=0504b6bf", "../../assets/js/parametros.js": "../../assets/js/parametros.js?h=e37bd8ad", "../../assets/js/party-colors.js": "../../assets/js/party-colors.js?h=1dbcc778", "../../assets/js/phone-facts.js": "../../assets/js/phone-facts.js?h=323d0b21", "../../assets/js/play-hours.js": "../../assets/js/play-hours.js?h=db3c2627", "../../assets/js/player-peek.js": "../../assets/js/player-peek.js?h=dd12290b", "../../assets/js/preview-seed.js": "../../assets/js/preview-seed.js?h=96604df4", "../../assets/js/profile-button.js": "../../assets/js/profile-button.js?h=cc3d50a7", "../../assets/js/profile-hint.js": "../../assets/js/profile-hint.js?h=508db1ce", "../../assets/js/profile-texts.js": "../../assets/js/profile-texts.js?h=7b226844", "../../assets/js/profile-usage.js": "../../assets/js/profile-usage.js?h=258a75f9", "../../assets/js/push.js": "../../assets/js/push.js?h=c6703034", "../../assets/js/qr.js": "../../assets/js/qr.js?h=e21987b2", "../../assets/js/ranking.js": "../../assets/js/ranking.js?h=904cdefa", "../../assets/js/recap.js": "../../assets/js/recap.js?h=a4cd7233", "../../assets/js/records.js": "../../assets/js/records.js?h=6736616c", "../../assets/js/region-patterns.js": "../../assets/js/region-patterns.js?h=20d295c4", "../../assets/js/rng.js": "../../assets/js/rng.js?h=ba7e5a86", "../../assets/js/room-flow.js": "../../assets/js/room-flow.js?h=3be116ea", "../../assets/js/room-state.js": "../../assets/js/room-state.js?h=3f7f3b38", "../../assets/js/screen-bands.js": "../../assets/js/screen-bands.js?h=9a8c84c6", "../../assets/js/search.js": "../../assets/js/search.js?h=59d11b17", "../../assets/js/season.js": "../../assets/js/season.js?h=25bc3ff0", "../../assets/js/secret-achievements.js": "../../assets/js/secret-achievements.js?h=951326ab", "../../assets/js/session.js": "../../assets/js/session.js?h=bd684e40", "../../assets/js/share-grid.js": "../../assets/js/share-grid.js?h=f8a42662", "../../assets/js/share-templates.js": "../../assets/js/share-templates.js?h=46c31f0e", "../../assets/js/site-footer.js": "../../assets/js/site-footer.js?h=62f831cc", "../../assets/js/slot-roll.js": "../../assets/js/slot-roll.js?h=1748306a", "../../assets/js/sobre.js": "../../assets/js/sobre.js?h=de580b39", "../../assets/js/sound.js": "../../assets/js/sound.js?h=00325dd0", "../../assets/js/splash.js": "../../assets/js/splash.js?h=9e0d44fe", "../../assets/js/stall-guard.js": "../../assets/js/stall-guard.js?h=3e398305", "../../assets/js/storage-keys.js": "../../assets/js/storage-keys.js?h=71eb4a6d", "../../assets/js/support.js": "../../assets/js/support.js?h=832f8adc", "../../assets/js/teclado.js": "../../assets/js/teclado.js?h=0905b503", "../../assets/js/tester-badge.js": "../../assets/js/tester-badge.js?h=9645ed45", "../../assets/js/tester-boot.js": "../../assets/js/tester-boot.js?h=a6ef812b", "../../assets/js/tester-ribbon.js": "../../assets/js/tester-ribbon.js?h=c26bfac5", "../../assets/js/time-format.js": "../../assets/js/time-format.js?h=1921e1e4", "../../assets/js/told-sync.js": "../../assets/js/told-sync.js?h=46b77e9a", "../../assets/js/transport/best-effort.js": "../../assets/js/transport/best-effort.js?h=b8f82884", "../../assets/js/transport/cleanup.js": "../../assets/js/transport/cleanup.js?h=8706857e", "../../assets/js/transport/dispose.js": "../../assets/js/transport/dispose.js?h=24e516c5", "../../assets/js/transport/errors.js": "../../assets/js/transport/errors.js?h=65f7809c", "../../assets/js/transport/firebase.js": "../../assets/js/transport/firebase.js?h=14fb2128", "../../assets/js/transport/local.js": "../../assets/js/transport/local.js?h=338088fa", "../../assets/js/transport/ratelimit.js": "../../assets/js/transport/ratelimit.js?h=026e11fc", "../../assets/js/transport/seat.js": "../../assets/js/transport/seat.js?h=72ee2f56", "../../assets/js/transport/stats.js": "../../assets/js/transport/stats.js?h=7c77b5ea", "../../assets/js/uad-days.js": "../../assets/js/uad-days.js?h=dec58d63", "../../assets/js/uad-place.js": "../../assets/js/uad-place.js?h=368dd032", "../../assets/js/ui.js": "../../assets/js/ui.js?h=998826bb", "../../assets/js/uno-al-dia-avisos.js": "../../assets/js/uno-al-dia-avisos.js?h=a9865afb", "../../assets/js/uno-al-dia-red.js": "../../assets/js/uno-al-dia-red.js?h=e9a328ea", "../../assets/js/uno-al-dia-ui.js": "../../assets/js/uno-al-dia-ui.js?h=891f2f8d", "../../assets/js/uno-al-dia.js": "../../assets/js/uno-al-dia.js?h=4df1c1fc", "../../assets/js/vapid.js": "../../assets/js/vapid.js?h=74c138b9", "../../assets/js/vendor/qrcode.js": "../../assets/js/vendor/qrcode.js?h=18ae399f", "../../assets/js/vigia.js": "../../assets/js/vigia.js?h=3ea83b0d", "../../assets/js/waiting.js": "../../assets/js/waiting.js?h=092f58d1", "../../assets/season/templates.js": "../../assets/season/templates.js?h=878ae7de", "../../battleship/engine.js": "../../battleship/engine.js?h=b9fdd30a", "../../battleship/flota.js": "../../battleship/flota.js?h=379777c5", "../../battleship/game.js": "../../battleship/game.js?h=b109863a", "../../battleship/rules.js": "../../battleship/rules.js?h=e1e1dd1c", "../../bulls-and-cows/engine.js": "../../bulls-and-cows/engine.js?h=2a478102", "../../bulls-and-cows/game.js": "../../bulls-and-cows/game.js?h=9cfa7204", "../../bulls-and-cows/rules.js": "../../bulls-and-cows/rules.js?h=27740525", "../../cup/admin.js": "../../cup/admin.js?h=7db7f88b", "../../cup/avisos.js": "../../cup/avisos.js?h=0ea7ecd0", "../../cup/clock.js": "../../cup/clock.js?h=1e53e7d2", "../../cup/code.js": "../../cup/code.js?h=06f0e1c6", "../../cup/cover/cover.js": "../../cup/cover/cover.js?h=b153a4b3", "../../cup/create.js": "../../cup/create.js?h=d7908a3f", "../../cup/cuenta.js": "../../cup/cuenta.js?h=ff53f307", "../../cup/demo.js": "../../cup/demo.js?h=70977bfa", "../../cup/desglose.js": "../../cup/desglose.js?h=61c38ee1", "../../cup/engine.js": "../../cup/engine.js?h=2fd9544b", "../../cup/game.js": "../../cup/game.js?h=34bfc7b5", "../../cup/games/agents/clues-en.js": "../../cup/games/agents/clues-en.js?h=e2b14f99", "../../cup/games/agents/clues-pt.js": "../../cup/games/agents/clues-pt.js?h=1b64f093", "../../cup/games/agents/clues.js": "../../cup/games/agents/clues.js?h=2b518b22", "../../cup/games/agents/engine.js": "../../cup/games/agents/engine.js?h=5cc1828e", "../../cup/games/agents/numbers.js": "../../cup/games/agents/numbers.js?h=81d095cf", "../../cup/games/agents/texts.js": "../../cup/games/agents/texts.js?h=ccb45212", "../../cup/games/agents/ui.js": "../../cup/games/agents/ui.js?h=d461185d", "../../cup/games/audiencia.js": "../../cup/games/audiencia.js?h=3938fe5f", "../../cup/games/bridges/engine.js": "../../cup/games/bridges/engine.js?h=f40d4b11", "../../cup/games/bridges/neon-visitors.js": "../../cup/games/bridges/neon-visitors.js?h=4110a7a9", "../../cup/games/bridges/neon.js": "../../cup/games/bridges/neon.js?h=a981d168", "../../cup/games/bridges/physics.js": "../../cup/games/bridges/physics.js?h=e9854838", "../../cup/games/bridges/pixel.js": "../../cup/games/bridges/pixel.js?h=585ab3d1", "../../cup/games/bridges/scene.js": "../../cup/games/bridges/scene.js?h=29db56b0", "../../cup/games/bridges/texts.js": "../../cup/games/bridges/texts.js?h=2ba994d6", "../../cup/games/bridges/trains.js": "../../cup/games/bridges/trains.js?h=bd7f14cb", "../../cup/games/bridges/ui.js": "../../cup/games/bridges/ui.js?h=bc4dae9a", "../../cup/games/bridges/visitors.js": "../../cup/games/bridges/visitors.js?h=b0f575fa", "../../cup/games/case/engine.js": "../../cup/games/case/engine.js?h=ef61f182", "../../cup/games/case/ui.js": "../../cup/games/case/ui.js?h=95246a5b", "../../cup/games/connections/engine.js": "../../cup/games/connections/engine.js?h=004cabe9", "../../cup/games/connections/grillas-en.js": "../../cup/games/connections/grillas-en.js?h=6b4d1c8f", "../../cup/games/connections/grillas-pt.js": "../../cup/games/connections/grillas-pt.js?h=bcea9e47", "../../cup/games/connections/grillas.js": "../../cup/games/connections/grillas.js?h=25c7e0d1", "../../cup/games/connections/ui.js": "../../cup/games/connections/ui.js?h=34482d6e", "../../cup/games/croc/engine.js": "../../cup/games/croc/engine.js?h=e30784d4", "../../cup/games/croc/scene.js": "../../cup/games/croc/scene.js?h=009c3933", "../../cup/games/croc/texts.js": "../../cup/games/croc/texts.js?h=3cd29dc4", "../../cup/games/croc/ui.js": "../../cup/games/croc/ui.js?h=4c0dbbb3", "../../cup/games/deshacer.js": "../../cup/games/deshacer.js?h=6d8e7e32", "../../cup/games/dominorama/engine.js": "../../cup/games/dominorama/engine.js?h=58cda08d", "../../cup/games/dominorama/texts.js": "../../cup/games/dominorama/texts.js?h=32b64775", "../../cup/games/dominorama/ui.js": "../../cup/games/dominorama/ui.js?h=8293351a", "../../cup/games/final/engine.js": "../../cup/games/final/engine.js?h=37b12b4b", "../../cup/games/final/ui.js": "../../cup/games/final/ui.js?h=c7ba43bf", "../../cup/games/flap/engine.js": "../../cup/games/flap/engine.js?h=01f65501", "../../cup/games/flap/scene.js": "../../cup/games/flap/scene.js?h=a1714717", "../../cup/games/flap/texts.js": "../../cup/games/flap/texts.js?h=5a7ebc22", "../../cup/games/flap/ui.js": "../../cup/games/flap/ui.js?h=fe5bfaa4", "../../cup/games/index.js": "../../cup/games/index.js?h=3f93a7ae", "../../cup/games/mazos.js": "../../cup/games/mazos.js?h=44c8fd92", "../../cup/games/memory/engine.js": "../../cup/games/memory/engine.js?h=1608fc03", "../../cup/games/memory/sprites.js": "../../cup/games/memory/sprites.js?h=a74108f8", "../../cup/games/memory/texts.js": "../../cup/games/memory/texts.js?h=f98c0545", "../../cup/games/memory/ui.js": "../../cup/games/memory/ui.js?h=b1e18664", "../../cup/games/microgames/engine.js": "../../cup/games/microgames/engine.js?h=3ef0bd98", "../../cup/games/microgames/intros.js": "../../cup/games/microgames/intros.js?h=88dde4d2", "../../cup/games/microgames/stage.js": "../../cup/games/microgames/stage.js?h=1efab8e9", "../../cup/games/microgames/texts.js": "../../cup/games/microgames/texts.js?h=d9906caa", "../../cup/games/microgames/tr.js": "../../cup/games/microgames/tr.js?h=8b04a61a", "../../cup/games/microgames/ui.js": "../../cup/games/microgames/ui.js?h=7ba8937a", "../../cup/games/number/engine.js": "../../cup/games/number/engine.js?h=e0dfedc1", "../../cup/games/number/ui.js": "../../cup/games/number/ui.js?h=5fecb9a8", "../../cup/games/paint-mines/dibujos.js": "../../cup/games/paint-mines/dibujos.js?h=0c7752b9", "../../cup/games/paint-mines/engine.js": "../../cup/games/paint-mines/engine.js?h=43481356", "../../cup/games/paint-mines/texts.js": "../../cup/games/paint-mines/texts.js?h=51af36dc", "../../cup/games/paint-mines/ui.js": "../../cup/games/paint-mines/ui.js?h=d539b2ea", "../../cup/games/plots/engine.js": "../../cup/games/plots/engine.js?h=2aee6dbb", "../../cup/games/plots/texts.js": "../../cup/games/plots/texts.js?h=15f42df2", "../../cup/games/plots/ui.js": "../../cup/games/plots/ui.js?h=d5272707", "../../cup/games/queens/engine.js": "../../cup/games/queens/engine.js?h=cfe894bd", "../../cup/games/queens/ui.js": "../../cup/games/queens/ui.js?h=d8729803", "../../cup/games/routes/engine.js": "../../cup/games/routes/engine.js?h=ddc20a85", "../../cup/games/routes/texts.js": "../../cup/games/routes/texts.js?h=e338a7c1", "../../cup/games/routes/ui.js": "../../cup/games/routes/ui.js?h=cdb5ab96", "../../cup/games/semilla.js": "../../cup/games/semilla.js?h=85160e6c", "../../cup/games/solo.js": "../../cup/games/solo.js?h=f218475c", "../../cup/games/stack/engine.js": "../../cup/games/stack/engine.js?h=a4d15a7f", "../../cup/games/stack/scene.js": "../../cup/games/stack/scene.js?h=9689042a", "../../cup/games/stack/texts.js": "../../cup/games/stack/texts.js?h=3a251697", "../../cup/games/stack/ui.js": "../../cup/games/stack/ui.js?h=eb721c23", "../../cup/games/stick/engine.js": "../../cup/games/stick/engine.js?h=7c052714", "../../cup/games/stick/scene.js": "../../cup/games/stick/scene.js?h=6f324351", "../../cup/games/stick/texts.js": "../../cup/games/stick/texts.js?h=ad880609", "../../cup/games/stick/ui.js": "../../cup/games/stick/ui.js?h=0c9f7c9d", "../../cup/games/sudoku/engine.js": "../../cup/games/sudoku/engine.js?h=429629a2", "../../cup/games/sudoku/texts.js": "../../cup/games/sudoku/texts.js?h=17b93e5a", "../../cup/games/sudoku/ui.js": "../../cup/games/sudoku/ui.js?h=848f1cfc", "../../cup/games/tango/engine.js": "../../cup/games/tango/engine.js?h=acb531cb", "../../cup/games/tango/ui.js": "../../cup/games/tango/ui.js?h=0f8a9cfc", "../../cup/games/timeline/engine.js": "../../cup/games/timeline/engine.js?h=6ef6c2d4", "../../cup/games/timeline/ui.js": "../../cup/games/timeline/ui.js?h=aab888c9", "../../cup/games/untangle/engine.js": "../../cup/games/untangle/engine.js?h=f0485091", "../../cup/games/untangle/ui.js": "../../cup/games/untangle/ui.js?h=73ecc340", "../../cup/games/where/ciudades.js": "../../cup/games/where/ciudades.js?h=6f2f63cd", "../../cup/games/where/engine.js": "../../cup/games/where/engine.js?h=bb4d3f44", "../../cup/games/where/globo.js": "../../cup/games/where/globo.js?h=4cfa832e", "../../cup/games/where/mapa.js": "../../cup/games/where/mapa.js?h=78f414aa", "../../cup/games/where/nombres.js": "../../cup/games/where/nombres.js?h=10b9dfdc", "../../cup/games/where/ui.js": "../../cup/games/where/ui.js?h=ee8d1fc7", "../../cup/games/word/engine.js": "../../cup/games/word/engine.js?h=598eb701", "../../cup/games/word/palabras.js": "../../cup/games/word/palabras.js?h=80be5ef2", "../../cup/games/word/ui.js": "../../cup/games/word/ui.js?h=9e28ee63", "../../cup/games/year/engine.js": "../../cup/games/year/engine.js?h=9e052cca", "../../cup/games/year/ui.js": "../../cup/games/year/ui.js?h=fe5a7713", "../../cup/games/zip/engine.js": "../../cup/games/zip/engine.js?h=bcaf7703", "../../cup/games/zip/lever.js": "../../cup/games/zip/lever.js?h=861c6fd2", "../../cup/games/zip/ui.js": "../../cup/games/zip/ui.js?h=b04c2fdc", "../../cup/history.js": "../../cup/history.js?h=2e71ff69", "../../cup/join.js": "../../cup/join.js?h=5ef8c970", "../../cup/planilla.js": "../../cup/planilla.js?h=bcdb129f", "../../cup/recap.js": "../../cup/recap.js?h=3610e666", "../../cup/reportes.js": "../../cup/reportes.js?h=1604dfa6", "../../cup/result.js": "../../cup/result.js?h=a2e96f10", "../../cup/rules.js": "../../cup/rules.js?h=0de834c3", "../../cup/screens.js": "../../cup/screens.js?h=5f0b7ebd", "../../cup/store-firebase.js": "../../cup/store-firebase.js?h=1ed29bfa", "../../cup/store-local.js": "../../cup/store-local.js?h=e8671ca8", "../../cup/store-offline.js": "../../cup/store-offline.js?h=5ccbcfaf", "../../cup/table-image.js": "../../cup/table-image.js?h=85646475", "../../cup/talk.js": "../../cup/talk.js?h=65af7c9a", "../../duels/duels-page.js": "../../duels/duels-page.js?h=6450b648", "../../generala/engine.js": "../../generala/engine.js?h=4fe1f3fc", "../../generala/game.js": "../../generala/game.js?h=d8507135", "../../generala/rules.js": "../../generala/rules.js?h=94bad377", "../../hangman/decks/animales.js": "../../hangman/decks/animales.js?h=681eff68", "../../hangman/decks/chile.js": "../../hangman/decks/chile.js?h=4c565470", "../../hangman/decks/cine.js": "../../hangman/decks/cine.js?h=38dd21ad", "../../hangman/decks/comida.js": "../../hangman/decks/comida.js?h=f3139966", "../../hangman/decks/deportes.js": "../../hangman/decks/deportes.js?h=194ec9b7", "../../hangman/decks/index.js": "../../hangman/decks/index.js?h=f0c8c0b5", "../../hangman/engine.js": "../../hangman/engine.js?h=3ea7070a", "../../hangman/game.js": "../../hangman/game.js?h=d99cced6", "../../hangman/rules.js": "../../hangman/rules.js?h=c8159523", "../../labs/artifacts/engine.js": "../../labs/artifacts/engine.js?h=380c31ac", "../../labs/artifacts/game.js": "../../labs/artifacts/game.js?h=bb248198", "../../labs/artifacts/levels.js": "../../labs/artifacts/levels.js?h=e776d05d", "../../labs/artifacts/scene.js": "../../labs/artifacts/scene.js?h=94a6d881", "../../labs/blackjack/engine.js": "../../labs/blackjack/engine.js?h=94e4eb8a", "../../labs/blackjack/game.js": "../../labs/blackjack/game.js?h=21c354d4", "../../labs/blackjack/rules.js": "../../labs/blackjack/rules.js?h=76035ef7", "../../labs/bodega.js": "../../labs/bodega.js?h=1f4cde03", "../../labs/bridges/trains/sheet.js": "../../labs/bridges/trains/sheet.js?h=e61ce596", "../../labs/bridges/visitors/sheet.js": "../../labs/bridges/visitors/sheet.js?h=df537ffa", "../../labs/chameleon/engine.js": "../../labs/chameleon/engine.js?h=d0138ecd", "../../labs/chameleon/game.js": "../../labs/chameleon/game.js?h=3e2ecd57", "../../labs/chameleon/rules.js": "../../labs/chameleon/rules.js?h=23971a54", "../../labs/code/engine-palabra.js": "../../labs/code/engine-palabra.js?h=4ea17011", "../../labs/code/engine.js": "../../labs/code/engine.js?h=9c6a100c", "../../labs/code/game.js": "../../labs/code/game.js?h=3ec35900", "../../labs/cosmic-marble/course.js": "../../labs/cosmic-marble/course.js?h=094d4f04", "../../labs/cosmic-marble/engine.js": "../../labs/cosmic-marble/engine.js?h=1025bf6c", "../../labs/cosmic-marble/game.js": "../../labs/cosmic-marble/game.js?h=fc51fd98", "../../labs/cosmic-marble/rules.js": "../../labs/cosmic-marble/rules.js?h=761296b4", "../../labs/cryptic/clues.js": "../../labs/cryptic/clues.js?h=2a9e30e9", "../../labs/cryptic/engine.js": "../../labs/cryptic/engine.js?h=4487810f", "../../labs/cryptic/flapboard.js": "../../labs/cryptic/flapboard.js?h=8cd5f330", "../../labs/cryptic/game.js": "../../labs/cryptic/game.js?h=b2bed54a", "../../labs/cryptic/propose.js": "../../labs/cryptic/propose.js?h=2c280782", "../../labs/cryptic/rules.js": "../../labs/cryptic/rules.js?h=ed751deb", "../../labs/cryptic/sealed.js": "../../labs/cryptic/sealed.js?h=85861062", "../../labs/dominorama/engine.js": "../../labs/dominorama/engine.js?h=ee53a2ba", "../../labs/dominorama/game.js": "../../labs/dominorama/game.js?h=56005118", "../../labs/drift/car2d.js": "../../labs/drift/car2d.js?h=a68d5180", "../../labs/drift/car3d.js": "../../labs/drift/car3d.js?h=3acfe351", "../../labs/drift/cheer.js": "../../labs/drift/cheer.js?h=6b0b24d1", "../../labs/drift/circuits.js": "../../labs/drift/circuits.js?h=1974976a", "../../labs/drift/engine.js": "../../labs/drift/engine.js?h=f3005178", "../../labs/drift/game.js": "../../labs/drift/game.js?h=6c7d0f4f", "../../labs/drift/ghost-label.js": "../../labs/drift/ghost-label.js?h=06190cb4", "../../labs/drift/ghost.js": "../../labs/drift/ghost.js?h=6afb8003", "../../labs/drift/gl3d.js": "../../labs/drift/gl3d.js?h=a97d5375", "../../labs/drift/input.js": "../../labs/drift/input.js?h=bf65bdc0", "../../labs/drift/minimap.js": "../../labs/drift/minimap.js?h=c907b691", "../../labs/drift/pacer.js": "../../labs/drift/pacer.js?h=6e10cf59", "../../labs/drift/props3d.js": "../../labs/drift/props3d.js?h=5102c688", "../../labs/drift/relief.js": "../../labs/drift/relief.js?h=fddee1f5", "../../labs/drift/rules.js": "../../labs/drift/rules.js?h=3bdc29fa", "../../labs/drift/scene.js": "../../labs/drift/scene.js?h=63842b5b", "../../labs/drift/scene3d.js": "../../labs/drift/scene3d.js?h=f7ec7ce3", "../../labs/drift/scenery.js": "../../labs/drift/scenery.js?h=893fd0b8", "../../labs/drift/textures.js": "../../labs/drift/textures.js?h=cbdd9053", "../../labs/drift/tracks.js": "../../labs/drift/tracks.js?h=cb16d2a8", "../../labs/drift/tuning.js": "../../labs/drift/tuning.js?h=8592db77", "../../labs/exploding-numbers/engine.js": "../../labs/exploding-numbers/engine.js?h=680b00f7", "../../labs/exploding-numbers/game.js": "../../labs/exploding-numbers/game.js?h=aca0bc6a", "../../labs/flap/engine.js": "../../labs/flap/engine.js?h=927df9e5", "../../labs/flap/game.js": "../../labs/flap/game.js?h=9c4fcd15", "../../labs/flap/scene.js": "../../labs/flap/scene.js?h=6ccfd0f0", "../../labs/fourth-king/engine.js": "../../labs/fourth-king/engine.js?h=44f9f09f", "../../labs/fourth-king/game.js": "../../labs/fourth-king/game.js?h=79167638", "../../labs/fourth-king/rules.js": "../../labs/fourth-king/rules.js?h=44dc9e19", "../../labs/home/experiments.js": "../../labs/home/experiments.js?h=c3089b12", "../../labs/index-nav.js": "../../labs/index-nav.js?h=7ef19804", "../../labs/julep/engine.js": "../../labs/julep/engine.js?h=8ff80af4", "../../labs/julep/game.js": "../../labs/julep/game.js?h=75290776", "../../labs/julep/rules.js": "../../labs/julep/rules.js?h=b60ca2cc", "../../labs/launched.js": "../../labs/launched.js?h=6710d2a7", "../../labs/marquee/marquee.js": "../../labs/marquee/marquee.js?h=9d19beff", "../../labs/memory/engine.js": "../../labs/memory/engine.js?h=bbfaa5a3", "../../labs/memory/game.js": "../../labs/memory/game.js?h=5ef00088", "../../labs/memory/rules.js": "../../labs/memory/rules.js?h=ca8582b2", "../../labs/memory/sprites.js": "../../labs/memory/sprites.js?h=bcb6c4ae", "../../labs/publish.js": "../../labs/publish.js?h=f334f36e", "../../labs/stack/engine.js": "../../labs/stack/engine.js?h=47b96079", "../../labs/stack/game.js": "../../labs/stack/game.js?h=60c6a83a", "../../labs/stack/scene.js": "../../labs/stack/scene.js?h=9295e673", "../../labs/sudoku/engine.js": "../../labs/sudoku/engine.js?h=bc1491ff", "../../labs/sudoku/game.js": "../../labs/sudoku/game.js?h=17bed4fa", "../../labs/sudoku/rules.js": "../../labs/sudoku/rules.js?h=f44a6909", "../../labs/transfer/engine.js": "../../labs/transfer/engine.js?h=a56ed9dd", "../../labs/transfer/game.js": "../../labs/transfer/game.js?h=8f148e62", "../../labs/transfer/rules.js": "../../labs/transfer/rules.js?h=b56405ad", "../../labs/twins/engine.js": "../../labs/twins/engine.js?h=76b2d9e8", "../../labs/twins/game.js": "../../labs/twins/game.js?h=a656ab8f", "../../labs/twins/rules.js": "../../labs/twins/rules.js?h=2ace6c61", "../../liars-dice/engine.js": "../../liars-dice/engine.js?h=949789e4", "../../liars-dice/game.js": "../../liars-dice/game.js?h=4e8f4b2d", "../../liars-dice/rules.js": "../../liars-dice/rules.js?h=9dd26abd", "../../panel/aggregate.js": "../../panel/aggregate.js?h=1cf1c768", "../../panel/campaigns.js": "../../panel/campaigns.js?h=311e9d7b", "../../panel/copas.js": "../../panel/copas.js?h=bf7dfda6", "../../panel/dominios.js": "../../panel/dominios.js?h=337fccc0", "../../panel/feedback.js": "../../panel/feedback.js?h=3d7943a9", "../../panel/game-report.js": "../../panel/game-report.js?h=dc05b025", "../../panel/lab-keys.js": "../../panel/lab-keys.js?h=49a23a0f", "../../panel/panel.js": "../../panel/panel.js?h=13e9701d", "../../panel/profile-report.js": "../../panel/profile-report.js?h=c1247cf1", "../../panel/public-games.js": "../../panel/public-games.js?h=d57ababe", "../../panel/release-push.js": "../../panel/release-push.js?h=e77f31af", "../../panel/rooms-watch.js": "../../panel/rooms-watch.js?h=6a525722", "../../panel/rutas.js": "../../panel/rutas.js?h=fedfca62", "../../panel/timeline.js": "../../panel/timeline.js?h=e5e2bb68", "../../panel/wbr-view.js": "../../panel/wbr-view.js?h=ef650f79", "../../panel/wbr.js": "../../panel/wbr.js?h=bb505bde", "../../privacy/texts.js": "../../privacy/texts.js?h=10706733", "../../profile/badge-details.js": "../../profile/badge-details.js?h=83d2847d", "../../profile/badges.js": "../../profile/badges.js?h=a339e4d5", "../../profile/profile.js": "../../profile/profile.js?h=e9ac4abf", "../../profile/texts.js": "../../profile/texts.js?h=2e6138b0", "../../sw.js": "../../sw.js?h=17b0b431", "../../timeline/decks/brasil.js": "../../timeline/decks/brasil.js?h=231eae24", "../../timeline/decks/chile.js": "../../timeline/decks/chile.js?h=a8cc1127", "../../timeline/decks/futbol.js": "../../timeline/decks/futbol.js?h=31b8f32e", "../../timeline/decks/historia.js": "../../timeline/decks/historia.js?h=a239a7dc", "../../timeline/decks/index.js": "../../timeline/decks/index.js?h=ab999761", "../../timeline/decks/musica.js": "../../timeline/decks/musica.js?h=4b5db315", "../../timeline/decks/pop.js": "../../timeline/decks/pop.js?h=98a53476", "../../timeline/engine.js": "../../timeline/engine.js?h=5d408db9", "../../timeline/game.js": "../../timeline/game.js?h=f8ecebe6", "../../timeline/rules.js": "../../timeline/rules.js?h=7e763516", "../../wbr/page.js": "../../wbr/page.js?h=f6dbb059", "../../wobbles/game.js": "../../wobbles/game.js?h=6aa0c8bb", "../../wobbles/rules.js": "../../wobbles/rules.js?h=7d39090b"}}</script>
+</head>
+  <script type="module">import '../../assets/js/instalable.js';</script>
+<body>
+<header>
+  <a href="../" aria-label="Volver a la portada">‹</a>
+  <h1>⚖️ <span>Tembleque</span></h1>
+  <button id="mute" aria-label="Sonido">🔊</button>
+</header>
+<main>
+  <canvas id="cv"></canvas>
+  <canvas id="hearts" aria-hidden="true"></canvas>
+  <div id="hud"><span id="count"></span><span id="chip"></span><span id="score"></span></div>
+  <div id="card"><div class="in">
+    <div id="cEmoji"></div><h2 id="cTitle"></h2><div id="cBody"></div><button id="cBtn"></button>
+    <!-- The result's shared blocks (C-19), filled by ../game.js: rankings notice, exits, breakdown, table -->
+    <div id="cAviso"></div><div id="cExits"></div><div id="cDetail"></div><div id="cRank"></div>
+  </div></div>
+</main>
+<script>
+'use strict';
+/**
+ * ⚖️ Tembleque 3D — lab prototype. A disc rests on one point. Pieces arrive one at a time: the player
+ * drags the one in hand over the disc, turns it any way they like, sees its shadow on whatever is under
+ * it, and lets it fall; if the time runs out it falls by itself, where it is. They pile up, the disc
+ * leans under their weight and gets knocked by every landing. Each piece that falls off costs a life:
+ * the third ends the game. And if the disc leans too far for too long it goes over, pile and all, and
+ * that ends it at once.
+ *
+ * The pieces are the 2D game's (Tembleque, the neon one), in 3D: the same kinds, coming in the same
+ * order and as often, and all weighing the same.
+ *
+ * The player can turn the view around the disc to look at the pile from any side; that is the view's
+ * business alone, the game never knows.
+ *
+ * Three parts: the physics (rigid bodies in 3D, pure), the game (the pile, the hand, the score, pure)
+ * and the view (canvas, sound, input). The first two run on a fixed step and use only + − × ÷ and sqrt,
+ * like Tren en Vilo's engine, so one seed and the same moves give the same game everywhere.
+ *
+ * The pile can grow without end because only its top is simulated piece by piece: once a piece is
+ * buried and at rest it is welded to the disc (physics: `mkPart`; game: `weld`).
+ */
+
+/* ================================================================== */
+/* Physics: bodies made of convex solids and balls, sequential impulses */
+/* ================================================================== */
+const DT = 1 / 120, GRAV = 12, ITER = 10, SLOP = 0.004, BETA = 0.2, MAX_BIAS = 0.6, REST_V = 0.6, SPEC = 0.01;
+/** Every piece weighs the same; a ball that touches something loses this much spin a second (so it stays put on a level floor). */
+const MASS = 1, ROLL = 14;
+const IDENT = [1, 0, 0, 0, 1, 0, 0, 0, 1], C45 = 0.7071067811865476, SIN60 = 0.8660254037844386;
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/**
+ * A convex solid from its corners and its faces (each a loop of corner indexes, in order around the
+ * face): moved so its centre of mass is the origin, with each face wound counter-clockwise seen from
+ * outside, its normals, its edges grouped by direction, its volume and its inertia (for a density of 1;
+ * the solids here are symmetric, so only the diagonal is kept).
+ */
+function mkShape(pts, faces) {
+  const mid = [0, 1, 2].map(d => pts.reduce((s, p) => s + p[d], 0) / pts.length);
+  const fs = faces.map(f => (dot(cross(sub(pts[f[1]], pts[f[0]]), sub(pts[f[2]], pts[f[0]])), sub(pts[f[0]], mid)) < 0 ? f.slice().reverse() : f.slice()));
+  const tris = [];
+  for (const f of fs) for (let i = 1; i + 1 < f.length; i++) tris.push([f[0], f[i], f[i + 1]]);
+  let vol = 0; const cm = [0, 0, 0];
+  for (const [i, j, k] of tris) { const a = pts[i], b = pts[j], c = pts[k], v = dot(a, cross(b, c)) / 6; vol += v; for (let d = 0; d < 3; d++) cm[d] += v * (a[d] + b[d] + c[d]) / 4; }
+  const p = pts.map(q => [q[0] - cm[0] / vol, q[1] - cm[1] / vol, q[2] - cm[2] / vol]);
+  const sq = [0, 0, 0];
+  for (const [i, j, k] of tris) {
+    const a = p[i], b = p[j], c = p[k], v = dot(a, cross(b, c)) / 60;
+    for (let d = 0; d < 3; d++) sq[d] += v * (a[d] * a[d] + b[d] * b[d] + c[d] * c[d] + a[d] * b[d] + a[d] * c[d] + b[d] * c[d]);
+  }
+  const nrm = fs.map(f => { const n = cross(sub(p[f[1]], p[f[0]]), sub(p[f[2]], p[f[0]])), l = Math.sqrt(dot(n, n)); return [n[0] / l, n[1] / l, n[2] / l]; });
+  const dirs = [], seen = new Set();
+  for (const f of fs) for (let i = 0; i < f.length; i++) {
+    const a = f[i], b = f[(i + 1) % f.length], key = a < b ? a * 1000 + b : b * 1000 + a;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const e = sub(p[b], p[a]), l = Math.sqrt(dot(e, e)), d = [e[0] / l, e[1] / l, e[2] / l];
+    const g = dirs.find(x => { const k = dot(x.d, d); return k > 0.9999 || k < -0.9999; });
+    if (g) g.edges.push([a, b]); else dirs.push({ d, edges: [[a, b]] });
+  }
+  return { p, faces: fs, nrm, dirs, vol, inertia: [sq[1] + sq[2], sq[0] + sq[2], sq[0] + sq[1]], nv: p.length, r: Math.sqrt(Math.max(...p.map(q => dot(q, q)))) };
+}
+/** A box. Its faces come in this order: under, over, back (−z), right (+x), front (+z), left (−x). */
+const box = (w, h, d) => mkShape([[-w / 2, -h / 2, -d / 2], [w / 2, -h / 2, -d / 2], [w / 2, -h / 2, d / 2], [-w / 2, -h / 2, d / 2], [-w / 2, h / 2, -d / 2], [w / 2, h / 2, -d / 2], [w / 2, h / 2, d / 2], [-w / 2, h / 2, d / 2]],
+  [[0, 1, 2, 3], [4, 5, 6, 7], [0, 1, 5, 4], [1, 2, 6, 5], [2, 3, 7, 6], [3, 0, 4, 7]]);
+/** The points of a circle of n steps, each turned from the last by the angle of cosine c1 and sine s1 (no trigonometry: the same in every browser). */
+function circle(n, c1, s1) { const out = []; let c = 1, s = 0; for (let i = 0; i < n; i++) { out.push([c, s]); const t = c * c1 - s * s1; s = s * c1 + c * s1; c = t; } return out; }
+/** A prism over a polygon of points [x, z], h tall. */
+function prism(ring, h) {
+  const n = ring.length, pts = [...ring.map(([x, z]) => [x, h / 2, z]), ...ring.map(([x, z]) => [x, -h / 2, z])];
+  return mkShape(pts, [ring.map((_, i) => i), ring.map((_, i) => n + i), ...ring.map((_, i) => [i, (i + 1) % n, n + (i + 1) % n, n + i])]);
+}
+/** A flat shape of points [x, y] pulled along z, d deep: the 2D game's triangle and hexagon, given a depth. */
+function extrude(shape, d) {
+  const n = shape.length, pts = [...shape.map(([x, y]) => [x, y, d / 2]), ...shape.map(([x, y]) => [x, y, -d / 2])];
+  return mkShape(pts, [shape.map((_, i) => i), shape.map((_, i) => n + i), ...shape.map((_, i) => [i, (i + 1) % n, n + (i + 1) % n, n + i])]);
+}
+/** Half a ball of radius r, flat side down, cut in facets: eight sides at its foot, eight more half way up, and its top. */
+function dome(r) {
+  const ring = circle(8, C45, C45);
+  return mkShape([...ring.map(([c, s]) => [c * r, 0, s * r]), ...ring.map(([c, s]) => [c * r * C45, r * C45, s * r * C45]), [0, r, 0]],
+    [[0, 1, 2, 3, 4, 5, 6, 7], ...ring.map((_, i) => [i, (i + 1) % 8, 8 + (i + 1) % 8, 8 + i]), ...ring.map((_, i) => [8 + i, 8 + (i + 1) % 8, 16])]);
+}
+/** A ball: the one thing here that is not a solid of flat faces. */
+const ball = r => { const vol = 4.1887902047863905 * r * r * r, i = 0.4 * vol * r * r; return { ball: true, r, vol, inertia: [i, i, i], nv: 0, p: [], faces: [], nrm: [], dirs: [] }; };
+
+/**
+ * A piece's form: the solids it is made of (`hulls`: what touches) and the ones it is drawn with (`looks`:
+ * the same ones, unless it is made of blocks), each with where its centre is from the piece's centre of
+ * mass; its volume, how far it reaches from its centre (`r`) and the inverse of its inertia for a mass of
+ * MASS (`ib`: xx, yy, zz, xy, xz, yz: an L is not symmetric, so all six are kept).
+ */
+function mkForm(hulls, looks = null) {
+  let V = 0, cx = 0, cy = 0, cz = 0;
+  for (const h of hulls) { const v = h.shape.vol; V += v; cx += v * h.x; cy += v * h.y; cz += v * h.z; }
+  cx /= V; cy /= V; cz /= V;
+  let a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, r = 0;
+  const out = hulls.map(h => {
+    const x = h.x - cx, y = h.y - cy, z = h.z - cz, v = h.shape.vol, I = h.shape.inertia;
+    a += I[0] + v * (y * y + z * z); b += I[1] + v * (x * x + z * z); c += I[2] + v * (x * x + y * y); d -= v * x * y; e -= v * x * z; f -= v * y * z;
+    if (h.shape.ball) r = Math.max(r, Math.sqrt(x * x + y * y + z * z) + h.shape.r);
+    else for (const p of h.shape.p) r = Math.max(r, Math.sqrt((p[0] + x) * (p[0] + x) + (p[1] + y) * (p[1] + y) + (p[2] + z) * (p[2] + z)));
+    return { shape: h.shape, lx: x, ly: y, lz: z };
+  });
+  const k = MASS / V; a *= k; b *= k; c *= k; d *= k; e *= k; f *= k;
+  const det = a * (b * c - f * f) - d * (d * c - e * f) + e * (d * f - b * e);
+  return { hulls: out, looks: looks ? looks.map(l => ({ shape: l.shape, lx: l.x - cx, ly: l.y - cy, lz: l.z - cz, hide: l.hide, seams: l.seams })) : out, vol: V, r,
+    ib: [(b * c - f * f) / det, (a * c - e * e) / det, (a * b - d * d) / det, (e * f - d * c) / det, (d * f - b * e) / det, (d * e - a * f) / det], round: hulls.length === 1 && !!hulls[0].shape.ball };
+}
+/** The form of a piece that is one solid. */
+const solid = shape => mkForm([{ shape, x: 0, y: 0, z: 0 }]);
+/**
+ * The form of a piece made of cubes of side a on a grid, one cube deep (an L, a T…: no single convex solid
+ * is one). `cells` are its cubes, as [column, row]; `bars` the boxes it touches with, each { x, y, w, h }
+ * in cubes (its centre and its size). It is drawn cube by cube, without the faces between two cubes
+ * (`hide`) and without a line where two cubes meet flat (`seams`: per face, per edge).
+ */
+function blocks(a, cells, bars) {
+  const has = (i, j) => cells.some(c => c[0] === i && c[1] === j), cube = box(a, a, a);
+  const WAY = [[0, -1], [0, 1], null, [1, 0], null, [-1, 0]];   // where each face of a box looks, on the grid (front and back: off it)
+  const looks = cells.map(([i, j]) => ({ shape: cube, x: i * a, y: j * a, z: 0,
+    hide: WAY.map(d => !!d && has(i + d[0], j + d[1])),
+    seams: cube.faces.map((f, fi) => f.map((v, k) => {
+      // The other face that shares this edge, and the cube across it: a line is only drawn where the piece really has an edge
+      const w = f[(k + 1) % f.length], e = WAY[cube.faces.findIndex((g, gi) => gi !== fi && g.includes(v) && g.includes(w))], d = WAY[fi];
+      return !!e && has(i + e[0], j + e[1]) && (!d || !has(i + e[0] + d[0], j + e[1] + d[1]));
+    })) }));
+  return mkForm(bars.map(b => ({ shape: box(b.w * a, b.h * a, a), x: b.x * a, y: b.y * a, z: 0 })), looks);
+}
+
+/** The lists a placed solid keeps of itself in the world: corners, face normals, edge directions. */
+const slots = sh => ({ px: new Array(sh.nv), py: new Array(sh.nv), pz: new Array(sh.nv), nx: new Array(sh.faces.length), ny: new Array(sh.faces.length), nz: new Array(sh.faces.length),
+  dx: new Array(sh.dirs.length), dy: new Array(sh.dirs.length), dz: new Array(sh.dirs.length), minx: 0, maxx: 0, miny: 0, maxy: 0, minz: 0, maxz: 0 });
+
+/**
+ * A body: where its centre of mass is (x, y, z), how it is turned (a quaternion), how it moves (v) and
+ * spins (o). It is made of `parts` (what touches) and drawn with `looks` (the same ones, or its `cells`
+ * if it is made of blocks); its box (minx…maxz) holds all its parts.
+ */
+function mkBody(id, form, x, y, z, { fr = 0.5, re = 0 } = {}) {
+  const b = { id, form, x, y, z, vx: 0, vy: 0, vz: 0, ox: 0, oy: 0, oz: 0, qw: 1, qx: 0, qy: 0, qz: 0, m: MASS, invM: 1 / MASS, ib: form.ib, r: IDENT.slice(), ii: [0, 0, 0, 0, 0, 0],
+    fr, re, touch: false, round: form.round, parts: [], cells: [], looks: null, minx: 0, maxx: 0, miny: 0, maxy: 0, minz: 0, maxz: 0 };
+  b.parts = form.hulls.map((h, k) => mkPart(b, id * 8 + k, h.shape, h.lx, h.ly, h.lz, IDENT, { fr, re }));
+  if (form.looks !== form.hulls) b.cells = form.looks.map(l => mkPart(b, -1, l.shape, l.lx, l.ly, l.lz, IDENT, { hide: l.hide, seams: l.seams }));
+  b.looks = b.cells.length ? b.cells : b.parts;
+  place(b); return b;
+}
+/** The rotation matrix (b.r, by rows) from the quaternion. */
+function turn(b) {
+  const w = b.qw, x = b.qx, y = b.qy, z = b.qz, r = b.r;
+  r[0] = 1 - 2 * (y * y + z * z); r[1] = 2 * (x * y - w * z); r[2] = 2 * (x * z + w * y);
+  r[3] = 2 * (x * y + w * z); r[4] = 1 - 2 * (x * x + z * z); r[5] = 2 * (y * z - w * x);
+  r[6] = 2 * (x * z - w * y); r[7] = 2 * (y * z + w * x); r[8] = 1 - 2 * (x * x + y * y);
+}
+/** World corners, normals, edge directions and bounding box of a placed solid from its position and rotation matrix. */
+function spread(b) {
+  const sh = b.shape, r = b.r;
+  if (sh.ball) { b.minx = b.x - sh.r; b.maxx = b.x + sh.r; b.miny = b.y - sh.r; b.maxy = b.y + sh.r; b.minz = b.z - sh.r; b.maxz = b.z + sh.r; return; }
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < sh.nv; i++) {
+    const p = sh.p[i], X = b.x + r[0] * p[0] + r[1] * p[1] + r[2] * p[2], Y = b.y + r[3] * p[0] + r[4] * p[1] + r[5] * p[2], Z = b.z + r[6] * p[0] + r[7] * p[1] + r[8] * p[2];
+    b.px[i] = X; b.py[i] = Y; b.pz[i] = Z;
+    if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; if (Z < z0) z0 = Z; if (Z > z1) z1 = Z;
+  }
+  for (let i = 0; i < sh.nrm.length; i++) { const n = sh.nrm[i]; b.nx[i] = r[0] * n[0] + r[1] * n[1] + r[2] * n[2]; b.ny[i] = r[3] * n[0] + r[4] * n[1] + r[5] * n[2]; b.nz[i] = r[6] * n[0] + r[7] * n[1] + r[8] * n[2]; }
+  for (let i = 0; i < sh.dirs.length; i++) { const d = sh.dirs[i].d; b.dx[i] = r[0] * d[0] + r[1] * d[1] + r[2] * d[2]; b.dy[i] = r[3] * d[0] + r[4] * d[1] + r[5] * d[2]; b.dz[i] = r[6] * d[0] + r[7] * d[1] + r[8] * d[2]; }
+  b.minx = x0; b.maxx = x1; b.miny = y0; b.maxy = y1; b.minz = z0; b.maxz = z1;
+}
+/** Everything a body derives from its position and quaternion: where its parts are, its box, and its inverse inertia in the world (ii: xx, yy, zz, xy, xz, yz). */
+function place(b) {
+  turn(b);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const q of b.parts) { seat(q); if (q.minx < x0) x0 = q.minx; if (q.maxx > x1) x1 = q.maxx; if (q.miny < y0) y0 = q.miny; if (q.maxy > y1) y1 = q.maxy; if (q.minz < z0) z0 = q.minz; if (q.maxz > z1) z1 = q.maxz; }
+  for (const q of b.cells) seat(q);
+  b.minx = x0; b.maxx = x1; b.miny = y0; b.maxy = y1; b.minz = z0; b.maxz = z1;
+  // R · A · Rᵀ, with A the inverse inertia in the body's own axes
+  const r = b.r, A = b.ib, i = b.ii;
+  const m00 = r[0] * A[0] + r[1] * A[3] + r[2] * A[4], m01 = r[0] * A[3] + r[1] * A[1] + r[2] * A[5], m02 = r[0] * A[4] + r[1] * A[5] + r[2] * A[2];
+  const m10 = r[3] * A[0] + r[4] * A[3] + r[5] * A[4], m11 = r[3] * A[3] + r[4] * A[1] + r[5] * A[5], m12 = r[3] * A[4] + r[4] * A[5] + r[5] * A[2];
+  const m20 = r[6] * A[0] + r[7] * A[3] + r[8] * A[4], m21 = r[6] * A[3] + r[7] * A[1] + r[8] * A[5], m22 = r[6] * A[4] + r[7] * A[5] + r[8] * A[2];
+  i[0] = m00 * r[0] + m01 * r[1] + m02 * r[2]; i[1] = m10 * r[3] + m11 * r[4] + m12 * r[5]; i[2] = m20 * r[6] + m21 * r[7] + m22 * r[8];
+  i[3] = m00 * r[3] + m01 * r[4] + m02 * r[5]; i[4] = m00 * r[6] + m01 * r[7] + m02 * r[8]; i[5] = m10 * r[6] + m11 * r[7] + m12 * r[8];
+}
+
+/**
+ * A part: a solid fixed to what owns it (a body, or the disc) at (lx, ly, lz) from its centre, turned by
+ * the matrix `lr`. A piece is made of them; the disc itself and its wall are parts of the disc, and so
+ * is every piece of the pile once it is buried: it stops being a body of its own and its parts become
+ * the disc's, which carries its weight.
+ */
+function mkPart(pl, id, shape, lx, ly, lz, lr, o) {
+  const q = Object.assign({ id, shape, owner: pl, lx, ly, lz, lr, r: new Array(9), x: 0, y: 0, z: 0, fr: 0.5, re: 0, m: 0 }, slots(shape), o);
+  seat(q); return q;
+}
+/** Puts a part where its owner carries it. */
+function seat(q) {
+  const pl = q.owner, P = pl.r, l = q.lr, r = q.r;
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) r[3 * i + j] = P[3 * i] * l[j] + P[3 * i + 1] * l[3 + j] + P[3 * i + 2] * l[6 + j];
+  q.x = pl.x + P[0] * q.lx + P[1] * q.ly + P[2] * q.lz; q.y = pl.y + P[3] * q.lx + P[4] * q.ly + P[5] * q.lz; q.z = pl.z + P[6] * q.lx + P[7] * q.ly + P[8] * q.lz;
+  spread(q);
+}
+
+/* What the last separating-axis test found: the axis from A to B (sX, sY, sZ), how far apart they are along it (sS: negative when they overlap) and what it is: a face of A (0), a face of B (1) or a pair of edges (2), and which (sI, sJ). */
+let sK = 0, sI = 0, sJ = 0, sS = 0, sX = 0, sY = 0, sZ = 0;
+/**
+ * The separating-axis test between two placed solids: false if a plane parts them (and then the axis
+ * is that plane's normal), true if they overlap (and then it is the axis of least overlap). The axes
+ * are the faces of each and the cross products of their edge directions.
+ */
+function sat(A, B) {
+  const a = A.shape, b = B.shape, na = a.nv, nb = b.nv;
+  let fa = -Infinity, ia = 0, fb = -Infinity, ib = 0;
+  for (let i = 0; i < a.faces.length; i++) {
+    const nx = A.nx[i], ny = A.ny[i], nz = A.nz[i], v = a.faces[i][0], d = nx * A.px[v] + ny * A.py[v] + nz * A.pz[v];
+    let m = Infinity;
+    for (let j = 0; j < nb; j++) { const s = nx * B.px[j] + ny * B.py[j] + nz * B.pz[j] - d; if (s < m) m = s; }
+    if (m > 0) { sK = 0; sI = i; sS = m; sX = nx; sY = ny; sZ = nz; return false; }
+    if (m > fa) { fa = m; ia = i; }
+  }
+  for (let i = 0; i < b.faces.length; i++) {
+    const nx = B.nx[i], ny = B.ny[i], nz = B.nz[i], v = b.faces[i][0], d = nx * B.px[v] + ny * B.py[v] + nz * B.pz[v];
+    let m = Infinity;
+    for (let j = 0; j < na; j++) { const s = nx * A.px[j] + ny * A.py[j] + nz * A.pz[j] - d; if (s < m) m = s; }
+    if (m > 0) { sK = 1; sI = i; sS = m; sX = -nx; sY = -ny; sZ = -nz; return false; }
+    if (m > fb) { fb = m; ib = i; }
+  }
+  let fe = -Infinity, ie = 0, je = 0, ex = 0, ey = 0, ez = 0;
+  for (let i = 0; i < a.dirs.length; i++) for (let j = 0; j < b.dirs.length; j++) {
+    let cx = A.dy[i] * B.dz[j] - A.dz[i] * B.dy[j], cy = A.dz[i] * B.dx[j] - A.dx[i] * B.dz[j], cz = A.dx[i] * B.dy[j] - A.dy[i] * B.dx[j];
+    const l2 = cx * cx + cy * cy + cz * cz;
+    if (l2 < 1e-6) continue;
+    const l = 1 / Math.sqrt(l2); cx *= l; cy *= l; cz *= l;
+    let a0 = Infinity, a1 = -Infinity, b0 = Infinity, b1 = -Infinity;
+    for (let k = 0; k < na; k++) { const s = cx * A.px[k] + cy * A.py[k] + cz * A.pz[k]; if (s < a0) a0 = s; if (s > a1) a1 = s; }
+    for (let k = 0; k < nb; k++) { const s = cx * B.px[k] + cy * B.py[k] + cz * B.pz[k]; if (s < b0) b0 = s; if (s > b1) b1 = s; }
+    // B past A along the axis, or against it: whichever way they overlap less
+    const s1 = b0 - a1, s2 = a0 - b1, s = s1 > s2 ? s1 : s2, g = s1 > s2 ? 1 : -1;
+    if (s > 0) { sK = 2; sI = i; sJ = j; sS = s; sX = g * cx; sY = g * cy; sZ = g * cz; return false; }
+    if (s > fe) { fe = s; ie = i; je = j; ex = g * cx; ey = g * cy; ez = g * cz; }
+  }
+  // A face is preferred: two edges only when they overlap clearly less than any face (two faces flat on each other give all three about the same)
+  if (fe > (fa > fb ? fa : fb) + 0.005) { sK = 2; sI = ie; sJ = je; sS = fe; sX = ex; sY = ey; sZ = ez; }
+  else if (fb > fa + 0.002) { sK = 1; sI = ib; sS = fb; sX = -B.nx[ib]; sY = -B.ny[ib]; sZ = -B.nz[ib]; }
+  else { sK = 0; sI = ia; sS = fa; sX = A.nx[ia]; sY = A.ny[ia]; sZ = A.nz[ia]; }
+  return true;
+}
+
+/* Where a ball touches: the closest point of the other solid (or of the first ball). */
+let cX = 0, cY = 0, cZ = 0;
+/**
+ * A ball B against a convex solid P. Sets the axis from P to the ball, how far apart they are along it
+ * (negative when they overlap) and the point of P closest to the ball's centre; true if they overlap.
+ */
+function ballPoly(P, B) {
+  const sh = P.shape, bx = B.x, by = B.y, bz = B.z, r = B.shape.r;
+  let dm = -Infinity, im = 0;
+  for (let i = 0; i < sh.faces.length; i++) {
+    const v = sh.faces[i][0], d = P.nx[i] * (bx - P.px[v]) + P.ny[i] * (by - P.py[v]) + P.nz[i] * (bz - P.pz[v]);
+    if (d > dm) { dm = d; im = i; }
+  }
+  sK = 0; sI = im;
+  if (dm > r || dm <= 0) {
+    // Clear of it past one face (that face's plane parts them), or its centre is inside: that face's normal either way
+    sX = P.nx[im]; sY = P.ny[im]; sZ = P.nz[im]; sS = dm - r;
+    cX = bx - sX * dm; cY = by - sY * dm; cZ = bz - sZ * dm;
+    return dm <= 0;
+  }
+  // Its centre is outside, within reach: the closest point of the solid is on one of the faces the centre is in front of
+  let best = Infinity;
+  for (let i = 0; i < sh.faces.length; i++) {
+    const f = sh.faces[i], nx = P.nx[i], ny = P.ny[i], nz = P.nz[i], v0 = f[0], d = nx * (bx - P.px[v0]) + ny * (by - P.py[v0]) + nz * (bz - P.pz[v0]);
+    if (d <= 0 || d > r) continue;
+    // The centre brought down onto the face's plane; if that is past an edge, the closest point of that edge instead
+    const qx = bx - nx * d, qy = by - ny * d, qz = bz - nz * d;
+    let near = Infinity, ex = qx, ey = qy, ez = qz, out = false;
+    for (let k = 0; k < f.length; k++) {
+      const a = f[k], b = f[(k + 1) % f.length], ax = P.px[a], ay = P.py[a], az = P.pz[a], ux = P.px[b] - ax, uy = P.py[b] - ay, uz = P.pz[b] - az, wx = qx - ax, wy = qy - ay, wz = qz - az;
+      if ((uy * wz - uz * wy) * nx + (uz * wx - ux * wz) * ny + (ux * wy - uy * wx) * nz >= 0) continue;
+      out = true;
+      const t = clamp01((ux * wx + uy * wy + uz * wz) / (ux * ux + uy * uy + uz * uz)), px = ax + ux * t, py = ay + uy * t, pz = az + uz * t, d2 = (bx - px) * (bx - px) + (by - py) * (by - py) + (bz - pz) * (bz - pz);
+      if (d2 < near) { near = d2; ex = px; ey = py; ez = pz; }
+    }
+    if (!out) near = d * d;
+    if (near < best) { best = near; cX = ex; cY = ey; cZ = ez; }
+  }
+  const dist = Math.sqrt(best);
+  if (dist < 1e-9) { sX = P.nx[im]; sY = P.ny[im]; sZ = P.nz[im]; } else { sX = (bx - cX) / dist; sY = (by - cY) / dist; sZ = (bz - cZ) / dist; }
+  sS = dist - r;
+  return sS < 0;
+}
+/** Whether two placed solids overlap, either of which may be a ball; sets the axis from A to B and how far apart they are along it, as `sat` does. */
+function meets(A, B) {
+  const ba = A.shape.ball, bb = B.shape.ball;
+  if (!ba && !bb) return sat(A, B);
+  if (ba && bb) {
+    const dx = B.x - A.x, dy = B.y - A.y, dz = B.z - A.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    sK = 0; sS = d - A.shape.r - B.shape.r;
+    if (d < 1e-9) { sX = 0; sY = 1; sZ = 0; } else { sX = dx / d; sY = dy / d; sZ = dz / d; }
+    cX = A.x + sX * A.shape.r; cY = A.y + sY * A.shape.r; cZ = A.z + sZ * A.shape.r;
+    return sS < 0;
+  }
+  if (bb) return ballPoly(A, B);
+  const hit = ballPoly(B, A); sX = -sX; sY = -sY; sZ = -sZ;
+  return hit;
+}
+
+/**
+ * A contact: the normal (nx, ny, nz) goes from a to b. A and B are what touch: a body, or a part of the
+ * disc, and then the body that takes the push is the disc (its `owner`).
+ */
+const con = (A, B, nx, ny, nz, px, py, pz, pen) => ({ a: A.owner || A, b: B.owner || B, key: A.id * 65536 + B.id, nx, ny, nz, px, py, pz, pen, fr: Math.sqrt(A.fr * B.fr), re: A.re > B.re ? A.re : B.re,
+  pn: 0, p1: 0, p2: 0, rax: 0, ray: 0, raz: 0, rbx: 0, rby: 0, rbz: 0, t1x: 0, t1y: 0, t1z: 0, t2x: 0, t2y: 0, t2z: 0, mn: 0, m1: 0, m2: 0, bias: 0 });
+
+/** The part of a polygon on the inner side of a plane (s · p ≤ d). */
+function clip(poly, sx, sy, sz, d) {
+  const out = [];
+  let p = poly[poly.length - 1], dp = sx * p[0] + sy * p[1] + sz * p[2] - d;
+  for (const q of poly) {
+    const dq = sx * q[0] + sy * q[1] + sz * q[2] - d;
+    if ((dq <= 0) !== (dp <= 0)) { const t = dp / (dp - dq); out.push([p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1]), p[2] + t * (q[2] - p[2])]); }
+    if (dq <= 0) out.push(q);
+    p = q; dp = dq;
+  }
+  return out;
+}
+/** Of a solid's edges along one of its directions, the one furthest along the axis (sign 1) or against it (−1). */
+function support(S, k, sign) {
+  let best = null, m = -Infinity;
+  for (const e of S.shape.dirs[k].edges) {
+    const s = sign * (sX * (S.px[e[0]] + S.px[e[1]]) + sY * (S.py[e[0]] + S.py[e[1]]) + sZ * (S.pz[e[0]] + S.pz[e[1]]));
+    if (s > m) { m = s; best = e; }
+  }
+  return best;
+}
+const clamp01 = t => (t < 0 ? 0 : t > 1 ? 1 : t);
+
+/** Where two placed solids touch, added to `out`: up to a whole patch when a face lies on a face, one point for two edges. */
+function collide(A, B, out) {
+  // A ball touches at one point: the closest one
+  if (A.shape.ball || B.shape.ball) { if (meets(A, B)) out.push(con(A, B, sX, sY, sZ, cX, cY, cZ, -sS)); return; }
+  if (!sat(A, B)) return;
+  if (sK === 2) {
+    // Two edges: the closest points of the two segments
+    const ea = support(A, sI, 1), eb = support(B, sJ, -1);
+    const p1x = A.px[ea[0]], p1y = A.py[ea[0]], p1z = A.pz[ea[0]], d1x = A.px[ea[1]] - p1x, d1y = A.py[ea[1]] - p1y, d1z = A.pz[ea[1]] - p1z;
+    const p2x = B.px[eb[0]], p2y = B.py[eb[0]], p2z = B.pz[eb[0]], d2x = B.px[eb[1]] - p2x, d2y = B.py[eb[1]] - p2y, d2z = B.pz[eb[1]] - p2z;
+    const rx = p1x - p2x, ry = p1y - p2y, rz = p1z - p2z;
+    const a = d1x * d1x + d1y * d1y + d1z * d1z, e = d2x * d2x + d2y * d2y + d2z * d2z, f = d2x * rx + d2y * ry + d2z * rz, c = d1x * rx + d1y * ry + d1z * rz, b = d1x * d2x + d1y * d2y + d1z * d2z;
+    const den = a * e - b * b;
+    let s = den > 1e-12 ? clamp01((b * f - c * e) / den) : 0, t = (b * s + f) / e;
+    if (t < 0) { t = 0; s = clamp01(-c / a); } else if (t > 1) { t = 1; s = clamp01((b - c) / a); }
+    out.push(con(A, B, sX, sY, sZ, (p1x + d1x * s + p2x + d2x * t) / 2, (p1y + d1y * s + p2y + d2y * t) / 2, (p1z + d1z * s + p2z + d2z * t) / 2, -sS));
+    return;
+  }
+  // A face: the other solid's face that looks at it most, cut to the face's outline, gives the patch
+  const R = sK ? B : A, I = sK ? A : B, f = R.shape.faces[sI], nx = R.nx[sI], ny = R.ny[sI], nz = R.nz[sI], g = sK ? -1 : 1;
+  let fi = 0, md = Infinity;
+  for (let k = 0; k < I.nx.length; k++) { const d = nx * I.nx[k] + ny * I.ny[k] + nz * I.nz[k]; if (d < md) { md = d; fi = k; } }
+  let poly = I.shape.faces[fi].map(v => [I.px[v], I.py[v], I.pz[v]]);
+  for (let k = 0; k < f.length && poly.length; k++) {
+    const v1 = f[k], v2 = f[(k + 1) % f.length], ex = R.px[v2] - R.px[v1], ey = R.py[v2] - R.py[v1], ez = R.pz[v2] - R.pz[v1];
+    const sx = ey * nz - ez * ny, sy = ez * nx - ex * nz, sz = ex * ny - ey * nx;
+    poly = clip(poly, sx, sy, sz, sx * R.px[v1] + sy * R.py[v1] + sz * R.pz[v1]);
+  }
+  const d = nx * R.px[f[0]] + ny * R.py[f[0]] + nz * R.pz[f[0]];
+  for (const p of poly) {
+    // A corner a hair above the face still counts (with a negative depth: it only stops what would go through), so a resting patch keeps all its corners
+    const sep = nx * p[0] + ny * p[1] + nz * p[2] - d;
+    if (sep <= SPEC) out.push(con(A, B, g * nx, g * ny, g * nz, p[0] - nx * sep, p[1] - ny * sep, p[2] - nz * sep, -sep));
+  }
+}
+
+const T = [0, 0, 0];
+/** A body's inverse inertia applied to (x, y, z): the result in T. */
+function spin(b, x, y, z) { const i = b.ii; T[0] = i[0] * x + i[3] * y + i[4] * z; T[1] = i[3] * x + i[1] * y + i[5] * z; T[2] = i[4] * x + i[5] * y + i[2] * z; }
+/** How much a contact resists a push along (x, y, z): the inverse of the two bodies' give there. */
+function give(k, x, y, z) {
+  const a = k.a, b = k.b;
+  let cx = k.ray * z - k.raz * y, cy = k.raz * x - k.rax * z, cz = k.rax * y - k.ray * x;
+  spin(a, cx, cy, cz);
+  let s = a.invM + b.invM + cx * T[0] + cy * T[1] + cz * T[2];
+  cx = k.rby * z - k.rbz * y; cy = k.rbz * x - k.rbx * z; cz = k.rbx * y - k.rby * x;
+  spin(b, cx, cy, cz);
+  s += cx * T[0] + cy * T[1] + cz * T[2];
+  return 1 / s;
+}
+/** The impulse (x, y, z) at a contact: on b, and its opposite on a. */
+function push(k, x, y, z) {
+  const a = k.a, b = k.b;
+  a.vx -= a.invM * x; a.vy -= a.invM * y; a.vz -= a.invM * z;
+  spin(a, k.ray * z - k.raz * y, k.raz * x - k.rax * z, k.rax * y - k.ray * x);
+  a.ox -= T[0]; a.oy -= T[1]; a.oz -= T[2];
+  b.vx += b.invM * x; b.vy += b.invM * y; b.vz += b.invM * z;
+  spin(b, k.rby * z - k.rbz * y, k.rbz * x - k.rbx * z, k.rbx * y - k.rby * x);
+  b.ox += T[0]; b.oy += T[1]; b.oz += T[2];
+}
+/** How fast b moves past a at a contact, along (x, y, z). */
+function slip(k, x, y, z) {
+  const a = k.a, b = k.b;
+  return (b.vx + b.oy * k.rbz - b.oz * k.rby - a.vx - a.oy * k.raz + a.oz * k.ray) * x
+    + (b.vy + b.oz * k.rbx - b.ox * k.rbz - a.vy - a.oz * k.rax + a.ox * k.raz) * y
+    + (b.vz + b.ox * k.rby - b.oy * k.rbx - a.vz - a.ox * k.ray + a.oy * k.rax) * z;
+}
+
+/**
+ * One step of the world W: { bodies, plat, prev, K, D, smax }. `bodies` are the loose pieces. The disc
+ * (`plat`) cannot move, only lean about its pivot, with its parts: `u` is its up direction, a spring
+ * (K) pulls it level and a damper (D) calms it; `load` is the weight welded to it, as mass × arm, and
+ * `mass` how much that is; `smax` is the sine of the lean where it stops. It does not spin about the
+ * vertical: its inverse inertia has no y.
+ *
+ * The spring and the damper grow with the welded mass (× 1 + mass / SPRING_M), so the lean goes by how
+ * far off centre the pile's weight is, whatever its size.
+ */
+function stepWorld(W) {
+  const bs = W.bodies, pl = W.plat;
+  for (const b of bs) { b.touch = false; b.vy -= GRAV * DT; }
+  {
+    const k = (1 + pl.mass / SPRING_M) * PLAT_I * pl.ii[0], r = pl.r, L = pl.load;
+    const lx = r[0] * L[0] + r[1] * L[1] + r[2] * L[2], lz = r[6] * L[0] + r[7] * L[1] + r[8] * L[2];
+    pl.ox += ((-W.K * pl.uz - W.D * pl.ox) * k + GRAV * lz * pl.ii[0]) * DT;
+    pl.oz += ((W.K * pl.ux - W.D * pl.oz) * k - GRAV * lx * pl.ii[0]) * DT;
+  }
+
+  // What touches what: part against part, of the pairs whose boxes overlap
+  const cs = [], near = (p, q) => !(p.maxx < q.minx || q.maxx < p.minx || p.maxy < q.miny || q.maxy < p.miny || p.maxz < q.minz || q.maxz < p.minz);
+  for (let i = 0; i < bs.length; i++) {
+    const b = bs[i];
+    for (const q of pl.parts) if (near(q, b)) for (const h of b.parts) if (near(q, h)) collide(q, h, cs);
+    for (let j = i + 1; j < bs.length; j++) {
+      const a = bs[j];
+      if (near(a, b)) for (const h of b.parts) for (const g of a.parts) if (near(h, g)) collide(h, g, cs);
+    }
+  }
+
+  for (const k of cs) {
+    const a = k.a, b = k.b;
+    k.rax = k.px - a.x; k.ray = k.py - a.y; k.raz = k.pz - a.z; k.rbx = k.px - b.x; k.rby = k.py - b.y; k.rbz = k.pz - b.z;
+    // Two directions along the surface, for the friction
+    let tx, ty, tz;
+    if (k.nx * k.nx < 0.33) { tx = 0; ty = k.nz; tz = -k.ny; } else { tx = -k.nz; ty = 0; tz = k.nx; }
+    const l = 1 / Math.sqrt(tx * tx + ty * ty + tz * tz);
+    k.t1x = tx * l; k.t1y = ty * l; k.t1z = tz * l;
+    k.t2x = k.ny * k.t1z - k.nz * k.t1y; k.t2y = k.nz * k.t1x - k.nx * k.t1z; k.t2z = k.nx * k.t1y - k.ny * k.t1x;
+    k.mn = give(k, k.nx, k.ny, k.nz); k.m1 = give(k, k.t1x, k.t1y, k.t1z); k.m2 = give(k, k.t2x, k.t2y, k.t2z);
+    k.bias = k.pen < 0 ? k.pen / DT : Math.min(MAX_BIAS, BETA / DT * Math.max(0, k.pen - SLOP));
+    const vn = slip(k, k.nx, k.ny, k.nz);
+    if (vn < -REST_V && -k.re * vn > k.bias) k.bias = -k.re * vn;
+    // The push it ended the last step with, if it was there (the same pair, at about the same place)
+    const old = W.prev.get(k.key);
+    if (old) for (const o of old) {
+      const ex = o.x - k.px, ey = o.y - k.py, ez = o.z - k.pz;
+      if (o.used || ex * ex + ey * ey + ez * ez > 0.0009) continue;
+      o.used = true;
+      k.pn = Math.max(0, o.ix * k.nx + o.iy * k.ny + o.iz * k.nz); k.p1 = o.ix * k.t1x + o.iy * k.t1y + o.iz * k.t1z; k.p2 = o.ix * k.t2x + o.iy * k.t2y + o.iz * k.t2z;
+      push(k, k.pn * k.nx + k.p1 * k.t1x + k.p2 * k.t2x, k.pn * k.ny + k.p1 * k.t1y + k.p2 * k.t2y, k.pn * k.nz + k.p1 * k.t1z + k.p2 * k.t2z);
+      break;
+    }
+  }
+  for (let it = 0; it < ITER; it++) for (const k of cs) {
+    let d = k.mn * (k.bias - slip(k, k.nx, k.ny, k.nz)); const pn0 = k.pn;
+    k.pn = Math.max(pn0 + d, 0); d = k.pn - pn0;
+    push(k, d * k.nx, d * k.ny, d * k.nz);
+    const max = k.fr * k.pn;
+    d = -k.m1 * slip(k, k.t1x, k.t1y, k.t1z); const q1 = k.p1;
+    k.p1 = Math.max(-max, Math.min(max, q1 + d)); d = k.p1 - q1;
+    push(k, d * k.t1x, d * k.t1y, d * k.t1z);
+    d = -k.m2 * slip(k, k.t2x, k.t2y, k.t2z); const q2 = k.p2;
+    k.p2 = Math.max(-max, Math.min(max, q2 + d)); d = k.p2 - q2;
+    push(k, d * k.t2x, d * k.t2y, d * k.t2z);
+  }
+  const now = new Map();
+  for (const k of cs) {
+    if (k.pn > 0) { k.a.touch = true; k.b.touch = true; }
+    let list = now.get(k.key); if (!list) now.set(k.key, list = []);
+    list.push({ x: k.px, y: k.py, z: k.pz, ix: k.pn * k.nx + k.p1 * k.t1x + k.p2 * k.t2x, iy: k.pn * k.ny + k.p1 * k.t1y + k.p2 * k.t2y, iz: k.pn * k.nz + k.p1 * k.t1z + k.p2 * k.t2z, used: false, pn: k.pn });
+  }
+  W.prev = now;
+
+  // The disc leans: its up direction turns with its spin, and stops at its limit
+  {
+    const x = pl.ux - pl.oz * pl.uy * DT, y = pl.uy + (pl.oz * pl.ux - pl.ox * pl.uz) * DT, z = pl.uz + pl.ox * pl.uy * DT, l = 1 / Math.sqrt(x * x + y * y + z * z);
+    pl.ux = x * l; pl.uy = y * l; pl.uz = z * l;
+    const s2 = pl.ux * pl.ux + pl.uz * pl.uz;
+    if (s2 > W.smax * W.smax) {
+      const s = Math.sqrt(s2), k = W.smax / s, out = (pl.ox * pl.uz - pl.oz * pl.ux) / s;
+      if (out > 0) { pl.ox -= out * pl.uz / s; pl.oz += out * pl.ux / s; }
+      pl.ux *= k; pl.uz *= k; pl.uy = Math.sqrt(1 - W.smax * W.smax);
+    }
+    lean(pl);
+  }
+  for (const b of bs) {
+    // What touches something settles instead of rattling on. A ball rolls on: it only loses a steady bit of spin, so it rests on a level floor
+    const kv = b.touch ? (b.round ? 1.2 : 2) : 0.02, ko = b.touch ? (b.round ? 0.6 : 5) : 0.3;
+    if (b.round && b.touch) { const w = Math.sqrt(b.ox * b.ox + b.oy * b.oy + b.oz * b.oz), k = w > ROLL * DT ? 1 - ROLL * DT / w : 0; b.ox *= k; b.oy *= k; b.oz *= k; }
+    b.vx *= 1 - kv * DT; b.vy *= 1 - kv * DT; b.vz *= 1 - kv * DT; b.ox *= 1 - ko * DT; b.oy *= 1 - ko * DT; b.oz *= 1 - ko * DT;
+    b.x += b.vx * DT; b.y += b.vy * DT; b.z += b.vz * DT;
+    const h = 0.5 * DT, w = b.qw - h * (b.ox * b.qx + b.oy * b.qy + b.oz * b.qz), x = b.qx + h * (b.ox * b.qw + b.oy * b.qz - b.oz * b.qy),
+      y = b.qy + h * (b.oy * b.qw + b.oz * b.qx - b.ox * b.qz), z = b.qz + h * (b.oz * b.qw + b.ox * b.qy - b.oy * b.qx), l = 1 / Math.sqrt(w * w + x * x + y * y + z * z);
+    b.qw = w * l; b.qx = x * l; b.qy = y * l; b.qz = z * l;
+    place(b);
+  }
+}
+/** The disc's rotation from its up direction (the shortest turn from the vertical, so it never spins about it), and its parts with it. */
+function lean(pl) {
+  const w = 1 + pl.uy, l = 1 / Math.sqrt(w * w + pl.uz * pl.uz + pl.ux * pl.ux);
+  pl.qw = w * l; pl.qx = pl.uz * l; pl.qy = 0; pl.qz = -pl.ux * l;
+  turn(pl);
+  for (const q of pl.parts) seat(q);
+  for (const q of pl.cells) seat(q);
+}
+
+/* ================================================================== */
+/* The game: an endless pile, the hand, the score                      */
+/* ================================================================== */
+const RAD = 1.05, TH = 0.08, RIM = 0.12, RIM_W = 0.07, PLAT_I = 2.2, SPRING_M = 5, JUDGE_S = 1.4, PERFECT = 0.05;
+/** Going over: leaning past TIP (its sine: about 27°) for TIP_S seconds in all; past WARN (20°) the player is warned. Once over, it keeps tipping at TIP_A. */
+const TIP = 0.45, TIP_S = 0.35, WARN = 0.34, TIP_A = 5;
+/** How many pieces stay loose on top of the pile (the ones under them are welded to the disc), how far above the pile the hand holds the next one, how far from the centre it reaches (never past the wall), how low a piece is lost, and how fast a piece let go comes down (it is lowered, not thrown: however far it has to go, it lands as hard). */
+const LOOSE = 5, CLEAR = 1.15, REACH = RAD - RIM_W - 0.03, FALL_Y = -0.9, FALL_V = 3.2;
+const C75 = 0.9914448613738104, S75 = 0.13052619222005157;   // cosine and sine of 7.5°
+const RING = circle(48, C75, S75), DISC = prism(RING.filter((_, i) => i % 2 === 0).map(([x, z]) => [x * RAD, z * RAD]), TH), RIM_BOX = box(2 * RAD * S75 * 1.06, RIM, RIM_W);
+
+/**
+ * The pieces: the 2D game's ten kinds, each a shape of its own, given a depth (its square is a cube here,
+ * its triangle and its hexagon are pulled out into prisms, its L, T, Z and cross are one cube deep). They
+ * all weigh the same (MASS), whatever their size, and grip the same. Their names and what the player is
+ * told when one first shows up are in the texts (`b3K_…`, `b3T_…`).
+ */
+const HEX = [[1, 0], [0.5, SIN60], [-0.5, SIN60], [-1, 0], [-0.5, -SIN60], [0.5, -SIN60]];
+const KINDS = {
+  cubo: { color: [46, 230, 214], form: k => solid(box(0.34 * k, 0.34 * k, 0.34 * k)) },
+  ladrillo: { color: [255, 46, 136], form: k => solid(box(0.62 * k, 0.2 * k, 0.3 * k)) },
+  triangulo: { color: [157, 255, 58], form: k => solid(extrude([[0, 0.44 * SIN60 * k], [0.22 * k, 0], [-0.22 * k, 0]], 0.34 * k)) },
+  ele: { color: [106, 168, 255], form: (k, flip) => { const f = flip ? -1 : 1; return blocks(0.19 * k, [[0, -1], [0, 0], [0, 1], [f, -1]], [{ x: 0, y: 0, w: 1, h: 3 }, { x: f, y: -1, w: 1, h: 1 }]); } },
+  bola: { color: [255, 210, 63], form: k => solid(ball(0.17 * k)) },
+  te: { color: [176, 124, 255], form: k => blocks(0.19 * k, [[-1, 0], [0, 0], [1, 0], [0, 1]], [{ x: 0, y: 0, w: 3, h: 1 }, { x: 0, y: 1, w: 1, h: 1 }]) },
+  domo: { color: [255, 122, 26], form: k => solid(dome(0.24 * k)) },
+  hexagono: { color: [143, 227, 255], form: k => solid(extrude(HEX.map(([x, y]) => [x * 0.2 * k, y * 0.2 * k]), 0.3 * k)) },
+  zeta: { color: [233, 228, 255], form: (k, flip) => { const f = flip ? -1 : 1; return blocks(0.19 * k, [[-f, 1], [0, 1], [0, 0], [f, 0]], [{ x: -f / 2, y: 1, w: 2, h: 1 }, { x: f / 2, y: 0, w: 2, h: 1 }]); } },
+  cruz: { color: [255, 143, 189], form: k => blocks(0.17 * k, [[0, 0], [-1, 0], [1, 0], [0, -1], [0, 1]], [{ x: 0, y: 0, w: 3, h: 1 }, { x: 0, y: 1, w: 1, h: 1 }, { x: 0, y: -1, w: 1, h: 1 }]) },
+};
+/** A piece's form from its spec { kind, k (scale), flip (an L or a Z the other way round) }. */
+const formFor = spec => KINDS[spec.kind].form(spec.k, spec.flip);
+/**
+ * When each kind comes: the 2D game's schedule, as it is there (the owner's: new shapes one at a time and well apart).
+ * The first pieces are only the three everyday ones: squares to begin with, the brick from the 3rd piece and the
+ * triangle from the 6th. The special ones come one at a time, each on a turn of its own, and no other piece is one:
+ * the first two a little early (the 8th and the 12th piece), then a new kind every fifth piece (the 17th, 22nd… 37th),
+ * in SPECIAL's order. Once all have come they keep taking a turn every fifth piece, in the same order.
+ *
+ * Among the everyday ones a triangle is one in eight (WEIGHT: a little over 1 in 8 by the draw, which the squares
+ * that are forced bring down to it), and a square is never far: after NO_SQUARE pieces in a row without one, the next
+ * everyday piece is a square.
+ */
+const EVERYDAY = { cubo: 0, ladrillo: 2, triangulo: 5 }, WEIGHT = { cubo: 4, ladrillo: 3, triangulo: 1.15 }, NO_SQUARE = 3;
+const SPECIAL = ['ele', 'bola', 'te', 'domo', 'hexagono', 'zeta', 'cruz'], SPECIAL_AT = [8, 12, 17, 22, 27, 32, 37], EVERY = 5;
+function specialAt(i) {
+  const n = i + 1, k = SPECIAL_AT.indexOf(n), last = SPECIAL_AT[SPECIAL_AT.length - 1];
+  if (k >= 0) return { kind: SPECIAL[k], debut: true };
+  if (n > last && (n - last) % EVERY === 0) return { kind: SPECIAL[((n - last) / EVERY - 1) % SPECIAL.length], debut: false };
+  return null;
+}
+
+/**
+ * The i-th piece, the same for everyone with the seed: a special one on its turn, the new everyday kind on the piece
+ * it starts, a square if there has been none for a while, else drawn from the everyday ones seen so far.
+ * Pieces are asked for in order: `S.noSq` counts the ones since the last square.
+ */
+function pieceAt(S, i) {
+  const sp = specialAt(i);
+  let spec;
+  if (sp) spec = { kind: sp.kind, k: 0.9 + 0.2 * S.rngSeq(), flip: S.rngSeq() < 0.5, debut: sp.debut };
+  else {
+    const pool = Object.keys(EVERYDAY).filter(k => EVERYDAY[k] <= i), newest = pool[pool.length - 1], debut = EVERYDAY[newest] === i;
+    let kind = newest;
+    if (!debut) {
+      if (S.noSq >= NO_SQUARE) kind = 'cubo';
+      else {
+        let x = S.rngSeq() * pool.reduce((s, k) => s + WEIGHT[k], 0);
+        for (const k of pool) { x -= WEIGHT[k]; if (x < 0) { kind = k; break; } }
+      }
+    }
+    spec = { kind, k: i < 4 ? 1 : 0.9 + 0.25 * S.rngSeq(), flip: false, debut: debut && i > 0 };
+  }
+  S.noSq = spec.kind === 'cubo' ? 0 : S.noSq + 1;
+  return spec;
+}
+
+/** How hard the n-th piece is (n from 0): everything tightens a little with every piece. */
+function params(n) {
+  const u = Math.min(1, n / 60);
+  return {
+    hold: Math.max(2, 5 - 0.06 * n),                          // seconds to place the piece before it falls by itself: fewer each time
+    gap: Math.max(0.3, 0.6 - 0.006 * n),                      // the wait for the next piece
+    K: 28 - 12 * u, D: 5,                                     // the disc's spring: softer, so it leans more
+    turned: n < 3 ? 0 : n < 12 ? 1 : 2,                       // how the piece comes: straight, turned about the vertical, or (half the time) turned any way
+  };
+}
+function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+/** `skip` (lab only): starts as hard as if that many pieces were already down, on an empty disc. */
+function newGame(seed, skip = 0) {
+  const pl = { id: 0, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ox: 0, oy: 0, oz: 0, ux: 0, uy: 1, uz: 0, qw: 1, qx: 0, qy: 0, qz: 0, r: IDENT.slice(),
+    invM: 0, inertia: PLAT_I, ii: [1 / PLAT_I, 0, 1 / PLAT_I, 0, 0, 0], parts: [], cells: [], looks: [], load: [0, 0, 0], mass: 0, touch: false };
+  pl.disc = mkPart(pl, 1, DISC, 0, -TH / 2, 0, IDENT, { fr: 0.4, base: true });
+  pl.parts.push(pl.disc);
+  // The wall: 24 boxes around the edge, a third of a cube tall: nothing slides out under it or through it; a piece only leaves over its top
+  for (let i = 0; i < 24; i++) {
+    const [c, s] = RING[2 * i + 1], d = RAD * C75 - RIM_W / 2;
+    pl.parts.push(mkPart(pl, 2 + i, RIM_BOX, c * d, RIM / 2, s * d, [-s, 0, -c, 0, 1, 0, c, 0, -s], { fr: 0.3, base: true, wall: i }));
+  }
+  const S = { seed, skip, rngSeq: mulberry(seed), rngCar: mulberry(seed ^ 0x9e3779b9), t: 0, ids: 100, phase: 'play', P: params(skip),
+    lives: 3, score: 0, landed: 0, perfects: 0, bonus: 0, streak: 0, best: 0, done: false, overAt: 0,
+    plat: pl, bodies: [], prev: new Map(), K: 0, D: 5, smax: 0.5, top: 0, peak: 0, hover: CLEAR,
+    queue: [], gen: skip, held: null, released: 0, noSq: 0, spawnT: 0.7, tip: 0, warnAt: -9, capsized: false, capAt: 0, ev: [] };
+  S.K = S.P.K;
+  while (S.queue.length < 3) S.queue.push(pieceAt(S, S.gen++));
+  return S;
+}
+/** The next piece comes to the hand, over a spot and turned in a way drawn with the seed. */
+function takeNext(S) {
+  const P = S.P, spec = S.queue.shift(), r = S.rngCar;
+  while (S.queue.length < 3) S.queue.push(pieceAt(S, S.gen++));
+  const h = S.held = { spec, form: formFor(spec), qw: 1, qx: 0, qy: 0, qz: 0, x: (r() * 2 - 1) * 0.45, z: (r() * 2 - 1) * 0.45, fuse: P.hold, hold: P.hold };
+  const a = r() * 2 - 1, b = r() * 2 - 1, c = r() * 2 - 1, d = r() * 2 - 1, any = r() < 0.5;
+  if (P.turned === 2 && any && a * a + b * b + c * c + d * d > 0.05) { const l = 1 / Math.sqrt(a * a + b * b + c * c + d * d); h.qw = a * l; h.qx = b * l; h.qy = c * l; h.qz = d * l; }
+  else if (P.turned && a * a + c * c > 0.02) { const l = 1 / Math.sqrt(a * a + c * c); h.qw = a * l; h.qy = c * l; }
+  if (spec.debut) S.ev.push({ type: 'debut', kind: spec.kind });
+}
+function release(S, auto) {
+  const h = S.held, b = mkBody(++S.ids, h.form, h.x, S.hover, h.z);
+  b.qw = h.qw; b.qx = h.qx; b.qy = h.qy; b.qz = h.qz; b.kind = h.spec.kind; b.tc = null; b.judged = false; b.auto = auto; place(b);
+  S.bodies.push(b); S.held = null; S.released++; S.spawnT = S.P.gap;
+  S.ev.push({ type: 'drop', auto });
+  // The next piece is a little harder
+  S.P = params(S.released + S.skip); S.K = S.P.K;
+}
+/** A buried piece stops being a body and becomes parts of the disc, where it is: the disc takes its weight and gets harder to turn. */
+function weld(S, b) {
+  const pl = S.plat, P = pl.r;
+  const fix = (q, o) => {
+    const dx = q.x - pl.x, dy = q.y - pl.y, dz = q.z - pl.z, lr = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) lr[3 * i + j] = P[i] * q.r[j] + P[3 + i] * q.r[3 + j] + P[6 + i] * q.r[6 + j];
+    return mkPart(pl, q.id, q.shape, P[0] * dx + P[3] * dy + P[6] * dz, P[1] * dx + P[4] * dy + P[7] * dz, P[2] * dx + P[5] * dy + P[8] * dz, lr, o);
+  };
+  const parts = b.parts.map(q => fix(q, { fr: b.fr, re: b.re, kind: b.kind })), cells = b.cells.map(q => fix(q, { kind: b.kind, hide: q.hide, seams: q.seams }));
+  pl.parts.push(...parts); pl.cells.push(...cells); pl.looks.push(...(cells.length ? cells : parts));
+  // Its weight, at its centre of mass
+  const dx = b.x - pl.x, dy = b.y - pl.y, dz = b.z - pl.z, lx = P[0] * dx + P[3] * dy + P[6] * dz, ly = P[1] * dx + P[4] * dy + P[7] * dz, lz = P[2] * dx + P[5] * dy + P[8] * dz;
+  pl.load[0] += b.m * lx; pl.load[1] += b.m * ly; pl.load[2] += b.m * lz; pl.mass += b.m;
+  pl.inertia += b.m * (lx * lx + ly * ly + lz * lz) + 3 / (b.ib[0] + b.ib[1] + b.ib[2]); pl.ii[0] = pl.ii[2] = 1 / pl.inertia;
+  S.bodies = S.bodies.filter(x => x !== b);
+}
+
+/**
+ * One fixed step of the game. `inp`: what the player does this step, or null: { x, z } where the piece
+ * in hand is held over, `q` (optional, [w, x, y, z]) how they have turned it, and `drop` to let it go.
+ */
+function advance(S, inp) {
+  S.t += DT;
+  const pl = S.plat;
+  if (S.phase === 'play') {
+    if (S.held) {
+      const h = S.held;
+      if (inp) {
+        let x = inp.x, z = inp.z; const d2 = x * x + z * z;
+        if (d2 > REACH * REACH) { const l = REACH / Math.sqrt(d2); x *= l; z *= l; }
+        h.x = x; h.z = z;
+        if (inp.q) { const [w, a, b, c] = inp.q, l2 = w * w + a * a + b * b + c * c; if (l2 > 1e-6) { const l = 1 / Math.sqrt(l2); h.qw = w * l; h.qx = a * l; h.qy = b * l; h.qz = c * l; } }
+      }
+      h.fuse -= DT;
+      if ((inp && inp.drop) || h.fuse <= 0) release(S, !(inp && inp.drop));
+    } else { S.spawnT -= DT; if (S.spawnT <= 0) takeNext(S); }
+  }
+  for (const b of S.bodies) if (b.tc == null && b.vy < -FALL_V) b.vy = -FALL_V;
+  if (S.capsized) {
+    // Gone over: nothing holds the disc any more. It keeps tipping the way it leaned and, a moment later, drops off its point with whatever is welded to it
+    const l = Math.sqrt(pl.ux * pl.ux + pl.uz * pl.uz) || 1;
+    if (pl.uy > -0.2) { pl.ox += TIP_A * pl.uz / l * DT; pl.oz -= TIP_A * pl.ux / l * DT; } else { pl.ox = 0; pl.oz = 0; }
+    if (S.t > S.capAt + 0.3) { pl.vy -= GRAV * DT; pl.y += pl.vy * DT; }
+  }
+  stepWorld(S);
+  if (S.phase === 'play') {
+    const lean2 = pl.ux * pl.ux + pl.uz * pl.uz;
+    S.tip = lean2 >= TIP * TIP ? S.tip + DT : Math.max(0, S.tip - 2 * DT);
+    if (S.tip > TIP_S) {
+      S.capsized = true; S.capAt = S.t; S.phase = 'over'; S.held = null; S.overAt = S.t + 2.4; S.K = 0; S.D = 0; S.smax = 2;
+      S.ev.push({ type: 'capsize' });
+    } else if (lean2 >= WARN * WARN && S.t - S.warnAt > 2.5) { S.warnAt = S.t; S.ev.push({ type: 'warn' }); }
+  }
+
+  // The top of the pile: of what is welded and of what has stayed
+  let top = 0, loose = 0, low = null;
+  for (const q of pl.parts) if (!q.base && q.maxy > top) top = q.maxy;
+  for (const b of S.bodies.slice()) {
+    if (b.tc == null && b.touch) { b.tc = S.t; S.ev.push({ type: 'hit', x: b.x, y: b.miny, z: b.z, m: b.m, kind: b.kind, v: Math.sqrt(b.vx * b.vx + b.vy * b.vy + b.vz * b.vz) }); }
+    if (b.y < FALL_Y && !b.lost) {
+      // A piece off the disc costs a life, and the perfect streak; the third ends the game
+      b.lost = true;
+      const counts = S.phase === 'play';
+      if (counts) { S.lives--; S.streak = 0; if (S.lives <= 0) { S.phase = 'over'; S.held = null; S.overAt = S.t + 1.8; } }
+      S.ev.push({ type: 'fall', x: b.x, y: b.y, z: b.z, kind: b.kind, counts, lives: S.lives, over: counts && S.lives <= 0 });
+    }
+    if (b.y < -7) { S.bodies = S.bodies.filter(x => x !== b); continue; }
+    if (b.lost) continue;
+    if (S.phase === 'play' && b.tc != null && !b.judged && S.t - b.tc >= JUDGE_S) {
+      // It stayed: a point, and a perfect one if the disc is level and still. One that fell by itself (the time ran out) counts the same: it just fell where it was
+      b.judged = true; S.landed++; S.score++;
+      const perfect = pl.ux * pl.ux + pl.uz * pl.uz < PERFECT * PERFECT && pl.ox * pl.ox + pl.oz * pl.oz < 0.01;
+      let bonus = 0;
+      if (perfect) { S.streak++; S.perfects++; if (S.streak > S.best) S.best = S.streak; bonus = Math.min(S.streak, 5); S.score += bonus; S.bonus += bonus; } else S.streak = 0;
+      S.ev.push({ type: 'score', x: b.x, y: b.maxy, z: b.z, perfect, streak: S.streak, bonus });
+    }
+    if (b.judged) {
+      if (b.maxy > top) top = b.maxy;
+      loose++;
+      // The lowest one at rest is the next to be welded
+      if (b.touch && b.vx * b.vx + b.vy * b.vy + b.vz * b.vz < 0.02 && b.ox * b.ox + b.oy * b.oy + b.oz * b.oz < 0.1 && (!low || b.y < low.y)) low = b;
+    }
+  }
+  S.top = top;
+  if (top > S.peak) S.peak = top;
+  if (S.phase === 'play' && loose > LOOSE && low) weld(S, low);
+  // The hand rides above the pile, so a piece always falls about as far
+  S.hover += (top + CLEAR - S.hover) * 2.5 * DT;
+  if (S.phase === 'over' && S.t >= S.overAt) S.done = true;
+}
+
+/* ================================================================== */
+/* The texts, in the site's three languages                            */
+/* ================================================================== */
+/**
+ * In the shape of the site's texts files (cup/games/<game>/texts.js), ready to be lifted there, and the
+ * same shape as the 2D game's: `juego` is the game's entry in `juegos`; `ui`, the keys its screen reads,
+ * all prefixed `b3`. Plural forms are [none, one, many]. A value 'a|b' is a title and its line: the steps
+ * of the start card, and each piece's name with what is said when it first comes. A key ending in `Desk`
+ * is the same text for a mouse.
+ */
+const ES = {
+  juego: {
+    nombre: 'Tembleque', habilidad: 'espacial',
+    como: [
+      'Arrastra la pieza sobre el disco y suéltala: su sombra muestra dónde cae. Antes de soltarla puedes girarla.',
+      'Gira el tablero para mirar la pila por todos lados y reparte el peso: si el disco se inclina demasiado, se vuelca y se acaba.',
+      'Tienes 3 vidas: cada pieza que cae al vacío te cuesta una. Cada vez tienes menos tiempo para ubicarlas.',
+    ],
+    puntaje: 'Cada pieza que se queda vale 1 punto. Si el disco queda nivelado es ¡Perfecto!, y cada uno seguido suma 1, 2, 3… hasta 5 más.',
+    puntajeFinal: 'En la final cuentan tus puntos tal cual, hasta un máximo de 100.',
+    desempate: 'Si empatas, gana quien tardó menos.',
+  },
+  ui: {
+    b3Lema: 'Apila todo. Que no se caiga nada.',
+    b3Step1: 'Mueve y suelta|Arrastra la pieza y suelta. Su sombra muestra dónde cae.',
+    b3Step1Desk: 'Mueve y suelta|Mueve el mouse y haz clic. Su sombra muestra dónde cae.',
+    b3Step2: 'Gira la pieza|Antes de soltar, deja el dedo quieto: ahora la giras 360° y eliges de qué lado cae.',
+    b3Step2Desk: 'Gira la pieza|Mantén el botón apretado y arrastra: la giras 360° y eliges de qué lado cae.',
+    b3Step3: 'Gira el tablero|Con dos dedos, o deslizando la rueda de arriba.',
+    b3Step3Desk: 'Gira el tablero|Arrastra la rueda de arriba, o usa Q y E.',
+    b3Step4: 'Equilibra|Borde y aro alineados: ¡Perfecto! Si se inclina demasiado, se vuelca.',
+    b3AutoNote: 'La pieza cae sola después de {n} segundos',
+    b3LivesNote: '3 vidas',
+    b3Play: '▶ Jugar',
+    b3Again: '↻ Otra vez',
+    b3New: 'Nueva: {n}',
+    b3Perfect: '¡Perfecto!',
+    b3Perfects: ['¡Perfecto!', '¡Impecable!', '¡Clavado!', '¡Exacto!', '¡Genial!', '¡Tremendo!', '¡Maestro!', '¡Bravo!', '¡Increíble!'],
+    b3Streak: 'Perfecto ×{n}',
+    b3Fell: '¡Se cayó!',
+    b3LastLife: '¡Se cayó! ¡Última vida!',
+    b3Auto: '¡Se soltó sola!',
+    b3Tipping: '¡Se vuelca!',
+    b3Tipped: '¡Se volcó!',
+    b3Over: 'Fin del juego',
+    b3Paused: 'En pausa',
+    b3Resume: 'Toca para seguir',
+    b3HintMove: 'Arrastra para mover · suelta para dejar caer',
+    b3HintMoveDesk: 'Mueve el mouse · clic para soltar',
+    b3HintBoard: 'Gira el tablero con dos dedos · o con la rueda de arriba',
+    b3HintBoardDesk: 'Gira el tablero: arrastra la rueda de arriba · o Q y E',
+    b3HintPiece: 'Sin soltar, deja el dedo quieto: ahora giras la pieza',
+    b3HintPieceDesk: 'Mantén el botón apretado: ahora giras la pieza',
+    b3HintLevel: 'Alinea el borde con el aro: verde es ¡Perfecto!',
+    b3Turns: 'gira',
+    b3Moves: 'mueve',
+    b3BdTipped: '💥 El disco se inclinó demasiado y se volcó.',
+    b3BdPieces: ['🧱 Ninguna pieza apilada.', '🧱 1 pieza apilada: +1.', '🧱 {n} piezas apiladas: +{n}.'],
+    b3BdPerfects: ['✨ Ningún perfecto.', '✨ 1 perfecto: +{p}.', '✨ {n} perfectos: +{p}.'],
+    b3BdStreak: '🔥 Racha perfecta más larga: {n}.',
+    b3BdHeight: '📏 Tu pila llegó a {m} m de alto.',
+    b3BdTime: '⏱ Tiempo: {t}.',
+    b3LivesAria: ['Sin vidas', 'Te queda 1 vida', 'Te quedan {n} vidas'],
+    b3Back: 'Volver a la portada',
+    b3Sound: 'Sonido',
+    b3Cubo: 'Cubo|firme y parejo',
+    b3Ladrillo: 'Ladrillo|ancho y estable',
+    b3Triangulo: 'Triángulo|nada se queda en su punta',
+    b3Ele: 'Ele|deja un escalón',
+    b3Bola: 'Bola|rueda',
+    b3Te: 'Te|una barra con un tope',
+    b3Domo: 'Domo|se mece',
+    b3Hexagono: 'Hexágono|casi rueda',
+    b3Zeta: 'Zeta|hace escalera',
+    b3Cruz: 'Cruz|cuatro puntas',
+  },
+};
+
+const EN = {
+  juego: {
+    nombre: 'The Wobbles', habilidad: 'spatial',
+    como: [
+      'Drag the piece over the disc and let go: its shadow shows where it lands. Before letting go you can turn it.',
+      'Turn the board to look at the pile from every side and spread the weight: if the disc leans too far, it tips over and the game ends.',
+      'You have 3 lives: each piece that falls off costs you one. You get less and less time to place them.',
+    ],
+    puntaje: 'Each piece that stays is worth 1 point. If the disc ends level it is a Perfect!, and each one in a row adds 1, 2, 3… up to 5 more.',
+    puntajeFinal: 'In the final your points count as they are, up to a maximum of 100.',
+    desempate: 'If tied, whoever took less time wins.',
+  },
+  ui: {
+    b3Lema: 'Stack it all. Let nothing fall.',
+    b3Step1: 'Move and drop|Drag the piece and let go. Its shadow shows where it lands.',
+    b3Step1Desk: 'Move and drop|Move the mouse and click. Its shadow shows where it lands.',
+    b3Step2: 'Turn the piece|Before letting go, rest your finger: now you turn it 360° and choose which side lands.',
+    b3Step2Desk: 'Turn the piece|Hold the button down and drag: you turn it 360° and choose which side lands.',
+    b3Step3: 'Turn the board|With two fingers, or by sliding the dial at the top.',
+    b3Step3Desk: 'Turn the board|Drag the dial at the top, or use Q and E.',
+    b3Step4: 'Balance|Rim and hoop lined up: Perfect! If it leans too far, it tips over.',
+    b3AutoNote: 'The piece drops by itself after {n} seconds',
+    b3LivesNote: '3 lives',
+    b3Play: '▶ Play',
+    b3Again: '↻ Play again',
+    b3New: 'New: {n}',
+    b3Perfect: 'Perfect!',
+    b3Perfects: ['Perfect!', 'Flawless!', 'Nailed it!', 'Spot on!', 'Great!', 'Awesome!', 'Masterful!', 'Bravo!', 'Amazing!'],
+    b3Streak: 'Perfect ×{n}',
+    b3Fell: 'It fell!',
+    b3LastLife: 'It fell! Last life!',
+    b3Auto: 'It dropped by itself!',
+    b3Tipping: 'It is tipping!',
+    b3Tipped: 'It tipped over!',
+    b3Over: 'Game over',
+    b3Paused: 'Paused',
+    b3Resume: 'Tap to continue',
+    b3HintMove: 'Drag to move · let go to drop',
+    b3HintMoveDesk: 'Move the mouse · click to drop',
+    b3HintBoard: 'Turn the board with two fingers · or with the dial at the top',
+    b3HintBoardDesk: 'Turn the board: drag the dial at the top · or Q and E',
+    b3HintPiece: 'Without letting go, rest your finger: now you turn the piece',
+    b3HintPieceDesk: 'Hold the button down: now you turn the piece',
+    b3HintLevel: 'Line the rim up with the hoop: green is Perfect!',
+    b3Turns: 'turn',
+    b3Moves: 'move',
+    b3BdTipped: '💥 The disc leaned too far and tipped over.',
+    b3BdPieces: ['🧱 No pieces stacked.', '🧱 1 piece stacked: +1.', '🧱 {n} pieces stacked: +{n}.'],
+    b3BdPerfects: ['✨ No perfects.', '✨ 1 perfect: +{p}.', '✨ {n} perfects: +{p}.'],
+    b3BdStreak: '🔥 Longest perfect streak: {n}.',
+    b3BdHeight: '📏 Your pile reached {m} m.',
+    b3BdTime: '⏱ Time: {t}.',
+    b3LivesAria: ['No lives left', '1 life left', '{n} lives left'],
+    b3Back: 'Back to the cover',
+    b3Sound: 'Sound',
+    b3Cubo: 'Cube|steady and even',
+    b3Ladrillo: 'Brick|wide and stable',
+    b3Triangulo: 'Triangle|nothing stays on its tip',
+    b3Ele: 'L-piece|leaves a step',
+    b3Bola: 'Ball|it rolls',
+    b3Te: 'T-piece|a bar with a bump',
+    b3Domo: 'Dome|it rocks',
+    b3Hexagono: 'Hexagon|it almost rolls',
+    b3Zeta: 'Z-piece|makes a staircase',
+    b3Cruz: 'Cross|four points',
+  },
+};
+
+const PT = {
+  juego: {
+    nombre: 'Tremelique', habilidad: 'espacial',
+    como: [
+      'Arraste a peça sobre o disco e solte: a sombra mostra onde ela cai. Antes de soltar você pode girá-la.',
+      'Gire o tabuleiro para ver a pilha de todos os lados e distribua o peso: se o disco inclinar demais, ele vira e o jogo acaba.',
+      'Você tem 3 vidas: cada peça que cai no vazio custa uma. Você tem cada vez menos tempo para posicioná-las.',
+    ],
+    puntaje: 'Cada peça que fica vale 1 ponto. Se o disco ficar nivelado é Perfeito!, e cada um seguido soma 1, 2, 3… até 5 a mais.',
+    puntajeFinal: 'Na final seus pontos contam como estão, até no máximo 100.',
+    desempate: 'Se empatar, ganha quem demorou menos.',
+  },
+  ui: {
+    b3Lema: 'Empilhe tudo. Não deixe nada cair.',
+    b3Step1: 'Mova e solte|Arraste a peça e solte. A sombra mostra onde ela cai.',
+    b3Step1Desk: 'Mova e solte|Mova o mouse e clique. A sombra mostra onde ela cai.',
+    b3Step2: 'Gire a peça|Antes de soltar, deixe o dedo parado: agora você a gira 360° e escolhe de que lado ela cai.',
+    b3Step2Desk: 'Gire a peça|Segure o botão e arraste: você a gira 360° e escolhe de que lado ela cai.',
+    b3Step3: 'Gire o tabuleiro|Com dois dedos, ou deslizando a roda de cima.',
+    b3Step3Desk: 'Gire o tabuleiro|Arraste a roda de cima, ou use Q e E.',
+    b3Step4: 'Equilibre|Borda e aro alinhados: Perfeito! Se inclinar demais, ele vira.',
+    b3AutoNote: 'A peça cai sozinha depois de {n} segundos',
+    b3LivesNote: '3 vidas',
+    b3Play: '▶ Jogar',
+    b3Again: '↻ De novo',
+    b3New: 'Nova: {n}',
+    b3Perfect: 'Perfeito!',
+    b3Perfects: ['Perfeito!', 'Impecável!', 'Cravou!', 'Exato!', 'Genial!', 'Demais!', 'Mandou bem!', 'Bravo!', 'Incrível!'],
+    b3Streak: 'Perfeito ×{n}',
+    b3Fell: 'Caiu!',
+    b3LastLife: 'Caiu! Última vida!',
+    b3Auto: 'Soltou sozinha!',
+    b3Tipping: 'Vai virar!',
+    b3Tipped: 'Virou!',
+    b3Over: 'Fim de jogo',
+    b3Paused: 'Pausado',
+    b3Resume: 'Toque para continuar',
+    b3HintMove: 'Arraste para mover · solte para deixar cair',
+    b3HintMoveDesk: 'Mova o mouse · clique para soltar',
+    b3HintBoard: 'Gire o tabuleiro com dois dedos · ou com a roda de cima',
+    b3HintBoardDesk: 'Gire o tabuleiro: arraste a roda de cima · ou Q e E',
+    b3HintPiece: 'Sem soltar, deixe o dedo parado: agora você gira a peça',
+    b3HintPieceDesk: 'Segure o botão: agora você gira a peça',
+    b3HintLevel: 'Alinhe a borda com o aro: verde é Perfeito!',
+    b3Turns: 'gira',
+    b3Moves: 'move',
+    b3BdTipped: '💥 O disco inclinou demais e virou.',
+    b3BdPieces: ['🧱 Nenhuma peça empilhada.', '🧱 1 peça empilhada: +1.', '🧱 {n} peças empilhadas: +{n}.'],
+    b3BdPerfects: ['✨ Nenhum perfeito.', '✨ 1 perfeito: +{p}.', '✨ {n} perfeitos: +{p}.'],
+    b3BdStreak: '🔥 Maior sequência perfeita: {n}.',
+    b3BdHeight: '📏 Sua pilha chegou a {m} m de altura.',
+    b3BdTime: '⏱ Tempo: {t}.',
+    b3LivesAria: ['Sem vidas', 'Resta 1 vida', 'Restam {n} vidas'],
+    b3Back: 'Voltar à capa',
+    b3Sound: 'Som',
+    b3Cubo: 'Cubo|firme e certinho',
+    b3Ladrillo: 'Tijolo|largo e estável',
+    b3Triangulo: 'Triângulo|nada fica na sua ponta',
+    b3Ele: 'Ele|deixa um degrau',
+    b3Bola: 'Bola|rola',
+    b3Te: 'Tê|uma barra com um ressalto',
+    b3Domo: 'Cúpula|balança',
+    b3Hexagono: 'Hexágono|quase rola',
+    b3Zeta: 'Zê|faz uma escada',
+    b3Cruz: 'Cruz|quatro pontas',
+  },
+};
+const TEXTS = { es: ES, en: EN, pt: PT };
+/** The language: `?lang=en` in the address, else the one the site saved on this phone, else Spanish. */
+const LANG = (() => {
+  try { const l = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('juegos-de-salon:lang') || 'es').toLowerCase().slice(0, 2); return TEXTS[l] ? l : 'es'; } catch (_) { return 'es'; }
+})();
+const GAME = TEXTS[LANG].juego, UI = TEXTS[LANG].ui;
+/** A text with its {blanks} filled in. */
+const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k]);
+/** The text of a key, for a mouse if there is one and the key has a text for it. */
+const FINE = matchMedia('(pointer: fine)').matches;
+const ui = (key, o) => { const s = (FINE && UI[key + 'Desk']) || UI[key]; return o ? fmt(s, o) : s; };
+/** One of a key's plural forms [none, one, many]. */
+const some = (key, n, o) => fmt(UI[key][n === 1 ? 1 : n ? 2 : 0], { n, ...o });
+/** A piece's [name, line]. */
+const kindText = kind => UI['b3' + kind[0].toUpperCase() + kind.slice(1)].split('|');
+/** A number with one decimal, as the language writes it. */
+const decimal = v => (LANG === 'en' ? v.toFixed(1) : v.toFixed(1).replace('.', ','));
+document.documentElement.lang = LANG; document.title = `⚖️ ${GAME.nombre}`;
+
+/* ================================================================== */
+/* The view: Babel's solid blocks in isometric view, sound, input      */
+/* ================================================================== */
+const $ = s => document.querySelector(s);
+const DISPLAY = "Bangers, Impact, 'Arial Black', sans-serif", BODY = "Nunito, system-ui, -apple-system, sans-serif";
+const VW = 400, VH = 600, C30 = 0.8660254037844386, NEON = [[255, 46, 136], [255, 122, 26], [255, 210, 63], [157, 255, 58], [46, 230, 214], [138, 77, 255]];
+const rgb = ([r, g, b], a = 1) => `rgba(${r},${g},${b},${a})`;
+// A balanced drop says one of the cheers (the owner, 2026-11-18), never the same twice in a row, while flag wobbles-cheers is on (../game.js); off, ¡Perfecto!
+let lastCheer = -1;
+const cheer = list => { if (!window.__wobblesCheers) return list[0]; const free = lastCheer >= 0 ? list.length - 1 : list.length; let i = Math.floor(Math.random() * free); if (lastCheer >= 0 && i >= lastCheer) i++; lastCheer = i; return list[i]; };
+const sombra = (col, k) => col.map(v => Math.round(v * k));
+const claro = (col, k) => col.map(v => Math.round(v + (255 - v) * k));
+const neonAt = k => { const i = Math.floor(k) % 6, f = k - Math.floor(k), a = NEON[i], b = NEON[(i + 1) % 6]; return a.map((v, j) => Math.round(v + (b[j] - v) * f)); };
+const BASE_COLOR = [58, 20, 100], TRAY = [86, 44, 150], SHADOW = 'rgba(14,2,34,0.62)';
+const cv = $('#cv');
+/** `c` is the screen canvas, or for a moment a text sprite's while it is made. */
+let c = cv.getContext('2d');
+let dpr = 1, sc = 1, ox = 0, oy = 0, vw = 0, vh = 0, zoom = 1;
+/* ---------- drawing speed (docs/games/wobbles-3d.md, "Performance") ----------
+ * The canvas has at most 2 device pixels per CSS pixel (`RES`); `pace` lowers it to 1.5 and then 1 when
+ * frames come slower than about 42 a second for two seconds while playing. Lab: `?res=3|2|1` fixes it. */
+const qp = new URLSearchParams(location.search), RES_PARAM = Number(qp.get('res')) || 0;
+let RES = RES_PARAM || 2;
+function resize() {
+  const r = cv.getBoundingClientRect();
+  dpr = Math.min(window.devicePixelRatio || 1, RES); vw = r.width; vh = r.height; TEXTS_DRAWN.clear(); heartsWere = '';
+  cv.width = Math.round(vw * dpr); cv.height = Math.round(vh * dpr);
+  hv.width = Math.round(HEARTS_W * dpr); hv.height = Math.round(HEARTS_H * dpr);
+  sc = Math.min(vw / VW, vh / VH); ox = (vw - VW * sc) / 2; oy = (vh - VH * sc) / 2;
+}
+/**
+ * The camera, Babel's: seen from above and one side, x going right and down, z left and down, y up.
+ * Here it also turns about the vertical: `yaw` is how far, and (c, s) its cosine and sine. `CAM` is
+ * swapped to draw the small previews. The scene zooms about (200, ZY).
+ */
+const MAIN = { cx: 200, cy: 430, u: 122, c: 1, s: 0 }, ZY = 556;
+let CAM = MAIN, yaw = 0;
+const proj = (X, Y, Z) => { const x = X * CAM.c - Z * CAM.s, z = X * CAM.s + Z * CAM.c; return [CAM.cx + (x - z) * C30 * CAM.u, CAM.cy + (x + z) * 0.5 * CAM.u - Y * CAM.u]; };
+/** How much a direction of the world looks at the camera: positive, it faces it. */
+const facing = (x, y, z) => x * (CAM.c + CAM.s) + y + z * (CAM.c - CAM.s);
+/** A step across the screen plane (right, toward the viewer), as a step over the world's ground. */
+const ground = (xr, zr) => [xr * CAM.c + zr * CAM.s, zr * CAM.c - xr * CAM.s];
+/** How many blurs were drawn (the lab's check: 0 a frame while playing; only text sprites, made once, have one). */
+let blurs = 0;
+/**
+ * A glow without a blur: the path already made, stroked four times, each wider and fainter, before the line
+ * or shape itself goes on top. `k`: how strong (the line's own alpha); `w`: the line's width.
+ */
+const GLOW = [[1, 0.04], [0.72, 0.06], [0.46, 0.09], [0.22, 0.13]];
+function glowLine(color, blur, k = 1, w = c.lineWidth) {
+  const b = blur / zoom, a = c.globalAlpha * k * (w > 0 ? Math.min(1, 1.6 * w / b) : 1);
+  if (a < 0.004) return;
+  c.save(); c.strokeStyle = color; c.lineJoin = 'round'; c.lineCap = 'round';
+  for (const [r, f] of GLOW) { c.globalAlpha = a * f; c.lineWidth = w + 2 * b * r; c.stroke(); }
+  c.restore();
+}
+/** A glowing text: drawn once with a real blur into a canvas of its own (only once the fonts are in), then only copied. */
+const TEXTS_DRAWN = new Map();
+let fontsIn = !document.fonts;
+if (document.fonts) document.fonts.ready.then(() => { fontsIn = true; TEXTS_DRAWN.clear(); });
+function glowText(s, x, y, size, color, blur) {
+  const k = dpr * sc, key = `${s}|${size}|${color}|${blur}|${k.toFixed(2)}`;
+  let t = TEXTS_DRAWN.get(key);
+  if (!t) {
+    const font = `${size}px ${DISPLAY}`; c.font = font;
+    const pad = blur * 1.5 + 3, w = c.measureText(s).width + 2 * pad, h = size * 1.4 + 2 * pad, el = document.createElement('canvas');
+    el.width = Math.ceil(w * k); el.height = Math.ceil(h * k);
+    const main = c; c = el.getContext('2d');
+    c.setTransform(k, 0, 0, k, 0, 0); c.shadowColor = color; c.shadowBlur = blur * k; blurs++;
+    c.font = font; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(s, w / 2, h / 2);
+    c = main;
+    t = { el, w, h };
+    if (fontsIn) { if (TEXTS_DRAWN.size > 120) TEXTS_DRAWN.clear(); TEXTS_DRAWN.set(key, t); }
+  }
+  c.drawImage(t.el, x - t.w / 2, y - t.h / 2, t.w, t.h);
+}
+/**
+ * A soft shadow in the shape of the path that `trace` draws: the shape itself is drawn far off the
+ * canvas and only its blurred shadow lands in place (the one blur every browser's canvas has). What it
+ * may fall on is whatever clip is set.
+ */
+let shadowAlpha = 1;   // how much of the shadow shows (it fades in with the piece that casts it)
+/** The shadow without a blur: the shape filled, with its edge softened by wide faint strokes (a blur here cost most of a phone's frame). */
+function softShadow(trace) {
+  c.save(); c.globalAlpha *= shadowAlpha; c.beginPath(); trace(); c.closePath();
+  const a = c.globalAlpha; c.fillStyle = c.strokeStyle = SHADOW; c.lineJoin = 'round';
+  c.globalAlpha = a * 0.62; c.fill();
+  c.globalAlpha = a * 0.3; c.lineWidth = 5 / zoom; c.stroke();
+  c.globalAlpha = a * 0.14; c.lineWidth = 11 / zoom; c.stroke();
+  c.restore();
+}
+function poly(pts, fill) { c.beginPath(); pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.closePath(); if (fill) { c.fillStyle = fill; c.fill(); } }
+function txt(s, x, y, size, color = '#fff', body = false, align = 'center') {
+  c.font = body ? `900 ${size}px ${BODY}` : `${size}px ${DISPLAY}`;
+  c.textAlign = align; c.textBaseline = 'middle'; c.fillStyle = color; c.fillText(s, x, y);
+}
+
+/**
+ * The light: above, and more from the viewer's right than from the left, as on Babel's slabs. It goes
+ * around with the camera, so whichever side is looked at is lit the same way.
+ */
+const LX = 0.464, LY = 0.877, LZ = 0.124;
+const lit = (nx, ny, nz) => 0.47 + 0.68 * Math.max(0, (nx * CAM.c - nz * CAM.s) * LX + ny * LY + (nx * CAM.s + nz * CAM.c) * LZ);
+const tint = (col, s) => (s <= 1 ? sombra(col, s) : claro(col, Math.min(1, (s - 1) * 1.5)));
+/**
+ * A solid: its faces that look at the camera, each shaded by where it looks, with a lighter line around.
+ * One cube of a piece made of blocks leaves out the faces it shares with the next cube (`hide`) and the
+ * lines where two cubes meet flat (`seams`), so the piece reads as one.
+ * `cast`: the shadow of the piece in hand, which every face under it that looks up receives.
+ */
+function drawSolid(b, col, { alpha = 1, dim = 1, line = 0.55, fill = 1 } = {}, cast = null) {
+  const sh = b.shape, C = CAM, kx = C30 * C.u, ky = 0.5 * C.u, at = b.seams ? [] : null;
+  const under = cast && b.miny < cast.y && !(b.maxx < cast.x0 || b.minx > cast.x1 || b.maxz < cast.z0 || b.minz > cast.z1);
+  c.lineJoin = 'round'; c.lineCap = 'round'; c.lineWidth = 1 / zoom;
+  for (let i = 0; i < sh.faces.length; i++) {
+    const nx = b.nx[i], ny = b.ny[i], nz = b.nz[i];
+    if ((b.hide && b.hide[i]) || facing(nx, ny, nz) <= 1e-6) continue;
+    const f = sh.faces[i], path = new Path2D();
+    for (let k = 0; k < f.length; k++) {
+      const v = f[k], x = b.px[v] * C.c - b.pz[v] * C.s, z = b.px[v] * C.s + b.pz[v] * C.c, sx = C.cx + (x - z) * kx, sy = C.cy + (x + z) * ky - b.py[v] * C.u;
+      if (k) path.lineTo(sx, sy); else path.moveTo(sx, sy);
+      if (at) { at[2 * k] = sx; at[2 * k + 1] = sy; }
+    }
+    path.closePath();
+    c.fillStyle = rgb(tint(col, lit(nx, ny, nz) * dim), alpha * fill); c.fill(path);
+    if (under && ny > 0.08) {
+      // The shadow falls straight down: its outline, laid on this face's plane and cut to the face
+      const v = f[0], d = nx * b.px[v] + ny * b.py[v] + nz * b.pz[v];
+      c.save(); c.clip(path);
+      softShadow(() => { for (const hull of cast.hulls) { hull.forEach(([x, z], k) => { const p = proj(x, (d - nx * x - nz * z) / ny, z); if (k) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); } });
+      c.restore();
+    }
+    if (!line) continue;
+    c.strokeStyle = rgb(claro(col, 0.6), alpha * line);
+    if (!at) { c.stroke(path); continue; }
+    c.beginPath();
+    for (let k = 0; k < f.length; k++) if (!b.seams[i][k]) { const j = (k + 1) % f.length; c.moveTo(at[2 * k], at[2 * k + 1]); c.lineTo(at[2 * j], at[2 * j + 1]); }
+    c.stroke();
+  }
+}
+/** A ball: a lit disc, with three pairs of dots that turn with it, so it is seen to roll. */
+function drawBall(b, col, { alpha = 1, dim = 1 } = {}) {
+  const [x, y] = proj(b.x, b.y, b.z), rad = b.shape.r, R = rad * CAM.u, g = c.createRadialGradient(x + R * 0.2, y - R * 0.42, R * 0.05, x, y, R);
+  g.addColorStop(0, rgb(tint(col, 1.5 * dim), alpha)); g.addColorStop(0.55, rgb(tint(col, 0.98 * dim), alpha)); g.addColorStop(1, rgb(tint(col, 0.52 * dim), alpha));
+  c.beginPath(); c.arc(x, y, R, 0, 7); c.fillStyle = g; c.fill();
+  c.fillStyle = rgb(sombra(col, 0.42 * dim), 0.8 * alpha);
+  for (let j = 0; j < 3; j++) for (const s of [1, -1]) {
+    const vx = s * b.r[j], vy = s * b.r[3 + j], vz = s * b.r[6 + j];
+    if (facing(vx, vy, vz) <= 0.35) continue;
+    const [dx, dy] = proj(b.x + vx * rad * 0.94, b.y + vy * rad * 0.94, b.z + vz * rad * 0.94);
+    c.beginPath(); c.arc(dx, dy, R * 0.13, 0, 7); c.fill();
+  }
+  c.lineWidth = 1 / zoom; c.strokeStyle = rgb(claro(col, 0.6), 0.55 * alpha); c.beginPath(); c.arc(x, y, R, 0, 7); c.stroke();
+}
+/** One of the solids a piece is drawn with (a ball does not take the shadow of the piece in hand: it is too small to tell). */
+function drawPiece(kind, b, o = {}, cast = null) {
+  if (b.shape.ball) drawBall(b, KINDS[kind].color, o); else drawSolid(b, KINDS[kind].color, o, cast);
+}
+/** A solid's outline seen from straight above: the convex hull of its corners over the ground, as [x, z] (a ball's: a circle). */
+function outline(b) {
+  if (b.shape.ball) return ROUND.filter((_, i) => i % 2 === 0).map(([co, si]) => [b.x + co * b.shape.r, b.z + si * b.shape.r]);
+  const pts = b.px.map((x, i) => [x, b.pz[i]]).sort((p, q) => p[0] - q[0] || p[1] - q[1]), out = [];
+  const left = (o, a, p) => (a[0] - o[0]) * (p[1] - o[1]) - (a[1] - o[1]) * (p[0] - o[0]) <= 1e-12;
+  for (const p of pts) { while (out.length >= 2 && left(out[out.length - 2], out[out.length - 1], p)) out.pop(); out.push(p); }
+  const base = out.length + 1;
+  for (let i = pts.length - 2; i >= 0; i--) { while (out.length >= base && left(out[out.length - 2], out[out.length - 1], pts[i])) out.pop(); out.push(pts[i]); }
+  out.pop();
+  return out;
+}
+
+/** The outline on screen of a piece's solids, as one path: the convex hull of each solid's corners (a ball: its circle). */
+function silhouette(looks) {
+  c.beginPath();
+  for (const b of looks) {
+    if (b.shape.ball) { const [x, y] = proj(b.x, b.y, b.z), R = b.shape.r * CAM.u; c.moveTo(x + R, y); c.arc(x, y, R, 0, 7); continue; }
+    const pts = b.px.map((_, i) => proj(b.px[i], b.py[i], b.pz[i])).sort((p, q) => p[0] - q[0] || p[1] - q[1]), out = [];
+    const turn = (o, a, p) => (a[0] - o[0]) * (p[1] - o[1]) - (a[1] - o[1]) * (p[0] - o[0]) <= 0;
+    for (const p of pts) { while (out.length >= 2 && turn(out[out.length - 2], out[out.length - 1], p)) out.pop(); out.push(p); }
+    const base = out.length + 1;
+    for (let i = pts.length - 2; i >= 0; i--) { while (out.length >= base && turn(out[out.length - 2], out[out.length - 1], pts[i])) out.pop(); out.push(pts[i]); }
+    out.pop();
+    out.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y))); c.closePath();
+  }
+}
+/**
+ * The order to paint the solids in, far to near. Two convex solids that do not overlap are parted by a
+ * plane, and the physics' own test gives it (`meets`: the separating axis, or for a ball the line to its
+ * centre): the one on the camera's side of it goes later. Only pairs that overlap on screen matter. If
+ * the rules ever make a ring, the furthest goes first.
+ */
+function paintOrder(items) {
+  const n = items.length, next = items.map(() => []), deg = new Array(n).fill(0), out = [], C = CAM;
+  for (const it of items) {
+    const b = it.b; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    if (b.shape.ball) { const xr = b.x * C.c - b.z * C.s, zr = b.x * C.s + b.z * C.c, x = xr - zr, y = (xr + zr) * 0.5 - b.y, r = b.shape.r; x0 = x - 1.42 * r; x1 = x + 1.42 * r; y0 = y - 1.23 * r; y1 = y + 1.23 * r; }
+    else for (let i = 0; i < b.px.length; i++) {
+      const xr = b.px[i] * C.c - b.pz[i] * C.s, zr = b.px[i] * C.s + b.pz[i] * C.c, x = xr - zr, y = (xr + zr) * 0.5 - b.py[i];
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    it.x0 = x0; it.x1 = x1; it.y0 = y0; it.y1 = y1; it.depth = facing(b.x, b.y, b.z);
+  }
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const p = items[i], q = items[j];
+    if (p.x1 < q.x0 || q.x1 < p.x0 || p.y1 < q.y0 || q.y1 < p.y0) continue;
+    meets(p.b, q.b);
+    const d = facing(sX, sY, sZ);
+    if (d > 1e-4) { next[i].push(j); deg[j]++; } else if (d < -1e-4) { next[j].push(i); deg[i]++; }
+  }
+  const left = new Set(items.keys());
+  while (left.size) {
+    let pick = -1, far = -1;
+    for (const i of left) { if (far < 0 || items[i].depth < items[far].depth) far = i; if (deg[i] <= 0 && (pick < 0 || items[i].depth < items[pick].depth)) pick = i; }
+    if (pick < 0) pick = far;
+    left.delete(pick); out.push(items[pick]);
+    for (const j of next[pick]) deg[j]--;
+  }
+  return out;
+}
+
+/* ---------- the disc, drawn round (the physics has it with 24 sides) ---------- */
+const ROUND = Array.from({ length: 48 }, (_, i) => [Math.cos(i * Math.PI / 24), Math.sin(i * Math.PI / 24)]);
+let discY = 0;   // how far the disc has dropped from its pivot (only once it has gone over)
+const onDisc = (r, x, y, z) => proj(r[0] * x + r[1] * y + r[2] * z, discY + r[3] * x + r[4] * y + r[5] * z, r[6] * x + r[7] * y + r[8] * z);
+function circlePath(r, rad, y) { c.beginPath(); for (let i = 0; i < 48; i++) { const p = onDisc(r, ROUND[i][0] * rad, y, ROUND[i][1] * rad); if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); } c.closePath(); }
+/** The direction in the world of the disc's own (x, 0, z). */
+const outward = (r, x, z) => [r[0] * x + r[2] * z, r[3] * x + r[5] * z, r[6] * x + r[8] * z];
+function drawDisc(pl, level, cast) {
+  const r = pl.r;
+  for (let i = 0; i < 48; i++) {
+    const [c0, s0] = ROUND[i], [c1, s1] = ROUND[(i + 1) % 48], n = outward(r, (c0 + c1) / 2, (s0 + s1) / 2);
+    if (facing(n[0], n[1], n[2]) <= 0) continue;
+    poly([onDisc(r, c0 * RAD, 0, s0 * RAD), onDisc(r, c1 * RAD, 0, s1 * RAD), onDisc(r, c1 * RAD, -TH, s1 * RAD), onDisc(r, c0 * RAD, -TH, s0 * RAD)], rgb(sombra(TRAY, lit(n[0], n[1], n[2]) * 0.9)));
+  }
+  // Lighter at the back, whichever way the camera looks
+  const [bx, bz] = ground(-0.7, -0.7), a = onDisc(r, bx, 0, bz), b = onDisc(r, -bx, 0, -bz), g = c.createLinearGradient(a[0], a[1], b[0], b[1]);
+  g.addColorStop(0, rgb(claro(TRAY, 0.34))); g.addColorStop(1, rgb(claro(TRAY, 0.04)));
+  circlePath(r, RAD, 0); c.fillStyle = g; c.fill();
+  // Rings and a cross to aim by
+  c.lineWidth = 1 / zoom; c.strokeStyle = 'rgba(255,255,255,0.13)';
+  for (const rad of [0.33 * RAD, 0.66 * RAD]) { circlePath(r, rad, 0); c.stroke(); }
+  c.strokeStyle = 'rgba(255,255,255,0.2)'; c.beginPath();
+  c.moveTo(...onDisc(r, -RAD + RIM_W, 0, 0)); c.lineTo(...onDisc(r, RAD - RIM_W, 0, 0)); c.moveTo(...onDisc(r, 0, 0, -RAD + RIM_W)); c.lineTo(...onDisc(r, 0, 0, RAD - RIM_W)); c.stroke();
+  if (cast) {
+    // The shadow on the disc itself: the outline laid on its leaning plane
+    c.save(); circlePath(r, RAD - RIM_W, 0); c.clip();
+    softShadow(() => { for (const hull of cast.hulls) { hull.forEach(([x, z], k) => { const p = proj(x, -(pl.ux * x + pl.uz * z) / pl.uy, z); if (k) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); } });
+    c.restore();
+  }
+  const col = level ? '#9dff3a' : '#ffffff';
+  circlePath(r, 0.05, 0); c.lineWidth = 0; glowLine(col, level ? 14 : 5, 1, 0); c.fillStyle = col; c.fill();
+}
+/**
+ * The level ring: a hoop around the disc that never leans, at the height of the wall's top when the disc
+ * is level. A leaning disc dips under it on its heavy side and rises over it on the other, so how far
+ * off it is, and which way, shows from any side; a pink mark joins the hoop to the wall where the disc
+ * is lowest. Level, the wall's edge sits on the hoop and both light up green (the 2D plank's green knob).
+ * Drawn in two halves: the one behind the pile, and the one in front of it.
+ */
+function levelRing(pl, front) {
+  if (S.capsized) return;
+  const r = pl.r, rr = RAD + 0.05, a = Math.min(1, verde), lean = Math.sqrt(pl.ux * pl.ux + pl.uz * pl.uz);
+  // Close to going over, the hoop turns pink and beats
+  const danger = Math.max(0, Math.min(1, (lean - 0.26) / 0.14)), beat = danger * (0.6 + 0.4 * Math.sin(clock * 14));
+  const half = fn => { c.beginPath(); for (let i = 0; i < 48; i++) { const [c0, s0] = ROUND[i], [c1, s1] = ROUND[(i + 1) % 48]; if ((facing(c0 + c1, 0, s0 + s1) > 0) === front) { c.moveTo(...fn(c0, s0)); c.lineTo(...fn(c1, s1)); } } };
+  c.lineCap = 'round';
+  // The hoop
+  half((co, si) => proj(co * rr, RIM, si * rr));
+  if (danger > 0) { c.strokeStyle = `rgba(255,46,136,${0.3 + 0.45 * beat})`; c.lineWidth = (1.1 + 1.2 * beat) / zoom; glowLine('#ff2e88', 3 + 7 * beat, 0.3 + 0.45 * beat); c.stroke(); }
+  else {
+    c.strokeStyle = rgb([255, 255, 255].map((v, k) => Math.round(v + ([190, 255, 120][k] - v) * a)), 0.2 + 0.4 * a); c.lineWidth = (1.1 + 0.5 * a) / zoom;
+    if (a > 0.03) glowLine('#9dff3a', 3 + 4 * a, 0.2 + 0.4 * a); c.stroke();
+  }
+  // Level: the wall's edge lights up green too
+  if (a > 0.03) { half((co, si) => onDisc(r, co * RAD, RIM, si * RAD)); c.lineWidth = (1.4 + Math.max(0, verde - 1) * 1.6) / zoom; glowLine('#9dff3a', 4 + 5 * a, 0.55 * a); c.strokeStyle = `rgba(190,255,120,${0.55 * a})`; c.stroke(); }
+  // Not level: where the disc is lowest, a pink mark from the hoop down to the wall, longer the more it leans
+  if (lean > PERFECT && S.phase === 'play') {
+    const dx = pl.ux / lean, dz = pl.uz / lean;
+    if ((facing(dx, 0, dz) > 0) === front) {
+      const p = proj(dx * rr, RIM, dz * rr), q = onDisc(r, dx * rr, RIM, dz * rr), k = Math.min(1, (lean - PERFECT) / 0.08 + 0.35);
+      c.lineWidth = 2 / zoom; c.beginPath(); c.moveTo(p[0], p[1]); c.lineTo(q[0], q[1]); glowLine('#ff2e88', 4, 0.7 * k); c.strokeStyle = `rgba(255,46,136,${0.7 * k})`; c.stroke();
+      c.beginPath(); c.arc(q[0], q[1], 3.2 / zoom, 0, 7); glowLine('#ff2e88', 4, 0.7 * k, 0); c.fillStyle = `rgba(255,46,136,${0.7 * k})`; c.fill();
+    }
+  }
+}
+
+/* ---------- effects (only what is seen: they never touch the game) ---------- */
+let S = null, state = 'ready', acc = 0, clock = 0;
+let chispas = [], anillos = [], floats = [], says = [], banner = null, shake = 0, verde = 0;
+const STARS = Array.from({ length: 70 }, (_, i) => { const n = k => { const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return v - Math.floor(v); }; return { x: -400 + n(1) * 1200, y: -60 + n(2) * 520, r: 0.5 + n(3) * 1.1, f: 0.6 + n(4) * 2, p: n(5) * 6 }; });
+function sparks(x, y, z, n, colors, speed = 0.9) {
+  for (let k = 0; k < n; k++) { const a = (k / n) * 6.2832 + Math.random(); chispas.push({ x, y, z, vx: Math.cos(a) * speed, vy: 1.1 + (k % 3) * 0.45, vz: Math.sin(a) * speed, t: 0, color: colors[k % colors.length] }); }
+}
+const say = (text, color = '#ffd23f', size = 34) => { says = says.filter(s => s.t < 0.4); says.push({ text, color, size, t: 0 }); };
+
+/* ---------- sound: synthesized, like the site's sound.js ---------- */
+const MUTE_KEY = 'balanza-lab:muted';
+let actx = null, muted = false;
+try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (_) { /* no storage */ }
+function audio() {
+  if (muted) return null;
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state !== 'running') actx.resume().catch(() => {});
+    return actx;
+  } catch (_) { return null; }
+}
+function tone({ freq = 440, to = null, type = 'sine', dur = 0.15, gain = 0.2, delay = 0 }) {
+  const a = audio(); if (!a) return;
+  const t0 = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+let noiseBuf = null;
+function noise({ dur = 0.3, gain = 0.2, from = 900, to = 200 }) {
+  const a = audio(); if (!a) return;
+  if (!noiseBuf) { noiseBuf = a.createBuffer(1, a.sampleRate, a.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t0 = a.currentTime, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.setValueAtTime(from, t0); f.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  src.connect(f).connect(g).connect(a.destination); src.start(t0); src.stop(t0 + dur + 0.05);
+}
+const SCALE = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568];
+const SFX = {
+  drop: () => tone({ freq: 620, to: 330, dur: 0.09, gain: 0.07 }),
+  hit: m => tone({ freq: Math.max(70, 190 - m * 38), to: 55, dur: 0.16, gain: Math.min(0.3, 0.1 + m * 0.07) }),
+  tick: () => tone({ freq: 660, dur: 0.05, gain: 0.05, type: 'triangle' }),
+  perfect: n => { const i = Math.min(n - 1, 5); tone({ freq: SCALE[i], dur: 0.12, gain: 0.12, type: 'triangle' }); tone({ freq: SCALE[i + 2], dur: 0.2, gain: 0.12, type: 'triangle', delay: 0.08 }); },
+  fall: () => { noise({ dur: 0.4, gain: 0.25, from: 1400, to: 250 }); tone({ freq: 300, to: 80, dur: 0.35, gain: 0.12, type: 'sawtooth' }); },
+  pop: i => tone({ freq: SCALE[Math.min(i, 8)], dur: 0.1, gain: 0.09, type: 'triangle' }),
+  round: () => { tone({ freq: 392, dur: 0.12, gain: 0.1, type: 'square' }); tone({ freq: 523, dur: 0.12, gain: 0.1, type: 'square', delay: 0.11 }); tone({ freq: 784, dur: 0.25, gain: 0.1, type: 'square', delay: 0.22 }); },
+  over: () => { tone({ freq: 392, to: 196, dur: 0.5, gain: 0.14, type: 'sawtooth' }); tone({ freq: 196, to: 98, dur: 0.7, gain: 0.14, type: 'sawtooth', delay: 0.35 }); },
+};
+
+
+/** What the game says happened, turned into light and sound. */
+function onEvent(e) {
+  if (e.type === 'drop') { SFX.drop(); if (e.auto) say(ui('b3Auto'), '#ffd23f', 26); }
+  else if (e.type === 'hit') { sparks(e.x, e.y, e.z, 6, [KINDS[e.kind].color], 0.6); SFX.hit(e.m); }
+  else if (e.type === 'score') {
+    floats.push({ x: e.x, y: e.y + 0.12, z: e.z, text: `+${1 + e.bonus}`, color: e.perfect ? '#9dff3a' : '#ffd23f', t: 0 });
+    if (e.perfect) {
+      say(`${e.streak > 1 ? ui('b3Streak', { n: e.streak }) : cheer(UI.b3Perfects)}  +${1 + e.bonus}`, '#9dff3a'); SFX.perfect(e.streak); anillos.push({ t: 0 }); verde = 2;
+      // Sparks all around the rim, in the house's colors
+      const r = S.plat.r;
+      for (let k = 0; k < 16; k++) { const co = ROUND[k * 3][0] * RAD, si = ROUND[k * 3][1] * RAD; sparks(r[0] * co + r[2] * si, r[3] * co + r[5] * si + RIM, r[6] * co + r[8] * si, 1, [k % 2 ? [157, 255, 58] : NEON[k % 6]], 0.5); }
+    } else SFX.tick();
+  } else if (e.type === 'warn') { says = []; say(ui('b3Tipping'), '#ff2e88', 30); SFX.tick(); if (navigator.vibrate) navigator.vibrate(30); }
+  else if (e.type === 'capsize') { shake = 0.6; says = []; say(ui('b3Tipped'), '#ff2e88', 46); SFX.over(); if (navigator.vibrate) navigator.vibrate(120); }
+  else if (e.type === 'fall') {
+    if (e.counts) SFX.fall();
+    if (e.over) { shake = 0.5; says = []; say(ui('b3Over'), '#ff2e88', 44); SFX.over(); if (navigator.vibrate) navigator.vibrate(90); }
+    else if (e.counts) { shake = 0.35; says = []; say(ui(e.lives === 1 ? 'b3LastLife' : 'b3Fell'), '#ff2e88', 30); if (navigator.vibrate) navigator.vibrate(60); }
+  } else if (e.type === 'debut') { banner = { kind: e.kind, t: 0 }; SFX.round(); }
+}
+function fx(dt) {
+  for (const s of chispas) { s.t += dt; s.vy -= 6 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.z += s.vz * dt; }
+  chispas = chispas.filter(s => s.t < 0.7);
+  for (const a of anillos) a.t += dt; anillos = anillos.filter(a => a.t < 0.6);
+  for (const f of floats) f.t += dt; floats = floats.filter(f => f.t < 0.9);
+  for (const s of says) s.t += dt; says = says.filter(s => s.t < 1.3);
+  if (banner && (banner.t += dt) > 2.4) banner = null;
+  shake = Math.max(0, shake - dt);
+  // The green light of a level disc (the 2D plank's knob): it comes on and goes off softly, and a perfect drop flares it
+  if (S) { const pl = S.plat, on = S.phase === 'play' && pl.ux * pl.ux + pl.uz * pl.uz < PERFECT * PERFECT ? 1 : 0; verde += (on - verde) * Math.min(1, dt * (verde > 1 ? 3 : 8)); }
+  // The camera pulls back as the pile grows, so the piece in hand stays in sight
+  if (S) { const top = MAIN.cy - (S.hover + 0.65) * MAIN.u - 0.71 * RAD * MAIN.u; zoom += (Math.max(0.4, Math.min(1, (ZY - 50) / (ZY - top))) - zoom) * Math.min(1, dt * 4); }
+}
+
+/* ---------- the scene ---------- */
+/** The piece in hand: a body of the view's own, placed each frame from the game's, and the shadow it casts (the outline of each solid it is drawn with). */
+let hand = null, handOf = null, handAt = 0;
+const ENTER_S = 0.45;
+function holdPiece() {
+  const h = S.held;
+  if (h !== handOf) { handOf = h; hand = mkBody(-1, h.form, 0, 0, 0); handAt = S.t; }
+  // It comes in softly: it fades in while it settles the last bit down into the hand (by the game's clock, so a pause holds it)
+  const k = Math.min(1, (S.t - handAt) / ENTER_S), a = 1 - (1 - k) * (1 - k);
+  hand.x = h.x; hand.y = S.hover + (1 - a) * 0.3; hand.z = h.z; hand.qw = h.qw; hand.qx = h.qx; hand.qy = h.qy; hand.qz = h.qz; place(hand);
+  return { hulls: hand.looks.map(outline), x0: hand.minx, x1: hand.maxx, z0: hand.minz, z1: hand.maxz, y: hand.miny, a };
+}
+/**
+ * The dial that turns the view: where it is (x0 to x1, `h` tall) and how far a pixel turns. It sits at the
+ * top, over the next pieces (`TOP_PX` CSS pixels below the canvas top, which starts under the header): at the bottom, an iPhone's swipe
+ * up there leaves the app (the owner). Faded while it is not being used, so it does not draw the eye.
+ */
+const DIAL = { x0: 56, x1: 344, h: 36, gain: 0.012, TOP_PX: 6, IDLE: 0.4 };
+const dialY0 = () => (DIAL.TOP_PX - oy) / sc;
+function drawDial() {
+  const y0 = dialY0(), mid = y0 + DIAL.h / 2, on = !!(turning || twist || opening != null);
+  const A = on ? 1 : DIAL.IDLE;
+  c.save(); c.globalAlpha = A;
+  c.fillStyle = on ? 'rgba(46,230,214,0.18)' : 'rgba(0,0,0,0.32)'; c.strokeStyle = on ? 'rgba(46,230,214,0.7)' : 'rgba(255,255,255,0.18)'; c.lineWidth = 1;
+  c.beginPath(); c.roundRect(DIAL.x0, y0, DIAL.x1 - DIAL.x0, DIAL.h, DIAL.h / 2); c.fill(); c.stroke();
+  // A mark every 15°, in the rim's colors, that slides with the turn
+  c.save(); c.beginPath(); c.rect(DIAL.x0 + 34, y0, DIAL.x1 - DIAL.x0 - 68, DIAL.h); c.clip();
+  const k0 = Math.round(yaw / 0.2618);
+  for (let k = k0 - 6; k <= k0 + 6; k++) {
+    const x = 200 - (yaw - k * 0.2618) / DIAL.gain, big = k % 6 === 0, hh = big ? 11 : 6;
+    c.globalAlpha = A * Math.max(0, 1 - Math.abs(x - 200) / 110);
+    c.strokeStyle = rgb(neonAt((((k % 24) + 24) % 24) / 4)); c.lineWidth = big ? 3 : 2; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(x, mid - hh); c.lineTo(x, mid + hh); c.stroke();
+  }
+  c.restore(); c.globalAlpha = A;
+  txt('⟲', DIAL.x0 + 18, mid + 1, 17, 'rgba(255,255,255,0.8)', true); txt('⟳', DIAL.x1 - 18, mid + 1, 17, 'rgba(255,255,255,0.8)', true);
+  c.restore();
+  return y0;
+}
+const previews = new WeakMap();
+function render() {
+  MAIN.c = Math.cos(yaw); MAIN.s = Math.sin(yaw);
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
+  c.setTransform(dpr * sc, 0, 0, dpr * sc, dpr * ox, dpr * oy);
+  const L0 = -ox / sc, R0 = (vw - ox) / sc, T0 = -oy / sc, B0 = (vh - oy) / sc, t = clock;
+  // The stars in five fills, one per level of brightness, not one each
+  c.fillStyle = '#fff';
+  for (let lv = 0; lv < 5; lv++) {
+    c.beginPath();
+    for (const s of STARS) { if (Math.min(4, Math.floor(Math.sin(t * s.f + s.p) ** 2 * 5)) !== lv) continue; c.moveTo(s.x + s.r, s.y); c.arc(s.x, s.y, s.r, 0, 7); }
+    c.globalAlpha = 0.3 + 0.4 * (lv + 0.5) / 5; c.fill();
+  }
+  c.globalAlpha = 1;
+  if (!S) return;
+  const pl = S.plat, level = pl.ux * pl.ux + pl.uz * pl.uz < PERFECT * PERFECT;
+  CAM = MAIN; discY = pl.y;
+  // The whole scene is drawn through the camera, which zooms about a point near the bottom
+  c.save(); c.translate(200, ZY); c.scale(zoom, zoom); c.translate(-200, -ZY);
+  // The opening: the camera comes down on the board from far above it, and goes once around it as it arrives
+  const zoomWas = zoom, ok = opening == null ? 1 : Math.min(1, opening / OPENING_S);
+  if (ok < 1) { const u = 1 - Math.min(1, ok / 0.75), near = 1 - u * u * u, a = 0.26 + 0.74 * near; c.translate(MAIN.cx, MAIN.cy - 190 * (1 - near)); c.scale(a, a); c.translate(-MAIN.cx, -MAIN.cy); zoom *= a; }
+  if (shake > 0) c.translate((Math.random() - 0.5) * 14 * shake / 0.5, (Math.random() - 0.5) * 14 * shake / 0.5);
+
+  // A soft light around the disc (green while it is level), and Babel's column under it, fading into the night
+  const g1 = 0.55 * Math.min(1, verde), hc = [138, 77, 255].map((v, i) => Math.round(v + ([157, 255, 58][i] - v) * g1)), halo = c.createRadialGradient(MAIN.cx, MAIN.cy, 10, MAIN.cx, MAIN.cy, 250);
+  halo.addColorStop(0, rgb(hc, 0.3 + 0.04 * verde)); halo.addColorStop(1, rgb(hc, 0));
+  c.fillStyle = halo; c.fillRect(MAIN.cx - 260, MAIN.cy - 260, 520, 520);
+  {
+    const w = 0.2, y1 = -0.34, y0 = -3.6, tip = proj(0, -TH, 0);
+    for (const [nx, nz, a, b] of [[1, 0, [w, -w], [w, w]], [-1, 0, [-w, w], [-w, -w]], [0, 1, [-w, w], [w, w]], [0, -1, [w, -w], [-w, -w]]]) {
+      if (facing(nx, 0, nz) <= 0) continue;
+      const k = lit(nx, 0, nz) * 1.3, top = proj(a[0], y1, a[1])[1], bot = proj(a[0], y0, a[1])[1], g = c.createLinearGradient(0, top, 0, bot);
+      g.addColorStop(0, rgb(sombra(BASE_COLOR, k))); g.addColorStop(1, rgb(sombra(BASE_COLOR, k), 0));
+      poly([proj(a[0], y0, a[1]), proj(b[0], y0, b[1]), proj(b[0], y1, b[1]), proj(a[0], y1, a[1])], g);
+      // The point the disc rests on
+      poly([proj(a[0], y1, a[1]), proj(b[0], y1, b[1]), tip], rgb(sombra(claro(BASE_COLOR, 0.25), k)));
+    }
+  }
+
+  // The disc, its wall, the pile, the pieces in the air and the piece in hand, far to near; the piece in hand casts its shadow on the rest
+  const cast = S.held ? holdPiece() : null;
+  shadowAlpha = cast ? cast.a : 1;
+  levelRing(pl, false);
+  const items = [{ b: pl.disc, disc: true }];
+  for (const q of pl.parts) if (q.wall != null) items.push({ b: q, wall: q.wall });
+  for (const q of pl.looks) items.push({ b: q, kind: q.kind, o: { dim: 0.82 } });
+  for (const b of S.bodies) { const o = { alpha: b.lost ? Math.max(0, Math.min(1, 1 + (b.y - FALL_Y) / 2.5)) : 1 }; for (const q of b.looks) items.push({ b: q, kind: b.kind, o }); }
+  if (S.held) for (const q of hand.looks) items.push({ b: q, kind: S.held.spec.kind, held: true });
+  let haloDone = false;
+  for (const it of paintOrder(items)) {
+    if (it.disc) {
+      drawDisc(pl, level, cast);
+      // A perfect drop, as in Babel: a glowing outline that opens around the disc
+      for (const a of anillos) { const k = a.t / 0.6; circlePath(pl.r, RAD + 0.03 + k * 0.3, 0); c.lineWidth = 3.5 / zoom; glowLine('#9dff3a', 16, 1 - k); c.strokeStyle = `rgba(210,255,160,${1 - k})`; c.stroke(); }
+    } else if (it.wall != null) drawSolid(it.b, neonAt(it.wall / 4), { line: 0 }, cast);
+    else if (it.held) {
+      // Its glow: the outline of the whole piece, once, under its first solid
+      if (!haloDone) { haloDone = true; silhouette(hand.looks); c.lineWidth = 0; glowLine(rgb(KINDS[it.kind].color), 10, (hand.looks.length > 1 ? 0.45 : 0.8) * cast.a, 0); }
+      drawPiece(it.kind, it.b, { alpha: cast.a });
+    }
+    else drawPiece(it.kind, it.b, it.o, cast);
+  }
+  levelRing(pl, true);
+
+  if (S.held) {
+    // Its time: a ring over it that runs out
+    const h = S.held, f = Math.max(0, h.fuse / h.hold), hurry = h.fuse < 1.2;
+    c.globalAlpha = cast.a;
+    const [fx_, fy] = proj(h.x, hand.maxy + 0.16, h.z), fc = hurry ? '#ff2e88' : '#ffd23f', fr = (9 + (hurry ? Math.sin(t * 22) : 0)) / zoom;
+    c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 3 / zoom; c.beginPath(); c.arc(fx_, fy, fr, 0, 7); c.stroke();
+    c.lineWidth = 3 / zoom; c.lineCap = 'round'; c.beginPath(); c.arc(fx_, fy, fr, -1.5708, -1.5708 + 6.2832 * f); glowLine(fc, 8); c.strokeStyle = fc; c.stroke();
+    c.globalAlpha = 1;
+    if (drag && drag.grab && !drag.twisted) {
+      // Being turned: a ball of hoops around the piece: it goes all the way round, every way
+      const [gx, gy] = proj(h.x, (hand.miny + hand.maxy) / 2, h.z), R = hand.form.r * MAIN.u + 9, col = rgb(KINDS[h.spec.kind].color, 0.3);
+      c.strokeStyle = col; c.lineWidth = 1 / zoom;
+      c.setLineDash([5 / zoom, 5 / zoom]); c.beginPath(); c.arc(gx, gy, R, 0, 7); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.ellipse(gx, gy, R, R * 0.36, 0, 0, 7); c.stroke(); c.beginPath(); c.ellipse(gx, gy, R * 0.36, R, 0, 0, 7); c.stroke();
+      txt('360°', gx + R * 0.72 + 13 / zoom, gy - R * 0.72 - 4 / zoom, 10 / zoom, rgb(KINDS[h.spec.kind].color, 0.5), true);
+    }
+  }
+  for (const s of chispas) { const k = s.t / 0.7, [x, y] = proj(s.x, s.y, s.z), r = (3.5 * (1 - k) + 1) / zoom; c.fillStyle = rgb(s.color, 1 - k); c.fillRect(x - r, y - r, r * 2, r * 2); }
+  for (const f of floats) { const [x, y] = proj(f.x, f.y, f.z); c.globalAlpha = 1 - f.t / 0.9; c.save(); c.translate(x, y - f.t * 40 / zoom); c.scale(1 / zoom, 1 / zoom); const z0 = zoom; zoom = 1; glowText(f.text, 0, 0, 22, f.color, 8); zoom = z0; c.restore(); }
+  c.globalAlpha = 1;
+  c.restore(); zoom = zoomWas;
+
+  // From here on, drawn on the screen itself, not through the camera.
+  // What is coming: the next two pieces, centred under the dial in a column that flows down toward the
+  // hand: the one after next small and faint at the top, the next one under it, bigger and bright
+  const qTop = dialY0() + DIAL.h + 18;
+  if (S.phase === 'play') [[200, qTop + 40, 15, 0.95], [200, qTop, 9, 0.35]].forEach(([x, y, r, a], i) => {
+    const nx = S.queue[i]; if (!nx) return;
+    let b = previews.get(nx); if (!b) previews.set(nx, b = mkBody(-9, formFor(nx), 0, 0, 0));
+    CAM = { cx: x, cy: y, u: r / b.form.r, c: 1, s: 0 }; const z = zoom; zoom = 1;
+    for (const it of paintOrder(b.looks.map(q => ({ b: q })))) drawPiece(nx.kind, it.b, { alpha: a });
+    zoom = z; CAM = MAIN;
+  });
+
+  if (banner) {
+    const b = banner, [name, line] = kindText(b.kind), col = rgb(KINDS[b.kind].color), a = Math.min(1, b.t * 5) * Math.min(1, (2.4 - b.t) * 2.5), y = 92;
+    c.globalAlpha = a;
+    glowText(ui('b3New', { n: name }), 200, y, 34, col, 14);
+    txt(line, 200, y + 28, 14, 'rgba(255,255,255,0.85)', true);
+    c.globalAlpha = 1;
+  }
+  for (const s of says) { c.globalAlpha = 1 - s.t / 1.3; glowText(s.text, 200, 170 - s.t * 26, s.size, s.color, 14); }
+  c.globalAlpha = 1;
+  const dialTop = drawDial(), baseY = B0 - 10, showing = opening != null;
+  if (state === 'play' && showing) {
+    // The opening shows how the board is turned, once the camera is nearly there: a thumb sliding along the dial as the board turns and, on a touch screen, two fingertips twisting over it. Nothing is said: it ends with the turn
+    const mid = dialTop + DIAL.h / 2, tx = 200 + 70 * Math.cos(ok * Math.PI);
+    c.globalAlpha = Math.max(0, Math.min(1, (ok - 0.4) / 0.2));
+    c.lineWidth = 2; c.beginPath(); c.arc(tx, mid, 12, 0, 7); glowLine('#2ee6d6', 10); c.fillStyle = 'rgba(255,255,255,0.4)'; c.strokeStyle = '#fff'; c.fill(); c.stroke();
+    if (!FINE) {
+      const cx = 200, cy = ZY + (MAIN.cy - 150 - ZY) * zoom;
+      for (const g of [1, -1]) { c.lineWidth = 2; c.beginPath(); c.arc(cx + g * 38 * Math.cos(yaw), cy + g * 38 * Math.sin(yaw), 11, 0, 7); glowLine('#2ee6d6', 8); c.fillStyle = 'rgba(255,255,255,0.35)'; c.strokeStyle = '#fff'; c.fill(); c.stroke(); }
+      c.strokeStyle = 'rgba(46,230,214,0.8)'; c.lineWidth = 2; c.setLineDash([4, 5]); c.beginPath(); c.arc(cx, cy, 38, 0, 7); c.stroke(); c.setLineDash([]);
+    }
+    c.globalAlpha = 1;
+  }
+  if (state === 'play' && drag && !drag.twisted && S.held) {
+    // A pointer that rests: a ring fills around it, and then it does the other thing: it turns the piece, or moves it again
+    const x = drag.px, y = drag.py, col = rgb(KINDS[S.held.spec.kind].color);
+    if (drag.armed && drag.held > 0.15) { c.strokeStyle = col; c.globalAlpha = 0.4; c.lineWidth = 2; c.lineCap = 'round'; c.beginPath(); c.arc(x, y, 22, -1.5708, -1.5708 + 6.2832 * Math.min(1, drag.held / HOLD_S)); c.stroke(); c.globalAlpha = 1; }
+    c.globalAlpha = 0.5;
+    if (drag.grab) { c.strokeStyle = col; c.lineWidth = 1.2; c.beginPath(); c.arc(x, y, 22, 0, 7); c.stroke(); txt(ui('b3Turns'), x, y + 35, 11.5, col, true); }
+    else if (clock - drag.switched < 1) txt(ui('b3Moves'), x, y + 35, 11.5, '#fff', true);
+    c.globalAlpha = 1;
+  }
+  if (state === 'play' && !showing && !turned) txt(ui('b3HintBoard'), 200, baseY - 10, 13.5, 'rgba(46,230,214,0.95)', true);
+  else if (state === 'play' && !showing && !S.perfects && S.released < 8) txt(ui('b3HintLevel'), 200, baseY - 10, 13.5, 'rgba(190,255,120,0.9)', true);
+  if (state === 'play' && !showing && S.landed < 2 && S.released < 3) txt(ui('b3HintMove'), 200, baseY - 28, 13.5, 'rgba(255,255,255,0.72)', true);
+  else if (state === 'play' && !showing && !rotated && S.held) txt(ui('b3HintPiece'), 200, baseY - 28, 13.5, 'rgba(255,210,63,0.95)', true);
+  if (state === 'pause') { c.fillStyle = 'rgba(21,7,38,0.72)'; c.fillRect(L0, T0, R0 - L0, B0 - T0); txt(ui('b3Paused'), 200, 270, 44); txt(ui('b3Resume'), 200, 316, 17, 'rgba(255,255,255,0.72)', true); }
+}
+
+/* ---------- the lives: three solid hearts, that break ---------- */
+/**
+ * The lives are three small solid hearts on a canvas of their own over the top bar: each a heart's
+ * outline given depth and a bevelled face, lit from above and the left, swaying so its side shows.
+ * A life lost breaks its heart: it swells and whitens while a crack runs down it, then splits along
+ * the crack into two halves that tumble away and fall, with a few chips and a ring of light; a dark
+ * heart stays in its place. This is the view's own small renderer (seen straight on, no perspective),
+ * apart from the game's; nothing here touches the simulation.
+ */
+const hv = $('#hearts'), hc = hv.getContext('2d'), HEARTS_W = 240, HEARTS_H = 150, HEART_N = 40, HEART_S = 13, HEART_GAP = 33, HEART_Y = 20;
+const HEART_PINK = [255, 46, 136], HEART_GONE = [66, 32, 100], HEART_LIGHT = [-0.349, 0.648, 0.677];
+const CRACK_S = 0.18, BREAK_S = 1.15, STILL = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+/** The outline, from the notch down the right side to the tip and back up the left; about 1.9 wide and 1.7 tall, around (0, 0). */
+const HEART = Array.from({ length: HEART_N }, (_, k) => { const t = 2 * Math.PI * k / HEART_N, s = Math.sin(t); return [16 * s * s * s / 17, (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) / 17 + 0.15]; });
+/** The crack, from the notch to the tip, and the two halves it leaves (right, left), each around its own middle. */
+const CRACK = [HEART[0], [0.2, 0.18], [-0.17, -0.08], [0.15, -0.32], [-0.09, -0.56], HEART[HEART_N / 2]];
+const centred = P => { let x = 0, y = 0; for (const q of P) { x += q[0]; y += q[1]; } x /= P.length; y /= P.length; return { at: [x, y], P: P.map(q => [q[0] - x, q[1] - y]) }; };
+const HALVES = [centred([...HEART.slice(0, HEART_N / 2 + 1), ...CRACK.slice(1, -1).reverse()]), centred([...HEART.slice(HEART_N / 2), HEART[0], ...CRACK.slice(1, -1)])];
+const CHIP = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+/** A turn about the vertical (yaw), then a nod (pitch: the top toward the viewer), then a roll in the screen's plane: rows of the matrix, x right, y up, z toward the viewer. */
+function heartTurn(yw, pitch = 0, roll = 0) {
+  const cy = Math.cos(yw), sy = Math.sin(yw), cp = Math.cos(pitch), sp = Math.sin(pitch), cr = Math.cos(roll), sr = Math.sin(roll);
+  const a = [cy, 0, sy], b = [sp * sy, cp, -sp * cy];
+  return [cr * a[0] - sr * b[0], cr * a[1] - sr * b[1], cr * a[2] - sr * b[2], sr * a[0] + cr * b[0], sr * a[1] + cr * b[1], sr * a[2] + cr * b[2], -cp * sy, sp, cp * cy];
+}
+/**
+ * A flat shape given depth, drawn at (x, y), `s` pixels to the unit: its outline P (around its own
+ * middle), turned by R. `o`: h, half its depth; bevel, how deep the slanted border of each face is
+ * (0: none); alpha; white, how far toward white; gloss, a small shine on the front face. Only the
+ * faces that look at the viewer are drawn, the far ones first.
+ */
+function solidHeart(P, R, x, y, s, col, { h = 0.3, bevel = 0.13, alpha = 1, white = 0, gloss = false } = {}) {
+  const n = P.length, IN = bevel ? 0.72 : 1, w = h - bevel, faces = [];
+  let area = 0; for (let k = 0; k < n; k++) { const a = P[k], b = P[(k + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
+  const way = area > 0 ? 1 : -1;
+  const at = (q, z, k) => [x + s * (R[0] * q[0] * k + R[1] * q[1] * k + R[2] * z), y - s * (R[3] * q[0] * k + R[4] * q[1] * k + R[5] * z), R[6] * q[0] * k + R[7] * q[1] * k + R[8] * z];
+  const face = (pts, nx, ny, nz) => {
+    if (R[6] * nx + R[7] * ny + R[8] * nz <= 0) return;
+    const lx = R[0] * nx + R[1] * ny + R[2] * nz, ly = R[3] * nx + R[4] * ny + R[5] * nz, lz = R[6] * nx + R[7] * ny + R[8] * nz;
+    let z = 0; for (const q of pts) z += q[2];
+    faces.push({ pts, z: z / pts.length, k: 0.4 + 0.75 * Math.max(0, lx * HEART_LIGHT[0] + ly * HEART_LIGHT[1] + lz * HEART_LIGHT[2]) });
+  };
+  for (let k = 0; k < n; k++) {
+    const a = P[k], b = P[(k + 1) % n], ex = b[0] - a[0], ey = b[1] - a[1], len = Math.sqrt(ex * ex + ey * ey) || 1, nx = way * ey / len, ny = -way * ex / len;
+    face([at(a, -w, 1), at(b, -w, 1), at(b, w, 1), at(a, w, 1)], nx, ny, 0);
+    if (bevel) {
+      face([at(a, w, 1), at(b, w, 1), at(b, h, IN), at(a, h, IN)], nx * 0.6, ny * 0.6, 0.8);
+      face([at(a, -w, 1), at(b, -w, 1), at(b, -h, IN), at(a, -h, IN)], nx * 0.6, ny * 0.6, -0.8);
+    }
+  }
+  face(P.map(q => at(q, h, IN)), 0, 0, 1); face(P.map(q => at(q, -h, IN)), 0, 0, -1);
+  faces.sort((a, b) => a.z - b.z);
+  hc.save(); hc.globalAlpha *= alpha; hc.lineJoin = 'round';
+  for (const f of faces) {
+    let shade = f.k <= 1 ? sombra(col, f.k) : claro(col, Math.min(1, (f.k - 1) * 1.3)); if (white) shade = claro(shade, white);
+    hc.beginPath(); f.pts.forEach((q, i) => (i ? hc.lineTo(q[0], q[1]) : hc.moveTo(q[0], q[1]))); hc.closePath();
+    hc.fillStyle = hc.strokeStyle = rgb(shade); hc.fill();
+    if (alpha >= 1) { hc.lineWidth = 0.5; hc.stroke(); }   // closes the hairlines between neighbouring faces
+  }
+  if (gloss && R[8] > 0.3) {
+    hc.beginPath();
+    for (let i = 0; i < 12; i++) { const t = i * Math.PI / 6, u = 0.17 * Math.cos(t), v = 0.075 * Math.sin(t), q = at([-0.31 + u * 0.8 - v * 0.6, 0.3 + u * 0.6 + v * 0.8], h + 0.01, 1); i ? hc.lineTo(q[0], q[1]) : hc.moveTo(q[0], q[1]); }
+    hc.closePath(); hc.fillStyle = `rgba(255,255,255,${0.7 * R[8]})`; hc.fill();
+  }
+  hc.restore();
+}
+/** When each heart broke (by the view's clock; null: whole), the chips it threw, and, for the lab, a moment to hold the picture at. */
+let heartLost = [null, null, null], heartChips = [[], [], []], heartFrozen = null;
+function breakHeart(i, at, wait = 0) {
+  heartLost[i] = at;
+  heartChips[i] = Array.from({ length: 7 }, (_, k) => { const a = (k + Math.random()) * 2 * Math.PI / 7, v = 45 + 60 * Math.random(); return { vx: v * Math.cos(a), vy: -v * Math.abs(Math.sin(a)) - 25, sz: 0.9 + 1.1 * Math.random(), a, col: k % 3 ? HEART_PINK : claro(HEART_PINK, 0.55) }; });
+  if (!STILL) { tone({ freq: 1250, to: 420, type: 'square', dur: 0.07, gain: 0.045, delay: wait + CRACK_S * 0.5 }); tone({ freq: 300, to: 110, type: 'triangle', dur: 0.2, gain: 0.12, delay: wait + CRACK_S }); }
+}
+/** What the hearts' canvas shows: while none is breaking they move 20 times a second, and the canvas is left alone when nothing changed. */
+let heartsWere = '';
+function drawHearts() {
+  const breaking = heartLost.some(a => a != null && clock - a <= BREAK_S + 0.05);
+  const key = !S ? 'none' : breaking || heartFrozen != null ? null : `${S.capsized ? 0 : S.lives}|${STILL ? 0 : Math.floor(clock * 20)}`;
+  if (key !== null && key === heartsWere) return;
+  heartsWere = key || '';
+  hc.setTransform(dpr, 0, 0, dpr, 0, 0); hc.clearRect(0, 0, HEARTS_W, HEARTS_H);
+  if (!S) { heartLost = [null, null, null]; return; }
+  // The hearts go from the right; when the disc goes over, whatever was left goes with it, one after another
+  const now = heartFrozen != null ? heartFrozen : clock, left = S.capsized ? 0 : S.lives;
+  for (let i = 2, wait = 0; i >= 0; i--) {
+    if (i < left) heartLost[i] = null;
+    else if (heartLost[i] == null) { breakHeart(i, now + wait, wait); wait += 0.14; }
+  }
+  const age = i => (heartLost[i] == null ? -1 : now - heartLost[i]), xOf = i => HEARTS_W / 2 + (i - 1) * HEART_GAP;
+  const sway = i => (STILL ? 0.3 : 0.55 * Math.sin(now * 1.5 + i * 1.1)), NOD = 0.22;
+  for (let i = 0; i < 3; i++) {
+    const x = xOf(i), a = age(i);
+    if (a < 0) {
+      // Whole: it glows, sways and bobs; the last one left beats
+      const beat = !STILL && left === 1 ? 1 + 0.14 * Math.max(0, Math.sin(now * 6.5)) ** 3 : 1, y = HEART_Y + (STILL ? 0 : 0.8 * Math.sin(now * 2.1 + i * 1.7));
+      const g = hc.createRadialGradient(x, y, 2, x, y, 19); g.addColorStop(0, 'rgba(255,46,136,0.42)'); g.addColorStop(1, 'rgba(255,46,136,0)');
+      hc.fillStyle = g; hc.fillRect(x - 20, y - 20, 40, 40);
+      solidHeart(HEART, heartTurn(sway(i), NOD), x, y, HEART_S * beat, HEART_PINK, { gloss: true });
+    } else {
+      // Gone: a dark heart in its place, once the bright one has split (or as it fades, with motion reduced)
+      const k = STILL ? Math.min(1, a / 0.3) : Math.max(0, Math.min(1, (a - CRACK_S) / 0.35));
+      if (k > 0) { hc.save(); hc.globalAlpha = k; solidHeart(HEART, heartTurn(sway(i), NOD), x, HEART_Y, HEART_S * 0.9, HEART_GONE); hc.restore(); }
+      if (STILL && a < 0.3) solidHeart(HEART, heartTurn(sway(i), NOD), x, HEART_Y, HEART_S, HEART_PINK, { alpha: 1 - a / 0.3 });
+    }
+  }
+  if (STILL) return;
+  for (let i = 0; i < 3; i++) {
+    const x = xOf(i), a = age(i);
+    if (a < 0 || a > BREAK_S) continue;
+    if (a < CRACK_S) {
+      // It swells, turns to face the player and whitens, shaking, while the crack runs down it
+      const k = a / CRACK_S, s = HEART_S * (1 + 0.32 * Math.sin(k * Math.PI / 2)), R = heartTurn(sway(i) * (1 - k), NOD * (1 - k)), jx = x + 1.3 * Math.sin(a * 130);
+      solidHeart(HEART, R, jx, HEART_Y, s, HEART_PINK, { white: 0.7 * k, gloss: true });
+      const upTo = k * (CRACK.length - 1);
+      hc.beginPath();
+      for (let j = 0; j < CRACK.length && j <= Math.ceil(upTo); j++) {
+        const f = j <= upTo ? 1 : upTo - (j - 1), p = j ? CRACK[j - 1] : CRACK[0], q = CRACK[j], px = p[0] + (q[0] - p[0]) * f, py = p[1] + (q[1] - p[1]) * f;
+        const X = jx + s * (R[0] * px + R[1] * py + R[2] * 0.3), Y = HEART_Y - s * (R[3] * px + R[4] * py + R[5] * 0.3);
+        j ? hc.lineTo(X, Y) : hc.moveTo(X, Y);
+      }
+      hc.strokeStyle = '#fff'; hc.lineWidth = 1.3; hc.lineJoin = 'round'; hc.lineCap = 'round'; hc.stroke();
+      continue;
+    }
+    const t = a - CRACK_S, s = HEART_S * (1.32 - 0.32 * Math.min(1, t / 0.2)), fade = t < 0.5 ? 1 : Math.max(0, 1 - (t - 0.5) / (BREAK_S - CRACK_S - 0.5));
+    // A ring of light where it broke
+    if (t < 0.4) { hc.beginPath(); hc.arc(x, HEART_Y, 11 + 62 * t, 0, 2 * Math.PI); hc.strokeStyle = `rgba(255,46,136,${0.85 * (1 - t / 0.4)})`; hc.lineWidth = 2.2 * (1 - t / 0.4) + 0.4; hc.stroke(); }
+    // The two halves: thrown apart and up, tumbling each about its own middle, and falling
+    HALVES.forEach((half, j) => {
+      const side = j ? -1 : 1, hx = x + s * half.at[0] + side * (5 * Math.min(1, t / 0.08) + 30 * t), hy = HEART_Y - s * half.at[1] - 74 * t + 205 * t * t;
+      solidHeart(half.P, heartTurn(side * 2.4 * t, (j ? 1.1 : -0.9) * t, -side * 1.25 * t), hx, hy, s, HEART_PINK, { alpha: fade, white: 0.7 * Math.max(0, 1 - t / 0.22) });
+    });
+    // And a few chips
+    if (t < 0.75) for (const ch of heartChips[i]) solidHeart(CHIP, heartTurn(ch.a + 9 * t, ch.a * 2 + 7 * t, 5 * t), x + ch.vx * t, HEART_Y + ch.vy * t + 230 * t * t, ch.sz, ch.col, { h: 1, bevel: 0, alpha: 1 - t / 0.75, white: 0.5 * Math.max(0, 1 - t / 0.25) });
+  }
+}
+let hudWas = null;
+function hud() {
+  const now = S ? `${S.streak}|${S.landed}|${S.capsized ? 0 : S.lives}|${S.score}` : '';
+  if (now === hudWas) return;
+  hudWas = now;
+  if (!S) { $('#count').textContent = ''; $('#score').textContent = ''; $('#chip').hidden = true; return; }
+  // The lives in the middle, as in the other games; the pieces placed (and the perfect streak) on the left
+  $('#count').textContent = S.streak > 1 ? `🧱 ${S.landed} · 🔥 ×${S.streak}` : `🧱 ${S.landed}`;
+  // The hearts themselves are drawn, solid, on their own canvas (drawHearts): here only their place in the bar and what a screen reader hears
+  $('#chip').hidden = false; $('#chip').textContent = ''; $('#chip').setAttribute('role', 'img'); $('#chip').setAttribute('aria-label', some('b3LivesAria', S.capsized ? 0 : S.lives));
+  $('#score').textContent = S.score;
+}
+
+/* ---------- the flow ---------- */
+const card = $('#card');
+function showCard(emoji, title, html, btn) { $('#cEmoji').textContent = emoji; $('#cTitle').textContent = title; $('#cBody').innerHTML = html; $('#cBtn').textContent = btn; card.hidden = false; }
+/* The instructions: four steps, each with a small moving picture (SVG, moved by the page's CSS). */
+const cube = (x, y, s, [top, right, left]) => `<polygon points="${x},${y - s * 0.5} ${x + s * 0.87},${y} ${x},${y + s * 0.5} ${x - s * 0.87},${y}" fill="${top}"/><polygon points="${x - s * 0.87},${y} ${x},${y + s * 0.5} ${x},${y + s * 1.5} ${x - s * 0.87},${y + s}" fill="${left}"/><polygon points="${x},${y + s * 0.5} ${x + s * 0.87},${y} ${x + s * 0.87},${y + s} ${x},${y + s * 1.5}" fill="${right}"/>`;
+const TEAL = ['#5fefe2', '#23ac9f', '#19806f'], ROSE = ['#ff6fae', '#d92574', '#a01a55'];
+const discPic = (cx, cy) => `<ellipse cx="${cx}" cy="${cy + 5}" rx="46" ry="26" fill="#3a1464"/><ellipse cx="${cx}" cy="${cy}" rx="46" ry="26" fill="#7a56b8" stroke="url(#rb)" stroke-width="4"/>`;
+const pic = inner => `<svg viewBox="0 0 120 84" aria-hidden="true">${inner}</svg>`;
+function ready() {
+  const move = pic(`<defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#ffd23f"/><stop offset=".35" stop-color="#9dff3a"/><stop offset=".65" stop-color="#2ee6d6"/><stop offset="1" stop-color="#ff2e88"/></linearGradient></defs>
+    ${discPic(60, 58)}<g class="il-move"><polygon points="60,50 74,58 60,66 46,58" fill="rgba(14,2,34,.55)"/><g class="il-drop">${cube(60, 14, 14, TEAL)}</g><text class="il-finger" x="78" y="46" font-size="18">${FINE ? '🖱️' : '👆'}</text></g>`);
+  const spin = pic(`<ellipse cx="60" cy="45" rx="46" ry="26.2" fill="#3a1464"/><g transform="translate(60 40) scale(1 .57)"><g class="il-spin"><circle r="46" fill="#7a56b8" stroke="url(#rb)" stroke-width="6"/><path d="M-46 0H46M0 -46V46" stroke="rgba(255,255,255,.3)" stroke-width="1.5"/><rect x="12" y="-30" width="18" height="18" rx="2" fill="#2ee6d6"/><rect x="-30" y="8" width="16" height="16" rx="2" fill="#ff2e88"/></g></g>
+    <g transform="translate(60 40)"><g class="il-twist"><circle cx="-24" cy="0" r="6" fill="rgba(255,255,255,.45)" stroke="#fff" stroke-width="1.5"/><circle cx="24" cy="0" r="6" fill="rgba(255,255,255,.45)" stroke="#fff" stroke-width="1.5"/></g></g>
+    <rect x="22" y="70" width="76" height="12" rx="6" fill="rgba(0,0,0,.4)" stroke="rgba(46,230,214,.8)"/><path d="M40 73v6M50 73v6M60 72v8M70 73v6M80 73v6" stroke="#ffd23f" stroke-width="1.5" stroke-linecap="round"/><circle class="il-thumb" cx="60" cy="76" r="6" fill="rgba(255,255,255,.4)" stroke="#fff" stroke-width="1.5"/>`);
+  const level = pic(`<ellipse class="il-hoop" cx="60" cy="52" rx="54" ry="31" fill="none" stroke="#fff" stroke-width="1.6"/><g class="il-rock">${discPic(60, 52)}${cube(36, 36, 10, TEAL)}<g class="il-second">${cube(84, 36, 10, ROSE)}</g></g><text class="il-ok" x="60" y="13" text-anchor="middle" font-size="12" font-weight="900" fill="#9dff3a">${ui('b3Perfect')}</text>`);
+  const turnIt = pic(`<g class="il-turn">${cube(60, 22, 20, TEAL)}</g><path d="M22 30a40 30 0 0 1 14-20M98 30a40 30 0 0 0-14-20" fill="none" stroke="#ffd23f" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 4"/>
+    <g class="il-hold"><circle cx="60" cy="70" r="10" fill="none" stroke="#ffd23f" stroke-width="2"/><circle cx="60" cy="70" r="6" fill="rgba(255,255,255,.45)" stroke="#fff" stroke-width="1.5"/></g>`);
+  const step = (n, picture, key) => { const [title, line] = ui(key).split('|'); return `<li>${picture}<div><b><span class="n">${n}</span>${title}</b><p>${line}</p></div></li>`; };
+  // How long the first piece waits before it falls by itself (it gets shorter with every piece)
+  showCard('', GAME.nombre, `<p class="lema">${ui('b3Lema')}</p><ol class="steps">
+    ${step(1, move, 'b3Step1')}${step(2, turnIt, 'b3Step2')}${step(3, spin, 'b3Step3')}${step(4, level, 'b3Step4')}</ol>
+    <p class="pie">⏳ ${ui('b3AutoNote', { n: Math.round(params(fromParam).hold) })}<br>❤️ ${ui('b3LivesNote')}</p>`, ui('b3Play'));
+}
+const query = new URLSearchParams(location.search), seedParam = query.get('seed');
+/** Lab only: `?from=30` starts as hard as if 30 pieces were already down (on an empty disc), to try the late pieces. */
+const fromParam = Math.max(0, Math.min(500, Math.floor(Number(query.get('from')) || 0)));
+/* ---------- Lab: the pieces a game starts with (the «T» tester tab) ---------- */
+/**
+ * A tester sets on the cover's «T» tab, with − and +, how many pieces the disc starts with; the next game (▶ Jugar or ↻ Otra vez)
+ * starts with them. They are the game's own first pieces, in their order, dropped with the real physics
+ * over spots spread evenly across the disc (a sunflower: each one a golden angle on, further out the
+ * later; a spot on the side the disc leans to is swapped for the one opposite, so the pile stays level), and they count as nothing: no points, no lives, the time starts after them. Only the view sets
+ * this up, through the game's own steps; the rules are untouched. Kept on this phone.
+ */
+const START_KEY = 'balanza-lab:start-pieces', START_MAX = 40;
+let startPieces = 0, timeFrom = 0;
+try { startPieces = Math.max(0, Math.min(START_MAX, parseInt(localStorage.getItem(START_KEY), 10) || 0)); } catch (_) { /* no storage */ }
+function seedPile(S, n) {
+  // While it is set up the disc keeps its first stiffness (each piece softens it, which would tip a pile laid in one go); the game then goes on with its own
+  const R = REACH * 0.48, firm = () => { S.K = params(0).K; };
+  for (let i = 0; i < n && S.phase === 'play'; i++) {
+    for (let k = 0; k < 600 && !S.held && S.phase === 'play'; k++) { firm(); advance(S, null); }
+    if (!S.held) break;
+    // Its spot on the sunflower, or the one opposite when that is the side the disc leans to (its low side is (ux, uz))
+    const a = i * 2.399963, r = n > 1 ? R * Math.sqrt((i + 0.5) / n) : 0, pl = S.plat;
+    let x = r * Math.cos(a), z = r * Math.sin(a);
+    if (x * pl.ux + z * pl.uz > 0) { x = -x; z = -z; }
+    firm(); advance(S, { x, z, q: null, drop: true });
+    for (let k = 0; k < 150 && S.phase === 'play'; k++) { firm(); advance(S, null); }
+    S.ev.length = 0;
+  }
+  // Let the pile come to rest, and take away what went over the edge while it was set up
+  for (let k = 0; k < 360 && S.phase === 'play'; k++) { firm(); advance(S, null); }
+  if (S.phase !== 'play') return false;
+  S.bodies = S.bodies.filter(b => !b.lost && b.y > -0.2);
+  // They were set up, not played: the game starts from here
+  S.score = 0; S.landed = 0; S.perfects = 0; S.bonus = 0; S.streak = 0; S.best = 0; S.lives = 3; S.ev.length = 0;
+  for (const b of S.bodies) b.judged = true;
+  // The pile is the only difference: the game goes on as hard as a new one (the disc's stiffness, the time per piece)
+  S.released = 0; S.P = params(S.skip); S.K = S.P.K;
+  timeFrom = S.t;
+  return true;
+}
+
+function start() {
+  const seed = seedParam != null ? Number(seedParam) | 0 : Date.now() | 0;
+  S = newGame(seed, fromParam);
+  timeFrom = 0;
+  // More pieces than the disc holds tip it while they are laid: then it starts over with fewer, down to what fits
+  for (let n = startPieces; n > 0 && !seedPile(S, n); n -= 2) S = newGame(seed, fromParam);
+  if (S.phase !== 'play') S = newGame(seed, fromParam);
+  state = 'play'; acc = 0; chispas = []; anillos = []; floats = []; says = []; banner = null; zoom = 1; card.hidden = true; document.dispatchEvent(new Event('wobbles:clear'));
+  target = { x: 0, z: 0 }; dropQ = false; drag = null; turning = null; twist = null; fingers.clear(); seen = null; yaw = 0;
+  // The opening turn, at the start of every game (`?spin=0` skips it: lab only)
+  opening = query.get('spin') === '0' ? null : 0; sinceOpening = opening == null ? 99 : 0; handQ = null;
+}
+function finish() {
+  state = 'over';
+  const s = Math.round(S.t - timeFrom), time = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const lines = [S.capsized ? ui('b3BdTipped') : '', some('b3BdPieces', S.landed), some('b3BdPerfects', S.perfects, { p: S.bonus }),
+    ui('b3BdStreak', { n: S.best }), ui('b3BdHeight', { m: decimal(S.peak) }), ui('b3BdTime', { t: time })].filter(Boolean);
+  showCard('⚖️', ui('b3Over'), `<p class="big">${S.score}</p>`, ui('b3Again'));
+  // The rankings, the exits and the breakdown come from ../game.js, in C-19's order
+  document.dispatchEvent(new CustomEvent('wobbles:over', { detail: { score: S.score, ms: Math.round(S.t * 1000), lines } }));
+}
+
+/* ---------- input ---------- */
+/*
+ * The piece: a finger drags it and lets it go; a mouse just moves and clicks; arrows and Space.
+ * Before letting go, a pointer that rests for a moment (the finger, or the mouse with its button down)
+ * takes hold of the piece itself: moving then turns it, any way and all the way round, like a ball under
+ * the finger, so the player chooses which side it falls on; letting go drops it as it is. Resting again
+ * goes back to moving it.
+ * The view: two fingers twisting, or the dial at the bottom (a thumb, or the mouse); a mouse also has
+ * its wheel, its right button, and Q and E. It only turns about the vertical: the angle it looks down
+ * from never changes.
+ * `target` is where the player holds the piece over, `dropQ` whether they let it go, `drag` the finger
+ * (or the mouse button) on the piece, `turning` the pointer on the dial, `fingers` the touches on the
+ * scene (id → place on screen) and `twist` the two of them that are turning the view.
+ */
+let target = { x: 0, z: 0 }, dropQ = false, drag = null, turning = null, twist = null, mouseAt = null, seen = null, swallow = false;
+/** Whether this player has ever turned the view (kept between visits): until then the game shows how. */
+const TURNED_KEY = 'balanza-lab:turned', ROTATED_KEY = 'balanza-lab:rotated';
+/** Resting this long (seconds) changes what the pointer does (move the piece, or turn it); moving further than STILL_SLACK (in the screen's 400 × 600) is not resting. A pixel turns the piece by PIECE_GAIN, and the view (right button) by TURN_GAIN. */
+const HOLD_S = 0.45, STILL_SLACK = 6, PIECE_GAIN = 0.014, TURN_GAIN = 0.012;
+/** How the player has turned the piece in hand ([w, x, y, z]), or null if they have not; and whether they ever have (kept between visits). */
+let handQ = null, rotated = false;
+try { rotated = localStorage.getItem(ROTATED_KEY) === '1'; } catch (_) { /* no storage */ }
+const qmul = (a, b) => [a[0] * b[0] - a[1] * b[1] - a[2] * b[2] - a[3] * b[3], a[0] * b[1] + a[1] * b[0] + a[2] * b[3] - a[3] * b[2], a[0] * b[2] - a[1] * b[3] + a[2] * b[0] + a[3] * b[1], a[0] * b[3] + a[1] * b[2] - a[2] * b[1] + a[3] * b[0]];
+/**
+ * Turns the piece in hand as a drag of (dx, dy) on screen would turn a ball: sideways about the vertical,
+ * up and down about the line across the screen, so its near side follows the finger whichever way the view is turned.
+ */
+function turnPiece(dx, dy) {
+  const h = S.held; if (!h) return;
+  const [rx, rz] = ground(0.7071, -0.7071), a = dx * PIECE_GAIN / 2, b = dy * PIECE_GAIN / 2;
+  handQ = qmul([Math.cos(a), 0, Math.sin(a), 0], qmul([Math.cos(b), rx * Math.sin(b), 0, rz * Math.sin(b)], handQ || [h.qw, h.qx, h.qy, h.qz]));
+  if (!rotated) { rotated = true; try { localStorage.setItem(ROTATED_KEY, '1'); } catch (_) { /* no storage */ } }
+}
+let turned = false;
+try { turned = localStorage.getItem(TURNED_KEY) === '1'; } catch (_) { /* no storage */ }
+/**
+ * The opening: every game starts with the camera coming down on the empty disc from far above and going
+ * once around it as it arrives, before the first piece comes, so it is seen that the board turns (the
+ * dial turns with it, under a thumb). `opening` is how far into it the game is (seconds), or null; any
+ * touch or key cuts it short.
+ */
+const OPENING_S = 2.8;
+let opening = null, sinceOpening = 99;
+const fingers = new Map();
+/** The direction from one twisting finger to the other, as an angle on screen. */
+const twistAngle = () => { const p = fingers.get(twist.a), q = fingers.get(twist.b); return Math.atan2(q[1] - p[1], q[0] - p[0]); };
+const keys = new Set();
+function reach(x, z) { const d2 = x * x + z * z; if (d2 > REACH * REACH) { const l = REACH / Math.sqrt(d2); x *= l; z *= l; } return { x, z }; }
+/** A pointer's place on the canvas in the screen's own 400 × 600. */
+function onScreen(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - ox) / sc, (e.clientY - r.top - oy) / sc]; }
+/** That place in the scene, before the camera's zoom. */
+const inScene = ([x, y]) => [200 + (x - 200) / zoom, ZY + (y - ZY) / zoom];
+const onDial = ([x, y]) => { const y0 = dialY0(); return y > y0 - 8 && y < y0 + DIAL.h + 8 && x > DIAL.x0 - 8 && x < DIAL.x1 + 8; };
+/** A mouse holds the piece itself: the spot under the pointer at the height of the hand. */
+function underPointer([x, y]) {
+  const a = (x - MAIN.cx) / (C30 * MAIN.u), b = (y - MAIN.cy + S.hover * MAIN.u) / (0.5 * MAIN.u), [gx, gz] = ground((a + b) / 2, (b - a) / 2);
+  return reach(gx, gz);
+}
+/** Turns the view. The piece in hand is the player's, not the disc's: it stays where it is on screen, and the disc turns under it. */
+function spinView(d) {
+  yaw += d;
+  if (!turned) { turned = true; try { localStorage.setItem(TURNED_KEY, '1'); } catch (_) { /* no storage */ } }
+  const co = Math.cos(d), si = Math.sin(d), x = target.x * co + target.z * si;
+  target.z = target.z * co - target.x * si; target.x = x;
+}
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); audio();
+  if (!card.hidden) return;
+  if (state === 'pause') { state = 'play'; swallow = true; return; }
+  if (state !== 'play') return;
+  if (opening != null) { opening = null; yaw = 0; sinceOpening = 0; swallow = true; return; }
+  try { cv.setPointerCapture(e.pointerId); } catch (_) { /* a synthetic event has no pointer to capture */ }
+  const p = onScreen(e);
+  // On the dial, or with a mouse's right button: it turns the view
+  if (onDial(p) || e.button === 2) { if (!turning) turning = { id: e.pointerId, x: p[0] }; return; }
+  const q = inScene(p);
+  if (e.pointerType === 'mouse') { mouseAt = q; target = underPointer(q); drag = { id: e.pointerId, mouse: true, x: q[0], y: q[1], twisted: false, held: 0, armed: true, grab: false, switched: -9, ax: p[0], ay: p[1], px: p[0], py: p[1] }; return; }
+  fingers.set(e.pointerId, p);
+  // A second finger: the two twist the view, and this touch will not drop the piece when it ends (fingers rarely lift together)
+  if (fingers.size === 2) { const [a, b] = [...fingers.keys()]; twist = { a, b, angle: 0 }; twist.angle = twistAngle(); if (drag) drag.twisted = true; return; }
+  if (fingers.size > 2) return;
+  // One finger drags from wherever it lands, so it never covers the piece: the piece moves as the finger does
+  mouseAt = null; drag = { id: e.pointerId, x: q[0], y: q[1], twisted: false, held: 0, armed: true, grab: false, switched: -9, ax: p[0], ay: p[1], px: p[0], py: p[1] };
+});
+cv.addEventListener('pointermove', e => {
+  if (!S || state !== 'play') return;
+  const p = onScreen(e);
+  if (turning && turning.id === e.pointerId) { spinView(-(p[0] - turning.x) * TURN_GAIN); turning.x = p[0]; return; }
+  const q = inScene(p);
+  if (drag && drag.id === e.pointerId) {
+    // Moving on starts the wait over: only a pointer that rests changes what it does
+    if (Math.abs(p[0] - drag.ax) + Math.abs(p[1] - drag.ay) > STILL_SLACK) { drag.held = 0; drag.armed = true; drag.ax = p[0]; drag.ay = p[1]; }
+    const dx = p[0] - drag.px, dy = p[1] - drag.py; drag.px = p[0]; drag.py = p[1];
+    // It has hold of the piece: moving turns it (and the piece stays where it is)
+    if (drag.grab && !twist) { turnPiece(dx, dy); drag.x = q[0]; drag.y = q[1]; if (fingers.has(e.pointerId)) fingers.set(e.pointerId, p); return; }
+  }
+  if (e.pointerType === 'mouse') { if (!onDial(p)) mouseAt = q; return; }
+  if (!fingers.has(e.pointerId)) return;
+  fingers.set(e.pointerId, p);
+  if (twist) {
+    // Clockwise on screen is clockwise for the disc; the piece is not dragged meanwhile
+    if (e.pointerId !== twist.a && e.pointerId !== twist.b) return;
+    const a = twistAngle(); let d = a - twist.angle;
+    if (d > Math.PI) d -= 2 * Math.PI; else if (d < -Math.PI) d += 2 * Math.PI;
+    twist.angle = a; spinView(d);
+    return;
+  }
+  if (!drag || drag.id !== e.pointerId) return;
+  const a = (q[0] - drag.x) / (C30 * MAIN.u), b = (q[1] - drag.y) / (0.5 * MAIN.u), [gx, gz] = ground((a + b) / 2, (b - a) / 2);
+  drag.x = q[0]; drag.y = q[1]; target = reach(target.x + gx, target.z + gz);
+});
+function letGo(e) {
+  if (swallow) { swallow = false; return; }
+  if (turning && turning.id === e.pointerId) { turning = null; return; }
+  if (fingers.delete(e.pointerId) && twist && (e.pointerId === twist.a || e.pointerId === twist.b)) {
+    twist = null;
+    // The finger that stays goes on with the piece from where it is now
+    if (drag && fingers.has(drag.id)) { const q = inScene(fingers.get(drag.id)); drag.x = q[0]; drag.y = q[1]; }
+  }
+  if (!drag || drag.id !== e.pointerId) return;
+  const twisted = drag.twisted; drag = null;
+  if (!twisted && S && state === 'play' && S.held && e.type === 'pointerup') dropQ = true;
+}
+cv.addEventListener('pointerup', letGo); cv.addEventListener('pointercancel', letGo);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+cv.addEventListener('wheel', e => { e.preventDefault(); if (S && state === 'play') spinView(-(e.deltaY + e.deltaX) * 0.003); }, { passive: false });
+const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], KeyA: [-1, 0], KeyD: [1, 0], KeyW: [0, -1], KeyS: [0, 1] };
+window.addEventListener('keydown', e => {
+  if (ARROWS[e.code]) { e.preventDefault(); keys.add(e.code); mouseAt = null; return; }
+  if (e.code === 'KeyQ' || e.code === 'KeyE') { keys.add(e.code); return; }
+  if (e.code !== 'Space' && e.code !== 'Enter') return;
+  e.preventDefault();
+  if (e.repeat) return;
+  audio();
+  if (!card.hidden) $('#cBtn').click();
+  else if (state === 'pause') state = 'play';
+  else if (opening != null) { opening = null; yaw = 0; sinceOpening = 0; }
+  else if (state === 'play' && S.held) dropQ = true;
+});
+window.addEventListener('keyup', e => keys.delete(e.code));
+document.addEventListener('visibilitychange', () => { if (document.hidden && state === 'play') { state = 'pause'; drag = null; turning = null; twist = null; fingers.clear(); keys.clear(); } });
+
+let last = 0, framesUnderCard = 0;
+/** Frames gaps while playing, to lower the resolution when they come slow (see `RES`). */
+let paceMs = 0, paceN = 0, paceSlow = 0;
+function pace(gap) {
+  if (RES_PARAM || gap > 400) return;
+  paceMs += gap; paceN++; if (paceMs < 1000) return;
+  const mean = paceMs / paceN; paceN = paceMs = 0;
+  if (mean <= 24 || dpr <= 1) { paceSlow = 0; return; }
+  if (++paceSlow >= 2) { paceSlow = 0; RES = dpr > 1.5 ? 1.5 : 1; resize(); }
+}
+function frame(ts) {
+  // A 120 Hz screen: every other call is let through, so the scene is drawn at most about 60 times a second (the game's clock does not change)
+  if (ts - last < 10) { requestAnimationFrame(frame); return; }
+  const gap = ts - last;
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts; clock += dt;
+  if (S && state === 'play' && opening != null) {
+    opening += dt;
+    const k = Math.min(1, opening / OPENING_S), e = k < 0.5 ? 2 * k * k : 1 - (2 - 2 * k) * (2 - 2 * k) / 2;
+    yaw = -2 * Math.PI * (1 - e);
+    if (k >= 1) { opening = null; yaw = 0; sinceOpening = 0; }
+  } else if (S && state === 'play') {
+    sinceOpening += dt;
+    // A pointer that rests changes what it does: it takes hold of the piece to turn it, or goes back to moving it. It must move on before it can change again
+    if (drag && S.held && drag.armed && !drag.twisted && !twist && (drag.held += dt) >= HOLD_S) {
+      drag.grab = !drag.grab; drag.armed = false; drag.held = 0; drag.switched = clock;
+      if (!drag.grab && drag.mouse) mouseAt = inScene([drag.px, drag.py]);
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    if (keys.has('KeyQ')) spinView(2.2 * dt);
+    if (keys.has('KeyE')) spinView(-2.2 * dt);
+    MAIN.c = Math.cos(yaw); MAIN.s = Math.sin(yaw);
+    let a = 0, b = 0; for (const k of keys) if (ARROWS[k]) { a += ARROWS[k][0]; b += ARROWS[k][1]; }
+    if (a || b) { const [gx, gz] = ground((a + b) * 0.7 * dt, (b - a) * 0.7 * dt); target = reach(target.x + gx, target.z + gz); }
+    else if (mouseAt && !(drag && drag.grab)) target = underPointer(mouseAt);
+    acc += dt;
+    for (let n = 0; acc >= DT && n < 8; n++) {
+      const inp = S.held ? { x: target.x, z: target.z, q: handQ, drop: dropQ } : null;
+      dropQ = false;
+      advance(S, inp); acc -= DT;
+      for (const e of S.ev) onEvent(e); S.ev.length = 0;
+      // A new piece in hand: it starts where the game put it (under the pointer, for a mouse), and a finger still down goes on from there
+      if (S.held && S.held !== seen) { seen = S.held; handQ = null; if (drag) { drag.grab = false; drag.held = 0; drag.armed = true; } target = mouseAt ? underPointer(mouseAt) : { x: seen.x, z: seen.z }; }
+    }
+    if (acc > DT * 8) acc = 0;
+    if (S.done) finish();
+  }
+  if (state === 'play' && card.hidden && last && gap > 0) pace(gap);
+  fx(dt);
+  // Under a card only 1 frame in 4 is drawn: the scene only shows through the veil
+  if (card.hidden || S == null || ++framesUnderCard % 4 === 0) render();
+  hud(); drawHearts();
+  requestAnimationFrame(frame);
+}
+$('#cBtn').addEventListener('click', e => { e.currentTarget.blur(); audio(); start(); });
+const muteBtn = $('#mute'), paintMute = () => { muteBtn.textContent = muted ? '🔇' : '🔊'; };
+muteBtn.addEventListener('click', () => { muted = !muted; try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (_) { /* no storage */ } paintMute(); muteBtn.blur(); });
+window.addEventListener('resize', resize);
+$('header a').setAttribute('aria-label', ui('b3Back')); muteBtn.setAttribute('aria-label', ui('b3Sound')); $('h1 span').textContent = GAME.nombre;
+paintMute(); resize(); ready(); requestAnimationFrame(frame);
+window.__balanza = { get S() { return S; }, get opening() { return opening; }, get handQ() { return handQ; }, get state() { return state; }, get target() { return target; }, get yaw() { return yaw; }, set yaw(v) { yaw = v; }, finish, newGame, advance, stepWorld, mkBody, mkForm, solid, blocks, formFor, place, weld, sat, meets, collide, params, pieceAt, specialAt, box, ball, KINDS, MASS, LANG, UI, TEXTS, DT, RAD, RIM, CLEAR, REACH, DIAL,
+  show(s, st = 'play') { S = s; state = st; card.hidden = true; for (const e of s.ev) onEvent(e); s.ev.length = 0; }, fx, render, hud, drawHearts, HEART, HALVES, holdHearts(t) { heartFrozen = t; }, get heartLost() { return heartLost; }, get startPieces() { return startPieces; }, seedPile, get clock() { return clock; },
+  get blurs() { return blurs; }, set blurs(v) { blurs = v; }, get res() { return dpr; } };
+</script>
+<!-- The result's shared blocks: rankings, exits, feedback (C-19) -->
+<script type="module">import '../game.js';</script>
+</body>
+</html>

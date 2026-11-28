@@ -1,0 +1,11 @@
+/* Thanksgiving (templates.js, D-457): a November sunset, warm orange
+   low on the page fading into a deep blue sky. No corner: the user pill sits there (the owner, 2026-11-25). */
+:root.season-thanksgiving {
+  --fondo:
+    radial-gradient(1200px 600px at 10% -10%, rgba(80, 110, 220, 0.28), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(255, 170, 70, 0.14), transparent 60%),
+    radial-gradient(2200px 1600px at 50% 210%, rgba(255, 120, 40, 0.5), transparent 75%),
+    linear-gradient(170deg, #0b1230, #251436 55%, #3a1a14);
+}
+/* The turkey that peeks goes behind the page too, like the ones that walk by: never over a game's icon */
+.season-thanksgiving .season-peek { z-index: -1; }

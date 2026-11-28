@@ -1,0 +1,163 @@
+/**
+ * Blackjack: game data and locales (C-2, C-3). No DOM or game logic here.
+ * Texts in LOCALES = { es, en, pt } with identical keys. See docs/games/blackjack.md.
+ */
+
+export const GAME_ID = 'blackjack';
+export const MIN_PLAYERS = 2;
+export const MAX_PLAYERS = 6;
+export const ROLES = ['A', 'B', 'C', 'D', 'E', 'F'];
+export const DEFAULT_CONFIG = { decks: 2, maxRounds: 3, startingCoins: 250, minBet: 10 };
+
+export const DECK_OPTIONS = [1, 2, 4, 6, 8];
+export const ROUND_OPTIONS = [3, 5, 10, 0]; // 0 = until red card
+export const COIN_OPTIONS = [100, 250, 500, 1000];
+
+const ES = {
+  ui: {
+    docTitle: 'Blackjack ♠️ · Juegos de Salón', gameChip: 'Blackjack', menu: '‹ Laboratorio',
+    title: 'Blackjack', lead: 'Mesa estilo Las Vegas contra la casa: juega solo o con hasta 6 amigos.',
+    howTitle: 'Cómo se juega',
+    modeSolo: '🤖 Contra la casa', modeSoloHint: 'Tú solo contra el crupier.',
+    modeOnline: '📡 Varios celulares', modeOnlineHint: 'De 2 a 6 jugadores, cada uno en su celular.',
+    whoPlays: 'Arma tu mesa', setupHint: 'Fija mazos, rondas y fichas iniciales (sin dinero real).',
+    setupOnline: 'Mesa en varios celulares', onlineHint: 'Crea una sala o únete con el código de 4 letras.',
+    invitedTitle: 'Te invitaron a la mesa', invitedHint: 'Escribe tu nombre para sentarte a jugar.',
+    invited: 'Sala {code}', yourNameLabel: 'Tu nombre', changeName: 'Cambiar',
+    create: 'Crear mesa', joinTitle: 'O únete con código', codePlaceholder: 'ABCD', join: 'Entrar',
+    errName: 'Escribe tu nombre', errCode: 'Código de 4 letras', errNet: 'No se pudo conectar. Revisa tu señal.',
+    lobbyCode: 'Código de sala', lobbyShare: 'Comparte el código o el QR para que se sienten a la mesa:',
+    lobbyPlayers: 'En la mesa', lobbyStart: '¡Abrir mesa!', lobbyNeedMore: 'Falta al menos 1 jugador más',
+    lobbyWaitHost: 'Esperando a que {name} abra la mesa', lobbyCancel: 'Cancelar sala', lobbyLeave: 'Salir de la sala',
+    playerPlaceholder: 'Jugador {n}',
+    decksLabel: 'Mazos', roundsLabel: 'Rondas', coinsLabel: 'Fichas iniciales', unlimitedRounds: 'Hasta la carta roja',
+    start: '¡Repartir!', formError: 'Faltan nombres',
+    roundBadge: 'Ronda {r}/{max}', roundOpen: 'Ronda {r}',
+    shoeInfo: 'Mazo: {n}/{total} cartas', redCardAlert: '🟥 ¡Salió la carta roja! Última mano.',
+    feltPays: 'BLACKJACK PAGA 3 A 2', feltStands: 'EL CRUPIER SE PLANTA EN 17',
+    dealerLabel: 'Crupier (Casa)', dealerHidden: '?',
+    bettingTurn: 'Apuesta de {name}', waitBet: 'Esperando la apuesta de {name}…',
+    coinsNow: '🪙 {n}', betNow: 'Apuesta: 🪙 {n}',
+    chipClear: 'Limpiar', chipMax: 'Todo', placeBet: 'Apostar y jugar', betHint: 'Elige tu apuesta', leaveTable: 'Retirarse', changeMode: 'Cambiar modo',
+    turnOf: 'Turno de {name}', waitTurn: 'Turno de {name}…', handN: 'Mano {n}',
+    hit: 'Pedir', stand: 'Plantarse', double: 'Doblar', split: 'Dividir', surrender: 'Rendirse (50%)',
+    confirmSurrender: '¿Seguro? (50%)', confirmLeave: '¿Salir? Pierdes tus fichas',
+    outBlackjack: '¡Blackjack! +{n}', outWin: 'Ganaste +{n}', outPush: 'Empate',
+    outLose: 'Perdiste', outBust: 'Te pasaste', outSurrender: 'Te rendiste (−{n})', outLeft: 'Se retiró', outBroke: 'Sin fichas',
+    fxPlayerBj: '¡BLACKJACK! · Paga 3 a 2', fxDealerBj: '🎩 ¡Blackjack de la casa!',
+    nextRound: 'Siguiente ronda', seeResults: 'Ver resultados', waitNext: 'Esperando a {name} para seguir…',
+    resumeTitle: '⏯ Hay una mesa a medias', resume: 'Continuar', delete: 'Borrar',
+    endRounds: 'Se cumplieron las rondas', endRedCard: 'Salió la carta roja del mazo',
+    endBroke: 'Todos se quedaron sin fichas', endLeft: 'Todos dejaron la mesa',
+    winnerMulti: '🏆 ¡Ganó {name} ({coins})!', winnerTie: '🤝 Empate en {coins}: {names}',
+    winnerSoloWin: '🏆 ¡Le ganaste a la casa! (+{diff})', winnerSoloEven: '🤝 Saliste a mano',
+    winnerSoloLose: '🎩 Ganó la casa (−{diff})', handsWonN: '{n} manos ganadas', handsWonOne: '1 mano ganada', dealing: '🃏 Repartiendo…', houseTurn: '🎩 Juega la casa…',
+    again: '¡Otra mesa!', rematch: '¡Otra en la sala!',
+    shareRotulo: '📤 Compartir', shareContextSolo: 'Solo vs. la casa', shareContextOnline: 'Varios celulares',
+  },
+  como: [
+    '🎯 Acércate a 21 sin pasarte y vence la mano del crupier.',
+    '🪙 Apuesta y decide: pedir, plantarse, doblar, dividir o rendirse (50%).',
+    '🟥 Una carta roja va escondida en el mazo: cuando sale, se juega la última mano.',
+  ],
+};
+
+const EN = {
+  ui: {
+    docTitle: 'Blackjack ♠️ · Parlor Games', gameChip: 'Blackjack', menu: '‹ Lab',
+    title: 'Blackjack', lead: 'Vegas-style table against the house: play solo or with up to 6 friends.',
+    howTitle: 'How to play',
+    modeSolo: '🤖 Versus the house', modeSoloHint: 'Just you against the dealer.',
+    modeOnline: '📡 Several phones', modeOnlineHint: '2 to 6 players, each on their own phone.',
+    whoPlays: 'Set up your table', setupHint: 'Pick decks, rounds, and starting chips (simulation only).',
+    setupOnline: 'Multi-phone table', onlineHint: 'Create a room or join with the 4-letter code.',
+    invitedTitle: 'You\'re invited to the table', invitedHint: 'Enter your name to take a seat.',
+    invited: 'Room {code}', yourNameLabel: 'Your name', changeName: 'Change',
+    create: 'Create table', joinTitle: 'Or join with a code', codePlaceholder: 'ABCD', join: 'Join',
+    errName: 'Enter your name', errCode: '4-letter code', errNet: 'Could not connect. Check your signal.',
+    lobbyCode: 'Room code', lobbyShare: 'Share the code or QR so friends can take a seat:',
+    lobbyPlayers: 'At the table', lobbyStart: 'Open table!', lobbyNeedMore: 'Need at least 1 more player',
+    lobbyWaitHost: 'Waiting for {name} to open the table', lobbyCancel: 'Cancel room', lobbyLeave: 'Leave room',
+    playerPlaceholder: 'Player {n}',
+    decksLabel: 'Decks', roundsLabel: 'Rounds', coinsLabel: 'Starting chips', unlimitedRounds: 'Until the red card',
+    start: 'Deal!', formError: 'Names are missing',
+    roundBadge: 'Round {r}/{max}', roundOpen: 'Round {r}',
+    shoeInfo: 'Deck: {n}/{total} cards', redCardAlert: '🟥 Red card is out! Last hand.',
+    feltPays: 'BLACKJACK PAYS 3 TO 2', feltStands: 'DEALER STANDS ON 17',
+    dealerLabel: 'Dealer (House)', dealerHidden: '?',
+    bettingTurn: '{name}\'s bet', waitBet: 'Waiting for {name}\'s bet…',
+    coinsNow: '🪙 {n}', betNow: 'Bet: 🪙 {n}',
+    chipClear: 'Clear', chipMax: 'All-in', placeBet: 'Place bet', betHint: 'Pick your bet', leaveTable: 'Leave table', changeMode: 'Change mode',
+    turnOf: '{name}\'s turn', waitTurn: '{name}\'s turn…', handN: 'Hand {n}',
+    hit: 'Hit', stand: 'Stand', double: 'Double', split: 'Split', surrender: 'Surrender (50%)',
+    confirmSurrender: 'Sure? (50%)', confirmLeave: 'Leave? You lose your chips',
+    outBlackjack: 'Blackjack! +{n}', outWin: 'You win +{n}', outPush: 'Push (tie)',
+    outLose: 'You lose', outBust: 'Bust!', outSurrender: 'Surrendered (−{n})', outLeft: 'Left table', outBroke: 'No chips',
+    fxPlayerBj: 'BLACKJACK! · Pays 3 to 2', fxDealerBj: '🎩 House Blackjack!',
+    nextRound: 'Next round', seeResults: 'See results', waitNext: 'Waiting for {name} to continue…',
+    resumeTitle: '⏯ There is a table in progress', resume: 'Continue', delete: 'Delete',
+    endRounds: 'Round limit reached', endRedCard: 'The red card came out of the deck',
+    endBroke: 'Everyone ran out of chips', endLeft: 'Everyone left the table',
+    winnerMulti: '🏆 {name} wins ({coins})!', winnerTie: '🤝 Tie at {coins}: {names}',
+    winnerSoloWin: '🏆 You beat the house! (+{diff})', winnerSoloEven: '🤝 You broke even',
+    winnerSoloLose: '🎩 House wins (−{diff})', handsWonN: '{n} hands won', handsWonOne: '1 hand won', dealing: '🃏 Dealing…', houseTurn: '🎩 The house plays…',
+    again: 'Play again!', rematch: 'Rematch in room!',
+    shareRotulo: '📤 Share', shareContextSolo: 'Solo vs. house', shareContextOnline: 'Multi-phone table',
+  },
+  como: [
+    '🎯 Get as close to 21 as you can without busting and beat the dealer.',
+    '🪙 Bet each round; hit, stand, double, split, or surrender (50%).',
+    '🟥 A red card is hidden in the deck: when it comes out, that hand is the last.',
+  ],
+};
+
+const PT = {
+  ui: {
+    docTitle: 'Blackjack ♠️ · Jogos de Salão', gameChip: 'Blackjack', menu: '‹ Laboratório',
+    title: 'Blackjack', lead: 'Mesa estilo Las Vegas contra a casa: jogue sozinho ou com até 6 amigos.',
+    howTitle: 'Como se joga',
+    modeSolo: '🤖 Contra a casa', modeSoloHint: 'Só você contra o crupiê.',
+    modeOnline: '📡 Vários celulares', modeOnlineHint: 'De 2 a 6 jogadores, cada um no seu celular.',
+    whoPlays: 'Monte sua mesa', setupHint: 'Escolha baralhos, rodadas e fichas iniciais (sem dinheiro real).',
+    setupOnline: 'Mesa em vários celulares', onlineHint: 'Crie uma sala ou entre com o código de 4 letras.',
+    invitedTitle: 'Convidaram você para a mesa', invitedHint: 'Digite seu nome para sentar e jogar.',
+    invited: 'Sala {code}', yourNameLabel: 'Seu nome', changeName: 'Trocar',
+    create: 'Criar mesa', joinTitle: 'Ou entre com o código', codePlaceholder: 'ABCD', join: 'Entrar',
+    errName: 'Digite seu nome', errCode: 'Código de 4 letras', errNet: 'Não foi possível conectar. Verifique seu sinal.',
+    lobbyCode: 'Código da sala', lobbyShare: 'Compartilhe o código ou QR para entrarem na mesa:',
+    lobbyPlayers: 'Na mesa', lobbyStart: 'Abrir mesa!', lobbyNeedMore: 'Falta pelo menos mais 1 jogador',
+    lobbyWaitHost: 'Esperando {name} abrir a mesa', lobbyCancel: 'Cancelar sala', lobbyLeave: 'Sair da sala',
+    playerPlaceholder: 'Jogador {n}',
+    decksLabel: 'Baralhos', roundsLabel: 'Rodadas', coinsLabel: 'Fichas iniciais', unlimitedRounds: 'Até a carta vermelha',
+    start: 'Dar cartas!', formError: 'Faltam nomes',
+    roundBadge: 'Rodada {r}/{max}', roundOpen: 'Rodada {r}',
+    shoeInfo: 'Baralho: {n}/{total} cartas', redCardAlert: '🟥 Saiu a carta vermelha! Última mão.',
+    feltPays: 'BLACKJACK PAGA 3 PARA 2', feltStands: 'O CRUPIÊ PARA EM 17',
+    dealerLabel: 'Crupiê (Casa)', dealerHidden: '?',
+    bettingTurn: 'Aposta de {name}', waitBet: 'Esperando a aposta de {name}…',
+    coinsNow: '🪙 {n}', betNow: 'Aposta: 🪙 {n}',
+    chipClear: 'Limpar', chipMax: 'Tudo', placeBet: 'Apostar e jogar', betHint: 'Escolha a aposta', leaveTable: 'Sair da mesa', changeMode: 'Mudar de modo',
+    turnOf: 'Vez de {name}', waitTurn: 'Vez de {name}…', handN: 'Mão {n}',
+    hit: 'Pedir', stand: 'Parar', double: 'Dobrar', split: 'Dividir', surrender: 'Render-se (50%)',
+    confirmSurrender: 'Certeza? (50%)', confirmLeave: 'Sair? Você perde suas fichas',
+    outBlackjack: 'Blackjack! +{n}', outWin: 'Ganhou +{n}', outPush: 'Empate',
+    outLose: 'Perdeu', outBust: 'Estourou', outSurrender: 'Rendeu-se (−{n})', outLeft: 'Saiu', outBroke: 'Sem fichas',
+    fxPlayerBj: 'BLACKJACK! · Paga 3 para 2', fxDealerBj: '🎩 Blackjack da casa!',
+    nextRound: 'Próxima rodada', seeResults: 'Ver resultados', waitNext: 'Esperando {name} continuar…',
+    resumeTitle: '⏯ Há uma mesa pela metade', resume: 'Continuar', delete: 'Apagar',
+    endRounds: 'Limite de rodadas atingido', endRedCard: 'A carta vermelha saiu do baralho',
+    endBroke: 'Todos ficaram sem fichas', endLeft: 'Todos saíram da mesa',
+    winnerMulti: '🏆 {name} ganhou ({coins})!', winnerTie: '🤝 Empate em {coins}: {names}',
+    winnerSoloWin: '🏆 Você venceu a casa! (+{diff})', winnerSoloEven: '🤝 Você empatou',
+    winnerSoloLose: '🎩 A casa venceu (−{diff})', handsWonN: '{n} mãos ganhas', handsWonOne: '1 mão ganha', dealing: '🃏 Distribuindo…', houseTurn: '🎩 A casa joga…',
+    again: 'Outra mesa!', rematch: 'Outra na sala!',
+    shareRotulo: '📤 Compartilhar', shareContextSolo: 'Sozinho vs. casa', shareContextOnline: 'Vários celulares',
+  },
+  como: [
+    '🎯 Chegue perto de 21 sem estourar e vença a mão do crupiê.',
+    '🪙 Aposte e escolha: pedir, parar, dobrar, dividir ou render-se (50%).',
+    '🟥 Uma carta vermelha vai escondida no baralho: quando sai, é a última mão.',
+  ],
+};
+
+export const LOCALES = { es: ES, en: EN, pt: PT };

@@ -1,0 +1,77 @@
+/* ==========================================================
+   Críptico: the game's own styles (lab).
+   The shell (screens, the cover's hero, modes, fields, notices, the result's hero) lives once in
+   base.css (DESIGN.md §2); this file keeps only what is the game's own, on the tokens (DESIGN.md §1).
+   ========================================================== */
+
+.how { margin: 0; padding-left: 1.3em; display: grid; gap: var(--s-6); }
+
+/* ---------- The clue ---------- */
+.clue-card { display: grid; gap: var(--s-14); }
+.clue { margin: 0; font-size: var(--fs-140); font-weight: 800; line-height: 1.35; text-align: center; }
+.clue--small { font-size: var(--fs-110); }
+.clue .def { text-decoration-color: var(--yellow); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+
+/* ---------- The answer's letters, one box each ---------- */
+/* One row, always (the owner: a word never breaks over two lines): the boxes share the card's width,
+   up to 2.6rem each, and the letter shrinks with them for the long answers (10 and 11 letters) */
+.tiles {
+  display: grid; grid-template-columns: repeat(var(--n, 8), minmax(0, 2.6rem)); justify-content: center;
+  gap: var(--s-4);
+}
+.tile {
+  aspect-ratio: 7 / 8; display: grid; place-items: center; border-radius: var(--r-8); min-width: 0;
+  background: var(--well-deep); font: 900 min(var(--fs-120), calc(60cqi / var(--n, 8))) var(--font-display); text-transform: uppercase;
+}
+.tile--on { outline: 2px solid var(--cyan); }
+/* The next box to fill: the cursor, blinking while the keyboard is up */
+.tile--at { outline: 2px solid var(--yellow); }
+.tiles-wrap:focus-within .tile--at { animation: tile-blink 1s steps(1) infinite; }
+@keyframes tile-blink { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .tiles-wrap:focus-within .tile--at { animation: none; } }
+
+/* The field the player types into lies, invisible, over the boxes: a tap on them opens the keyboard */
+.tiles-wrap { position: relative; container-type: inline-size; }
+.tiles-input {
+  position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0;
+  opacity: 0; font-size: var(--fs-100); cursor: text;
+}
+
+.answer { display: grid; gap: var(--s-8); }
+
+/* ---------- The hints given ---------- */
+.hints { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-6); }
+.hints:empty { display: none; }
+.hints li { padding: var(--s-8) var(--s-12); border-radius: var(--r-12); background: var(--well); font-weight: 700; }
+
+/* ---------- The cover: the clue number or today's stars, between the two buttons ---------- */
+.today-note { margin: 0; }
+
+/* ---------- The cover's split-flap board (flapboard.js) ---------- */
+.flapboard { display: grid; grid-template-columns: repeat(var(--tiles, 8), minmax(0, 2.4rem)); justify-content: center; gap: var(--s-4); margin: 0 auto var(--s-20); }
+.flap {
+  position: relative; min-width: 0; aspect-ratio: 3 / 4; overflow: hidden; display: grid; place-items: center;
+  border-radius: var(--r-8); background: var(--well-deep); box-shadow: inset 0 0 0 1px var(--glass-border);
+  font: 900 var(--fs-160) var(--font-display); color: var(--yellow); line-height: 1;
+}
+/* The hinge across the middle of each tile */
+.flap::after { content: ''; position: absolute; inset: 50% 0 auto; height: 2px; background: var(--well); }
+.flap--tick { animation: flap-tick 0.12s ease-out; }
+@keyframes flap-tick { from { transform: scaleY(0.15); } to { transform: scaleY(1); } }
+.flapboard--done .flap { text-shadow: 0 0 12px rgb(var(--yellow-rgb) / 0.6); }
+
+/* ---------- «Propón tu críptico» (propose.js): the form's labelled fields ---------- */
+.propose-field { display: grid; gap: var(--s-4); }
+.propose-label { font-weight: 800; font-size: var(--fs-90); }
+.propose .btn { justify-self: center; }
+/* The kind, already picked (the owner): a tag, not one more button to choose */
+.propose-kind { justify-self: start; display: inline-grid; place-items: center; cursor: default; min-height: 0; padding: var(--s-4) var(--s-12); }
+
+/* ---------- The day's three clues (the owner, 2026-11-20): the level line, and each clue as it ended ---------- */
+.clue-step { margin: 0; }
+.solutions { display: grid; gap: var(--s-14); }
+.solution { display: grid; gap: var(--s-6); }
+.solution + .solution { padding-top: var(--s-14); border-top: 1px solid var(--glass-border); }
+.solution p { margin: 0; }
+.solution-head { font-weight: 800; }
+.hints-left { margin: 0; }

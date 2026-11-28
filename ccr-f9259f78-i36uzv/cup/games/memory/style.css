@@ -1,0 +1,103 @@
+/* 👀 Memorice in La Copa (from the lab's style.css, labs/memory/). Loaded by ui.js; every class starts with `mm-`.
+   Written on the design system's tokens (D-533, docs/DESIGN.md); the tiles' own colours are the game's
+   tokens below (DESIGN.md §4). */
+:root { --mm-tile-top: #7b3fe4; --mm-tile-bottom: #5a24b8; --mm-tile-face: #2d1b55; --mm-miss: #ff4d6d; --mm-miss-rgb: 255 77 109; --mm-miss-text: #ff8fa3; --mm-shade: #000; --mm-shade-rgb: 0 0 0; }
+
+/* The waiting room's name, with the 👀 that blinks, and its line */
+.mm-cabeza { display: grid; justify-items: center; gap: var(--s-4); text-align: center; }
+.mm-titulo { display: flex; align-items: center; justify-content: center; gap: var(--s-12); margin: 0; }
+.mm-titulo .rainbow { padding: 0.2em 0.12em 0 0; margin: -0.2em -0.12em 0 0; }
+.mm-logo { font-size: var(--fs-200); animation: mm-blink 3.2s ease-in-out infinite; }
+@keyframes mm-blink { 0%, 86%, 100% { transform: scaleY(1); } 90% { transform: scaleY(0.1); } 94% { transform: scaleY(1); } }
+.mm-lema { margin: 0; color: var(--muted); font-weight: 700; }
+
+/* The cover's small board playing by itself */
+.mm-portada { width: min(200px, 56vw); margin: 0 auto; }
+
+/* The board: square, its tiles chunky pixel blocks */
+.mm-juego { display: grid; gap: var(--s-8); position: relative; }
+.mm-slot { display: grid; place-items: center; padding: var(--s-8) 0; }
+.mm-board {
+  --gap: clamp(4px, 1.6vw, 8px);
+  display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: var(--gap);
+  width: min(100%, 420px, calc(100svh - 300px)); min-width: 240px; aspect-ratio: 1; margin: 0 auto;
+  touch-action: manipulation; -webkit-user-select: none; user-select: none;
+}
+.mm-board.mini { width: 100%; min-width: 0; --gap: 5px; }
+.mm-tile {
+  position: relative; aspect-ratio: 1; padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
+  perspective: 500px; -webkit-tap-highlight-color: transparent; font: inherit; color: inherit;
+}
+.mm-tile:disabled { cursor: default; }
+.mm-tile:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; border-radius: var(--r-8); }
+.mm-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.3s cubic-bezier(.4, 1.4, .5, 1); }
+.mm-tile.open .mm-inner { transform: rotateY(180deg); }
+.mm-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--r-8); display: grid; place-items: center; }
+/* The cover: a beveled block with a small pixel diamond, the same on every tile */
+.mm-cover {
+  background: linear-gradient(180deg, var(--mm-tile-top), var(--mm-tile-bottom));
+  box-shadow: inset 0 4px 0 rgb(var(--ink-rgb) / 0.28), inset 0 -5px 0 rgb(var(--mm-shade-rgb) / 0.35), inset 4px 0 0 rgb(var(--ink-rgb) / 0.1), inset -4px 0 0 rgb(var(--mm-shade-rgb) / 0.18), 0 3px 8px var(--well-deep);
+}
+.mm-cover::after { content: ''; width: 24%; aspect-ratio: 1; transform: rotate(45deg); background: rgb(var(--ink-rgb) / 0.2); box-shadow: 0 0 0 3px rgb(var(--mm-shade-rgb) / 0.12); }
+.mm-board.mini .mm-cover { box-shadow: inset 0 3px 0 rgb(var(--ink-rgb) / 0.28), inset 0 -3px 0 rgb(var(--mm-shade-rgb) / 0.35); }
+.mm-pic {
+  transform: rotateY(180deg); background: var(--mm-tile-face); border: 2px solid rgb(var(--ink-rgb) / 0.18);
+  box-shadow: inset 0 0 0 3px var(--well);
+}
+.mm-pic svg, .mm-pic-icon svg { width: 82%; height: 82%; display: block; image-rendering: pixelated; filter: drop-shadow(0 2px 0 rgb(var(--mm-shade-rgb) / 0.45)); }
+.mm-tile.empty .mm-pic::after { content: ''; width: 30%; height: 30%; border-radius: 50%; background: var(--glass); }
+.mm-tile.ok .mm-pic { border-color: var(--lime); box-shadow: 0 0 16px rgb(var(--lime-rgb) / 0.55), inset 0 0 0 3px var(--well); }
+.mm-tile.bad .mm-pic { border-color: var(--mm-miss); box-shadow: 0 0 16px rgb(var(--mm-miss-rgb) / 0.6); }
+.mm-tile.bad { animation: mm-shake 0.4s ease-in-out; }
+.mm-tile.answer .mm-pic { border-color: var(--yellow); box-shadow: 0 0 18px rgb(var(--yellow-rgb) / 0.7); animation: mm-ring 0.9s ease-in-out 2; }
+.mm-board.cleared .mm-tile.ok .mm-pic { animation: mm-jump 0.45s ease-out; }
+@keyframes mm-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes mm-ring { 50% { box-shadow: 0 0 4px rgb(var(--yellow-rgb) / 0.3); } }
+@keyframes mm-jump { 40% { transform: rotateY(180deg) translateY(-8px) scale(1.06); } }
+
+/* The lives and the round */
+.mm-hud { display: flex; align-items: center; justify-content: space-between; gap: var(--s-10); }
+.mm-vidas { display: flex; gap: var(--s-4); font-size: var(--fs-120); }
+.mm-vidas span { transition: opacity 0.4s, filter 0.4s; }
+.mm-vidas .lost { opacity: 0.25; filter: grayscale(1); }
+.mm-vidas .lost.now { animation: pop 0.4s ease-out; }
+.mm-ronda { font: 1.6rem var(--font-display); letter-spacing: 0.05em; color: var(--yellow); }
+.mm-ronda.bump { animation: pop 0.35s ease-out; }
+/* What to do now: always the same height, so the board does not jump */
+.mm-aviso {
+  min-height: 3.6rem; display: flex; align-items: center; justify-content: center; gap: var(--s-10); text-align: center;
+  font: 800 var(--fs-110) var(--font-body); color: var(--ink);
+}
+.mm-aviso.big, .mm-aviso.well { font: var(--fs-200) var(--font-display); letter-spacing: 0.05em; color: var(--yellow); animation: pop 0.35s ease-out; }
+.mm-aviso.well { color: var(--lime); }
+.mm-aviso.bad { color: var(--mm-miss-text); }
+.mm-aviso.ask { font-size: var(--fs-120); }
+.mm-skip { min-height: 44px; padding: 0 var(--s-14); border-radius: 999px; border: 2px solid var(--cyan); background: var(--glass); color: var(--ink); font: 800 var(--fs-90) var(--font-body); white-space: nowrap; cursor: pointer; }
+.mm-skip:active { transform: translateY(2px); }
+.mm-pic-icon { width: 3rem; height: 3rem; display: grid; place-items: center; border-radius: var(--r-8); background: var(--mm-tile-face); border: 2px solid var(--yellow); animation: pop 0.3s ease-out; }
+.mm-pic-icon svg { width: 88%; height: 88%; }
+/* The time left to look (lime to yellow), and to answer (pink to cyan) */
+.mm-bar { height: 6px; border-radius: var(--r-8); background: rgb(var(--ink-rgb) / 0.1); overflow: hidden; opacity: 0; transition: opacity 0.2s; }
+.mm-bar.on { opacity: 1; }
+.mm-bar span { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, var(--lime), var(--yellow)); }
+.mm-bar.answer span { background: linear-gradient(90deg, var(--pink), var(--cyan)); }
+
+/* Paused (the page hidden): over the play, until it is back */
+.mm-pausa { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--s-6); text-align: center; font-weight: 700; background: rgb(var(--mm-shade-rgb) / 0.55); border-radius: var(--radius); }
+.mm-pausa[hidden] { display: none; }
+
+/* The end: the verdict and Continuar */
+.mm-fin { display: grid; gap: var(--s-12); justify-items: center; text-align: center; }
+.mm-fin:empty { display: none; }
+.mm-veredicto { margin: 0; font-weight: 800; font-size: var(--fs-110); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mm-logo, .mm-tile.bad, .mm-tile.answer .mm-pic, .mm-board.cleared .mm-tile.ok .mm-pic, .mm-aviso, .mm-pic-icon, .mm-ronda.bump, .mm-vidas .lost.now { animation: none; }
+  .mm-inner { transition: none; }
+}
+
+/* A short phone (320×568): the cover's board shrinks so Empezar stays above the fold (U-39) */
+@media (max-height: 620px) {
+  .mm-portada { width: 130px; }
+  .mm-aviso { min-height: 2.6rem; }
+}

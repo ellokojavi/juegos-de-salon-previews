@@ -1,0 +1,85 @@
+/* The home page's ☁️ button and its sheet (offline-ready.js, D-538): a cyan→lime cloud that glows
+   when the phone keeps everything, an arrow and a ring while it stores, amber with "!" when
+   something is missing, grey and struck through when the browser keeps nothing. */
+.offline-ready { position: relative; padding: 0; }
+.or-icono { width: 28px; height: 28px; overflow: visible; }
+.or-c1 { stop-color: var(--cyan); }
+.or-c2 { stop-color: var(--lime); }
+.or-a1 { stop-color: var(--yellow); }
+.or-a2 { stop-color: var(--orange); }
+.or-nube { fill: url(#or-cg); }
+.or-marca { fill: none; stroke: var(--ink-on-cyan); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.or-punto { fill: var(--ink-on-yellow); stroke: none; }
+[data-state="ready"] .or-nube { filter: drop-shadow(0 0 3px rgb(var(--cyan-rgb) / 0.9)); }
+/* Storing: the titles' shimmer (.rainbow) over the cloud, no movement of the arrow (the owner, 2026-11-12) */
+.or-t1 { stop-color: var(--yellow); }
+.or-t2 { stop-color: var(--pink); }
+.or-t3 { stop-color: var(--cyan); }
+.or-t4 { stop-color: var(--lime); }
+[data-state="loading"] .or-nube { fill: url(#or-tg); filter: none; }
+[data-state="loading"] .or-marca { stroke: var(--bg1); }
+[data-state="missing"] .or-nube { fill: url(#or-ag); }
+[data-state="missing"] .or-marca { stroke: var(--ink-on-yellow); }
+[data-state="unsupported"] .or-nube { fill: var(--line-faint); }
+[data-state="unsupported"] .or-marca { stroke: var(--bg2); stroke-width: 2.4; }
+.or-anillo { position: absolute; inset: calc(-1 * var(--s-4)); width: calc(100% + var(--s-8)); height: calc(100% + var(--s-8)); transform: rotate(-90deg); pointer-events: none; }
+.or-anillo circle { fill: none; stroke: var(--glass-border); stroke-width: 2.5; }
+.or-anillo .or-lleno { stroke: var(--cyan); stroke-linecap: round; transition: stroke-dasharray 0.4s; }
+.or-destello .or-icono { animation: or-destello 0.9s ease-out 1; }
+@keyframes or-destello { 0% { transform: scale(1); } 40% { transform: scale(1.25); filter: drop-shadow(0 0 8px rgb(var(--lime-rgb) / 0.9)); } 100% { transform: scale(1); } }
+.or-hoja-icono { align-self: center; }
+.or-hoja-icono .or-icono { width: 72px; height: 72px; }
+.or-lineas { display: grid; gap: var(--s-8); }
+.or-barra { height: var(--s-6); border-radius: var(--r-pill); background: var(--glass-border); overflow: hidden; }
+.or-barra i { display: block; height: 100%; border-radius: var(--r-pill); background: linear-gradient(90deg, var(--cyan), var(--lime)); transition: width 0.4s; }
+.or-barra[hidden], .or-pct[hidden] { display: none; }
+.or-pct { text-align: center; font-weight: 900; font-size: var(--fs-110); color: var(--cyan); }
+@media (prefers-reduced-motion: reduce) {
+  .or-destello .or-icono { animation: none; }
+}
+
+/* The T tab's buttons, one per state (testers only) */
+.tr-or-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-6); }
+.tr-or-grid .btn:last-child { grid-column: 1 / -1; }
+
+/* The profile's ⚙️ row (flag cloud-quiet, offlineReadyRow): a .toggle-row that opens the sheet, the cloud at its end */
+.or-fila { width: 100%; border: 0; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.or-fila-icono { display: inline-flex; flex: none; }
+/* Quiet cloud (flag cloud-quiet, offline-ready.js): while the bar's ☁️ is hidden its slot takes no room, so the bar closes up */
+html.cloud-quiet .portada-barra .tools > span:has(> .offline-ready[hidden]) { display: none; }
+/* Its way out (offlineReadyButton's floatAway, the owner's variant 3): the cloud rises out of its button and fades
+   while the button's glass fades in place (QUIET_FLOAT_MS); the button never rises, or the screen's top edge would cut
+   it. Then, with nothing left to see (.or-ido), its slot narrows to nothing (QUIET_CLOSE_MS) and swallows the bar's gap
+   (--s-6, index.html), so the bar does not jump */
+.offline-ready.or-se-va { animation: or-vidrio-se-va 0.6s ease-in-out forwards; pointer-events: none; }
+.offline-ready.or-se-va .or-icono { animation: or-se-va 0.6s ease-in forwards; }
+.offline-ready.or-ido { visibility: hidden; }
+@keyframes or-vidrio-se-va { to { background-color: transparent; border-color: transparent; } }
+@keyframes or-se-va { 60% { opacity: 0.5; } to { opacity: 0; transform: translateY(-14px) scale(0.92); } }
+.or-cierra { overflow: hidden; transition: width 0.3s ease-in-out, margin-inline-end 0.3s ease-in-out; }
+.or-cierra.or-cerrado { margin-inline-end: calc(-1 * var(--s-6)); }
+@media (prefers-reduced-motion: reduce) {
+  .offline-ready.or-se-va .or-icono { animation-name: or-se-apaga; }
+  .or-cierra { transition: none; }
+}
+@keyframes or-se-apaga { to { opacity: 0; } }
+/* Its way in (offlineReadyButton's arrive, the mirror of the way out): the slot opens empty from the swallowed gap to
+   the cloud's width (QUIET_OPEN_MS), then the cloud grows from its centre, a little past its size and back
+   (QUIET_GROW_MS), the glass fading in under it */
+.offline-ready.or-llega { visibility: hidden; }
+.or-abre { overflow: hidden; margin-inline-end: calc(-1 * var(--s-6)); transition: width 0.25s ease-out, margin-inline-end 0.25s ease-out; }
+.or-abre.or-abierto { margin-inline-end: 0; }
+.offline-ready.or-crece { animation: or-vidrio-llega 0.45s ease-out both; }
+.offline-ready.or-crece .or-icono, .offline-ready.or-crece .or-anillo { animation: or-crece 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.offline-ready.or-crece .or-anillo { animation-name: or-anillo-crece; }
+@keyframes or-vidrio-llega { from { background-color: transparent; border-color: transparent; } }
+@keyframes or-crece { from { opacity: 0; transform: scale(0.2); } 40% { opacity: 1; } }
+@keyframes or-anillo-crece { from { opacity: 0; transform: rotate(-90deg) scale(0.2); } 40% { opacity: 1; } to { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .or-abre { transition: none; }
+  .offline-ready.or-crece .or-icono, .offline-ready.or-crece .or-anillo { animation: or-se-enciende 0.3s ease-out both; }
+}
+@keyframes or-se-enciende { from { opacity: 0; } }
+/* …and it comes and goes on the left of share (the owner, 2026-11-23): share and the pill never move, the cloud takes
+   the empty room toward the language */
+html.cloud-quiet .portada-barra .tools > #offline-ready-slot { order: -1; }

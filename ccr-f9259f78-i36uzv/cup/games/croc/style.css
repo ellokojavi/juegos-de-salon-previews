@@ -1,0 +1,246 @@
+/* Croc! in La Copa. Loaded by ui.js; all classes start with `sp-`. Tokens only (DESIGN.md). */
+
+:root {
+  --croc-stage: #101524;
+  --croc-pad: rgba(16, 22, 40, 0.56);
+  --croc-pad-on: rgba(46, 230, 214, 0.34);
+  --croc-shadow: rgba(0, 0, 0, 0.55);
+  /* The traffic lever's metal and knobs: the standard lever (Pintaminas', Sudoku's), green for normal, red for heavy */
+  --sp-plate-light: #4a4f5c;
+  --sp-plate-dark: #23262e;
+  --sp-plate-edge: #6b7180;
+  --sp-axle-light: #d9dde5;
+  --sp-axle-dark: #7b8190;
+  --sp-arm-1: #aeb4c0;
+  --sp-arm-2: #e6e9ef;
+  --sp-arm-3: #9aa0ad;
+  --sp-knob-easy: #c8ff8a;
+  --sp-knob-hard: #ff8a8a;
+  --sp-knob-shade-easy: #3f8f12;
+  --sp-knob-shade-hard: #c4142b;
+}
+
+.sp-cabeza {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: center;
+  text-align: center;
+  width: 100%;
+}
+.sp-logo { animation: croc-hop 2s ease-in-out infinite; }
+@keyframes croc-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  45% { transform: translateY(-4px) scale(1.03); }
+}
+.sp-nombre { white-space: nowrap; }
+body.sp-hard .sp-nombre { background: linear-gradient(90deg, var(--sp-knob-hard), var(--yellow), var(--sp-knob-hard)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.sp-titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--s-10);
+  margin: 0;
+}
+.sp-lema {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: var(--fs-90);
+}
+
+/* The cover's demo: the real game playing itself; on a short phone it shrinks so Empezar stays above the fold (U-39) */
+.sp-portada {
+  width: 100%;
+  max-width: 340px;
+  margin-inline: auto;
+  border-radius: var(--r-16);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  background: var(--croc-stage);
+  box-shadow: var(--shadow-panel);
+}
+.sp-demo {
+  display: block;
+  width: 100%;
+  height: max(72px, min(62vw, 300px, calc(100svh - 420px)));
+}
+
+.sp-juego {
+  display: grid;
+  gap: var(--s-12);
+  overscroll-behavior: none;
+}
+
+.sp-escenario {
+  position: relative;
+  height: calc(100svh - 190px);
+  min-height: 340px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  background: var(--croc-stage);
+  box-shadow: var(--shadow-panel);
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.sp-lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sp-hud {
+  position: absolute;
+  top: var(--s-10);
+  left: var(--s-10);
+  right: var(--s-10);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-8);
+  pointer-events: none;
+}
+.sp-pill {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-6) var(--s-10);
+  border-radius: var(--r-12);
+  background: rgb(var(--bg1-rgb) / 0.72);
+  border: 1px solid var(--glass-border);
+  font-size: var(--fs-85);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.sp-pill small {
+  font-size: var(--fs-75);
+  font-weight: 700;
+  color: var(--muted);
+}
+.sp-lives {
+  font-size: var(--fs-85);
+  line-height: 1.1;
+  letter-spacing: 1px;
+}
+.sp-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+}
+.sp-score {
+  font: 900 var(--fs-200)/1 var(--font-num);
+  font-variant-numeric: tabular-nums;
+  color: var(--yellow);
+  text-shadow: 0 3px 0 var(--croc-shadow);
+}
+.sp-dash {
+  padding: var(--s-4) var(--s-12);
+  border-radius: var(--r-pill);
+  background: rgb(var(--bg1-rgb) / 0.88);
+  border: 2px solid var(--yellow);
+  color: var(--yellow);
+  font-size: var(--fs-85);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 10px rgb(var(--yellow-rgb) / 0.35);
+}
+.sp-dash.cooldown {
+  border-width: 1px;
+  border-color: var(--glass-border);
+  color: var(--muted);
+  box-shadow: none;
+}
+
+.sp-pausa {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: var(--s-6);
+  text-align: center;
+  cursor: pointer;
+  background: rgb(var(--bg1-rgb) / 0.78);
+}
+
+.sp-fin {
+  display: grid;
+  gap: var(--s-10);
+  text-align: center;
+}
+.sp-veredicto {
+  margin: 0;
+  font: 900 var(--fs-120)/1.25 var(--font-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-logo { animation: none; }
+  .sp-arm, .sp-lever { transition: none; }
+  .sp-lever.on .sp-bolt { animation: none; opacity: 1; }
+  .sp-lever.zap .sp-plate { animation: none; }
+}
+
+/* ---------------- The traffic lever: the standard lever (Pintaminas', Sudoku's). Down and green is normal, up and red is heavy ---------------- */
+.sp-lever { position: relative; display: grid; grid-template-columns: 74px 1fr; gap: var(--s-14); align-items: center; width: 100%; text-align: left; cursor: pointer;
+  padding: var(--s-10) var(--s-14); border-radius: var(--r-16); border: 2px solid rgb(var(--lime-rgb) / 0.6); background: rgb(var(--lime-rgb) / 0.08);
+  box-shadow: 0 0 14px rgb(var(--lime-rgb) / 0.25); color: var(--ink); font: inherit; -webkit-tap-highlight-color: transparent; transition: border-color 0.25s, background 0.25s, box-shadow 0.25s; }
+/* On, the whole rectangle glows and flickers at random like a bad contact: ui.js moves --glow (0 to 1) */
+.sp-lever.on { --glow: 0.7; border-color: rgb(var(--red-rgb) / calc(0.4 + 0.6 * var(--glow))); background: rgb(var(--red-rgb) / calc(0.06 + 0.1 * var(--glow)));
+  box-shadow: 0 0 calc(4px + 26px * var(--glow)) rgb(var(--red-rgb) / calc(0.2 + 0.6 * var(--glow))), 0 0 calc(2px + 6px * var(--glow)) rgb(var(--yellow-rgb) / calc(0.4 * var(--glow))) inset;
+  transition: box-shadow 0.05s, border-color 0.05s, background 0.05s; }
+.sp-label { display: grid; gap: var(--s-2); min-width: 0; }
+.sp-label b { font: var(--fs-120) var(--font-display); letter-spacing: 0.05em; color: var(--lime); }
+.sp-lever.on .sp-label b { color: var(--sp-knob-hard); }
+.sp-label .muted { font-size: var(--fs-85); }
+.sp-plate { position: relative; width: 74px; height: 64px; border-radius: var(--r-12); background: linear-gradient(160deg, var(--sp-plate-light), var(--sp-plate-dark));
+  border: 2px solid var(--sp-plate-edge); box-shadow: inset 0 2px 4px rgb(var(--ink-rgb) / 0.15), inset 0 -3px 6px rgb(var(--well-rgb) / 0.5); }
+/* The groove is an arc around the lever's base with the ball's radius (39 px), as in Pintaminas */
+.sp-track { position: absolute; inset: 0; pointer-events: none; }
+.sp-track svg { width: 100%; height: 100%; display: block; }
+.sp-groove { fill: none; stroke: rgb(var(--well-rgb) / 0.5); stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 1px 0 rgb(var(--ink-rgb) / 0.18)); }
+.sp-axle { position: absolute; left: 50%; bottom: 4.75px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--sp-axle-light), var(--sp-axle-dark)); box-shadow: 0 1px 2px rgb(var(--well-rgb) / 0.6); }
+.sp-arm { position: absolute; left: 50%; bottom: 12.75px; width: 8px; height: 38px; margin-left: -4px; border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--sp-arm-1), var(--sp-arm-2), var(--sp-arm-3)); transform-origin: 50% 100%; transform: rotate(-38deg);
+  transition: transform 0.35s cubic-bezier(0.3, 1.6, 0.5, 1); }
+.sp-knob { position: absolute; left: 50%; top: -9px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--sp-knob-easy), var(--sp-knob-shade-easy)); box-shadow: 0 2px 3px rgb(var(--well-rgb) / 0.5); }
+.sp-lever.on .sp-arm { transform: rotate(38deg); }
+.sp-lever.on .sp-knob { background: radial-gradient(circle at 35% 35%, var(--sp-knob-hard), var(--sp-knob-shade-hard)); }
+.sp-lever:active { transform: scale(0.98); }
+.sp-lever:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+
+/* The sparks on the plate, while heavy traffic is on */
+.sp-bolt { position: absolute; font-size: var(--fs-100); opacity: 0; pointer-events: none; z-index: 1; }
+.sp-bolt.b1 { top: -10px; left: -8px; } .sp-bolt.b2 { top: 6px; right: -12px; } .sp-bolt.b3 { bottom: -8px; left: 6px; }
+.sp-lever.on .sp-bolt { animation: sp-spark 1.6s ease-out infinite; }
+.sp-lever.on .b2 { animation-delay: 0.45s; } .sp-lever.on .b3 { animation-delay: 0.9s; }
+.sp-lever.on .sp-plate { border-color: var(--sp-knob-hard); }
+@keyframes sp-spark { 0% { opacity: 0; transform: scale(0.4) rotate(-20deg); } 10% { opacity: 1; transform: scale(1.2) rotate(10deg); } 25%, 100% { opacity: 0; transform: scale(0.8); } }
+
+/* The electric wave: a ring that leaves the plate on every flip (green to normal, red and yellow to heavy), and the plate jolts */
+.sp-wave { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; pointer-events: none;
+  border: 3px solid var(--sp-knob-easy); box-shadow: 0 0 16px var(--sp-knob-easy), inset 0 0 12px var(--sp-knob-easy); animation: sp-wave 0.85s ease-out forwards; }
+.sp-wave.hard { border-color: var(--sp-knob-hard); box-shadow: 0 0 18px var(--sp-knob-hard), 0 0 6px var(--yellow), inset 0 0 14px var(--yellow); }
+@keyframes sp-wave { 0% { opacity: 1; transform: scale(0.6); } 100% { opacity: 0; transform: scale(5.5); } }
+.sp-lever.zap .sp-plate { animation: sp-jolt 0.5s ease-out; }
+@keyframes sp-jolt { 0% { transform: translateX(-2px); } 20% { transform: translateX(3px); } 40% { transform: translateX(-2px); } 100% { transform: none; } }
+
+/* The flash over the whole view when switching to heavy traffic */
+.sp-flash { position: fixed; inset: 0; z-index: 60; pointer-events: none; animation: sp-flash 0.55s ease-out forwards;
+  background: radial-gradient(circle at 50% 70%, rgb(var(--ink-rgb) / 0.95), rgb(var(--red-rgb) / 0.7) 45%, rgb(var(--yellow-rgb) / 0.3)); }
+@keyframes sp-flash { 0% { opacity: 0; } 12% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Heavy traffic turns the whole page over: a charged red-violet panel with a yellow spark, like switching on a light */
+body.sp-hard {
+  --bg1: #1c020a; --bg1-rgb: 28 2 10; --bg2: #3a0618; --bg2-rgb: 58 6 24; --bg3: #200836; --bg3-rgb: 32 8 54;
+  --fondo:
+    radial-gradient(1100px 600px at 10% -10%, rgba(255, 70, 100, 0.34), transparent 60%),
+    radial-gradient(900px 500px at 110% 15%, rgba(255, 210, 63, 0.18), transparent 60%),
+    radial-gradient(800px 600px at 50% 120%, rgba(160, 60, 255, 0.32), transparent 60%),
+    linear-gradient(160deg, var(--bg1), var(--bg2) 55%, var(--bg3));
+}

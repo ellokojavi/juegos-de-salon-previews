@@ -1,0 +1,65 @@
+/* The home page's games as carousels (lab flag home-carousels, lab: #seccion-home-carousels; drawn by
+   home-carousels.js, which loads this sheet). What hides the filters and the list's cards is in the
+   home page itself (html.carousels), so it holds before this sheet arrives. */
+
+/* The rows: one under the other, each with its title */
+.shelves { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-28); margin-top: var(--s-16); }
+.shelf { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-8); }
+.shelf h2 { margin: 0; }
+
+/* A row is a widget: its games three to a line, as many lines as it needs; nothing slides (the owner, 2026-11-18) */
+.shelf-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-10); }
+.shelf-row > [role="listitem"] { display: flex; min-width: 0; }
+/* The line between La Copa and Uno al día and the games: the list's own divider, the rows' gap around it */
+.shelves-rule { width: 88%; margin: 0 auto; }
+
+/* A game: the home card's glass, its icon and its name in the display font, nothing else.
+   The whole tile is one button */
+.shelf-tile {
+  position: relative; flex: 1; min-width: 0; min-height: 44px; display: flex; flex-direction: column; align-items: center; gap: var(--s-6);
+  padding: var(--s-12) var(--s-8); text-align: center; cursor: pointer;
+  font: inherit; color: var(--ink); background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius);
+  transition: transform 0.12s, border-color 0.2s;
+}
+.shelf-tile:active { transform: scale(0.98); }
+.shelf-tile:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+/* The icon alone, with no well of its own: the tile's edge is the only box (the owner, 2026-11-18) */
+.shelf-tile .emoji { height: 56px; display: grid; place-items: center; font-size: calc(var(--fs-200) * 1.4); line-height: 1; }
+.shelf-tile .name { font-family: var(--font-display); font-size: var(--fs-110); letter-spacing: 0.04em; line-height: 1.05; text-transform: uppercase; overflow-wrap: anywhere; }
+
+/* The game's sheet: the bottom sheet (.hoja) with its body scrolling between the tabs and ▶ Jugar,
+   so the button stays in sight under a long ranking (U-39) */
+.game-sheet { --demo-min: 140px; overflow: hidden; max-height: 94dvh; }
+/* The sheet is as tall as ten rows of its ranking need (the owner, 2026-11-18), on both tabs: the list keeps the
+   room of ten rows even with fewer, the rows are a fixed 36 px, and the table drops its card so they fit a phone.
+   Never more than ten: the rows around the player, shown after the first ten elsewhere, are left out here */
+#game-sheet-ranking { --row: 36px; }
+#game-sheet-ranking .rk-ten { padding: 0; border: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#game-sheet-ranking .rk-ten .rk-lista { min-height: calc(10 * var(--row) + 9 * var(--s-4)); align-content: start; }
+#game-sheet-ranking .rk-ten .rk-fila { min-height: var(--row); box-sizing: border-box; padding-top: var(--s-4); padding-bottom: var(--s-4); }
+#game-sheet-ranking .rk-ten .rk-sep, #game-sheet-ranking .rk-ten .rk-sep ~ .rk-fila { display: none; }
+.game-sheet .hoja-cabeza h2 { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.game-sheet-icon { flex: none; font-size: var(--fs-200); line-height: 1; }
+.game-sheet-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); }
+/* One height for both tabs: Detalles and Ranking share one cell, so the sheet is as tall as the taller one and
+   stays put when the tab changes; each scrolls on its own if the screen gives less. The one not shown is invisible */
+.game-sheet-body > * { grid-area: 1 / 1; min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.game-sheet-body > .off { visibility: hidden; }
+.game-sheet-details { display: flex; flex-direction: column; gap: var(--s-12); text-align: center; }
+.game-sheet-details .chips { justify-content: center; }
+/* A game with no animation: its icon, big, where the animation would play */
+.game-sheet-hero { flex: 1 1 0; min-height: var(--demo-min); display: grid; place-items: center; font-size: calc(var(--fs-200) * 3); line-height: 1; }
+.game-sheet-details > :not(.game-sheet-demo, .game-sheet-hero) { flex: none; }
+/* The game's cover animation, framed (cup/cover/): as wide as the sheet's text, at least as tall as its page says
+   (min-height, set by home-carousels.js) and taking the room the details leave under the shared height; nothing in it is tapped */
+.game-sheet-demo { display: block; flex: 1 1 0; width: 100%; height: 0; min-height: var(--demo-min); border: 0; opacity: 0; transition: opacity 0.2s; background: none; color-scheme: normal; pointer-events: none; }
+.game-sheet-demo.on { opacity: 1; }
+/* The slot is the same size from the first frame (never 0 then a jump): the demo fades in inside it, a game with none swaps in its icon, same size */
+.game-sheet-fav { color: var(--muted); }
+.game-sheet-fav.on { color: var(--yellow); }
+.game-sheet > .btn { flex: none; }
+/* Three to a line on a narrow phone: the name a step smaller, so a long word still fits its tile */
+/* …and the sheet's title a step smaller beside its three buttons (share, ⭐, ✕), so a one-word name is not cut */
+@media (max-width: 359px) { .game-sheet .hoja-cabeza { gap: var(--s-6); } .game-sheet .hoja-cabeza h2 { font-size: var(--fs-140); overflow-wrap: normal; }
+  .shelf-tile { padding: var(--s-10) var(--s-4); } .shelf-tile .name { font-size: var(--fs-90); letter-spacing: 0.02em; } }
+@media (prefers-reduced-motion: reduce) { .shelf-tile, .game-sheet-demo { transition: none; } }

@@ -1,0 +1,103 @@
+/* ==========================================================
+   Derrape (Drift): the game's own styles (lab). The shell (screens, the cover's hero, the result's hero,
+   panels, buttons, the bottom sheet) lives once in base.css (DESIGN.md §2); this file keeps only what
+   is the game's own, on the tokens (DESIGN.md §1). What is drawn inside the canvas is declared at the
+   top of scene.js.
+   ========================================================== */
+:root { --drift-shade: rgba(0, 0, 0, 0.55); }
+
+.how { margin: 0; padding-left: 1.3em; display: grid; gap: var(--s-6); }
+
+/* ---------- The stage: the screen under the top bar (its 74 px, the screen's and the page's bottom air: 136), both halves are the controls ---------- */
+#screen-play.active { display: block; }
+.dr-stage {
+  position: relative; height: calc(100svh - 136px); min-height: 360px; overflow: hidden;
+  border-radius: var(--r-22); border: 1px solid var(--glass-border); box-shadow: var(--shadow-panel);
+  touch-action: none; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.dr-canvas { display: block; width: 100%; height: 100%; }
+
+/* What is read over the run: the clock and the penalties, the gate count */
+.dr-hud { position: absolute; top: var(--s-10); left: var(--s-12); right: var(--s-12); display: grid; gap: var(--s-2); pointer-events: none; text-shadow: var(--shadow-text); }
+.dr-clock { display: flex; align-items: baseline; gap: var(--s-8); font: 900 var(--fs-200)/1 var(--font-num); font-variant-numeric: tabular-nums; color: var(--ink); }
+.dr-penalty { font-size: var(--fs-110); color: var(--yellow); }
+.dr-penalty--bonus { color: var(--lime); }
+.dr-gate { font: 900 var(--fs-90) var(--font-body); color: var(--muted); }
+.dr-lives { font: 900 var(--fs-90) var(--font-body); }
+.dr-lives--low { color: rgb(var(--red-rgb)); }
+/* The gap to the ghost (ghost.js): green while ahead of it */
+.dr-ghost { font: 900 var(--fs-90) var(--font-body); font-variant-numeric: tabular-nums; color: var(--ink); }
+.dr-ghost--ahead { color: var(--lime); }
+.dr-ghost-line { margin: 0; font-weight: 700; }
+/* The name over a real player's ghost (ghost-label.js): placed by the scene each frame, pale like the ghost */
+.dr-ghost-name {
+  position: absolute; left: 0; top: 0; pointer-events: none; white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis;
+  font: 800 var(--fs-85) var(--font-body); color: var(--ink); text-shadow: var(--shadow-text);
+  padding: var(--s-2) var(--s-8); border-radius: var(--r-pill); background: var(--drift-shade);
+}
+
+/* A crash: «−1 ❤️» rises from the car and fades (the scene draws the impact and the damage) */
+.dr-hit {
+  position: absolute; left: 50%; top: 62%; transform: translate(-50%, 0); pointer-events: none;
+  font: 900 var(--fs-140) var(--font-body); text-shadow: var(--shadow-text); animation: dr-hit 1.1s ease-out forwards;
+}
+.dr-hit--bonus { color: var(--yellow); top: 52%; }
+@keyframes dr-hit { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -48px); } }
+@media (prefers-reduced-motion: reduce) {
+  @keyframes dr-hit { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, 0); } }
+}
+
+/* The edge: ↺ always, 🔧 with a lab key; clear of the bottom bar */
+.dr-edge { position: absolute; top: var(--s-10); right: var(--s-10); display: grid; justify-items: end; gap: var(--s-8); }
+.dr-edge .icon-btn { background: var(--drift-shade); }
+.dr-edge .dr-offer { box-shadow: 0 0 0 3px var(--yellow); }
+/* The small map under the buttons: the circuit, what is left of it, the car (minimap.js) */
+.dr-map { width: 76px; height: 76px; border-radius: var(--r-14); background: var(--drift-shade); pointer-events: none; }
+
+/* The first-run hint, until the first touch */
+.dr-hint {
+  position: absolute; left: 0; right: 0; bottom: calc(var(--s-24) + env(safe-area-inset-bottom)); margin: 0; padding: 0 var(--s-12);
+  display: flex; gap: var(--s-12); text-align: center; pointer-events: none;
+  font: 900 var(--fs-110) var(--font-body); color: var(--ink); text-shadow: var(--shadow-text); transition: opacity 0.3s;
+}
+.dr-hint span { flex: 1; white-space: pre-line; }
+/* Wheel and pedal: each half's own hint under its thumb */
+.dr-hint[data-scheme='wheel'] { font-size: var(--fs-90); }
+.dr-hint[data-scheme='wheel'] span { flex: 1 1 50%; }
+.dr-hint.fuera { opacity: 0; }
+
+/* Paused: over the run, until a tap */
+.dr-pause { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--s-6); text-align: center; font-weight: 700; background: var(--drift-shade); }
+
+/* ---------- The result ---------- */
+.dr-time { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); }
+
+/* ---------- The tuning panel (lab key only) ---------- */
+.dr-tune { max-height: 85svh; overflow-y: auto; }
+.dr-tune-row { display: grid; gap: var(--s-4); }
+.dr-tune-name { display: flex; justify-content: space-between; gap: var(--s-8); margin: 0; font-weight: 900; font-size: var(--fs-90); }
+.dr-tune-value { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--cyan); }
+.dr-tune-row input { width: 100%; min-height: 32px; accent-color: var(--cyan); }
+.dr-tune-frame { margin: 0; font-size: var(--fs-85); }
+
+/* ---------- Where each thumb landed: a ring, and a dot that follows the thumb (input.js) ---------- */
+/* The thumbs' gauges, drawn just above each thumb (input.js sizes and places them) */
+.dr-touch {
+  position: absolute; transform: translate(-50%, -50%); pointer-events: none;
+  border: 2px solid rgb(var(--ink-rgb) / 0.45); background: rgb(var(--ink-rgb) / 0.08);
+}
+.dr-touch--steer { height: 20px; border-radius: var(--r-pill); }
+.dr-touch--stick { border-radius: 50%; }
+.dr-touch--pedal {
+  width: 20px; border-radius: var(--r-pill); border-color: rgb(var(--ink-rgb) / 0.55);
+  background: linear-gradient(to bottom, rgb(var(--lime-rgb) / 0.55) 0 33%, rgb(var(--red-rgb) / 0.55) 33% 100%);
+}
+.dr-touch-dot {
+  position: absolute; left: 50%; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%;
+  background: rgb(var(--ink-rgb) / 0.85); box-shadow: var(--shadow-text);
+}
+
+/* The medal on the result (option B): the line above the ghost's */
+.dr-medal { font: 900 var(--fs-110) var(--font-body); }
+/* The ghost picker: three short choices on one line, even at 320 px */
+#ghost-pick button { flex: 1 1 auto; padding-inline: var(--s-6); white-space: nowrap; }

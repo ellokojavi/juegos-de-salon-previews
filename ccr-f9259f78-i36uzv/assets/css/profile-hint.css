@@ -1,0 +1,19 @@
+/* Lab flag profile (profile-hint.js): the bubble that rises from the top bar's pill the first time, its
+   tail pointing at the pill; a tap on it opens the profile, ✕ closes it for good */
+.pf-bubble {
+  position: absolute; z-index: 40; width: min(264px, calc(100vw - var(--s-16))); box-sizing: border-box;
+  display: grid; grid-template-columns: 1fr 44px; align-items: start; gap: var(--s-4);
+  padding: var(--s-8) var(--s-2) var(--s-8) var(--s-14); border-radius: var(--r-16);
+  background: var(--yellow); color: var(--ink-on-yellow); box-shadow: var(--shadow-panel);
+  animation: pfBubbleIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.3) both, pfBubbleBob 2.4s 0.6s ease-in-out infinite;
+  transform-origin: calc(100% - var(--tail, 24px)) 0;
+}
+.pf-bubble::before { content: ''; position: absolute; top: calc(-1 * var(--s-8)); right: var(--tail, 24px); width: var(--s-16); height: var(--s-16); background: inherit; transform: rotate(45deg); border-radius: var(--r-8) 0 0 0; }
+.pf-bubble.fuera { animation: fadeOut 0.25s both; }
+.pf-bubble-txt { position: relative; display: grid; gap: var(--s-2); color: inherit; text-decoration: none; padding-top: var(--s-2); }
+.pf-bubble-txt b { font-weight: 900; font-size: var(--fs-100); }
+.pf-bubble-txt span { font-weight: 700; font-size: var(--fs-85); line-height: 1.3; }
+.pf-bubble-x { position: relative; width: 44px; height: 44px; margin-top: calc(-1 * var(--s-6)); border: 0; border-radius: 50%; background: none; color: inherit; font: 900 var(--fs-110) var(--font-body); cursor: pointer; }
+@keyframes pfBubbleIn { from { transform: translateY(-14px) scale(0.6); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes pfBubbleBob { 50% { transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .pf-bubble { animation: fadeIn 0.2s both; } }

@@ -1,0 +1,219 @@
+/* The player's profile (lab flag profile). The medals' metals are the page's own colours (DESIGN.md §4). */
+:root {
+  --pf-tinta-lima: #123012;
+}
+
+.pf-page { display: grid; gap: var(--s-12); }
+.pf-hero-icon { display: block; font-size: var(--fs-200); line-height: 1.1; }
+.pf-tab { display: grid; gap: var(--s-12); }
+.pf-tab[hidden] { display: none; }
+
+/* The player's card: flag and name, since when; three figures */
+.pf-who { display: grid; text-align: center; }
+.pf-player { margin: 0; font-weight: 900; font-size: var(--fs-140); line-height: 1.2; overflow-wrap: anywhere; }
+.pf-since { margin: var(--s-2) 0 0; font-size: var(--fs-90); }
+/* Lab profile-chips: the same two facts as the design system's chips under the name */
+.pf-chips { justify-content: center; margin: var(--s-8) 0 0; }
+/* Until the server's figure arrives, three dots hop where the number goes; then the number pops in (the owner, 2026-11-23) */
+.pf-dots { display: inline-flex; gap: 0.16em; vertical-align: middle; }
+.pf-dots i { width: 0.22em; height: 0.22em; border-radius: var(--r-pill); background: var(--yellow); animation: pf-hop 0.9s ease-in-out infinite; }
+.pf-dots i:nth-child(2) { animation-delay: 0.15s; }
+.pf-dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pf-hop { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-0.28em); opacity: 1; } }
+.pf-stat b.pf-pop { animation: pf-pop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.5) both; }
+@keyframes pf-pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* The three tabs: always in view while scrolling */
+/* Sticky over the badges: nearly opaque in the page's own colour, blurred behind and edged, so it reads as a bar
+   above what scrolls under it, not as part of it (the owner, 2026-11-22) */
+.pf-tabs { position: sticky; top: var(--s-8); z-index: 3; box-shadow: var(--shadow-panel);
+  background: rgb(var(--bg2-rgb) / 0.92); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.pf-tabs button { white-space: nowrap; }
+
+/* A group of badges */
+.pf-group-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-8); margin: 0 0 var(--s-12); }
+.pf-group-head small { color: var(--muted); font-weight: 800; font-size: var(--fs-85); white-space: nowrap; }
+.pf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-10); overflow-x: clip; } /* a reveal's rays never widen the page */
+.pf-group .pf-duel-pills { margin: 0 0 0 auto; flex-wrap: nowrap; }
+.pf-group-head:has(.pf-duel-pills) { align-items: center; }
+@media (max-width: 359px) { .pf-group .pf-duel-pills { display: none; } }
+.pf-group .pf-duels-go, .pf-group .pf-group-go { margin-top: var(--s-12); width: 100%; }
+.pf-badge {
+  position: relative; display: grid; justify-items: center; align-content: start; gap: var(--s-4);
+  text-align: center; padding: var(--s-12) var(--s-4) var(--s-10); border-radius: var(--r-14); background: var(--well);
+}
+/* Still to earn: grey, a dashed ring, its progress under it */
+.pf-badge--locked .pf-medal { background: rgb(var(--ink-rgb) / 0.08); box-shadow: none; outline: 2px dashed rgb(var(--ink-rgb) / 0.3); filter: grayscale(1); opacity: 0.55; color: var(--muted); font: 900 var(--fs-160) var(--font-body); }
+.pf-badge--locked .pf-name { color: var(--muted); }
+.pf-name { font-weight: 900; font-size: var(--fs-85); line-height: 1.15; }
+/* At 320 px a long one-word name (Coleccionista, Todoterreno) fits its medal's column: a step smaller, a tighter card */
+@media (max-width: 359px) { .pf-grid { gap: var(--s-6); } .pf-badge { padding-left: var(--s-2); padding-right: var(--s-2); } .pf-name { font-size: var(--fs-75); } }
+.pf-desc { font-size: var(--fs-75); color: var(--muted); line-height: 1.2; }
+.pf-times { position: absolute; top: var(--s-6); right: var(--s-6); font: 900 var(--fs-75) var(--font-num); background: var(--pink); color: var(--ink); border-radius: var(--r-pill); padding: 0 var(--s-6); }
+.pf-bar { width: 80%; height: 6px; border-radius: var(--r-pill); background: rgb(var(--ink-rgb) / 0.12); overflow: hidden; margin-top: var(--s-2); }
+.pf-bar i { display: block; height: 100%; background: var(--cyan); }
+.pf-badge--new { box-shadow: 0 0 0 2px var(--lime) inset; }
+.pf-new { position: absolute; top: calc(-1 * var(--s-8)); left: 50%; transform: translateX(-50%); background: var(--lime); color: var(--pf-tinta-lima); font: 900 var(--fs-75) var(--font-body); border-radius: var(--r-pill); padding: 0 var(--s-8); white-space: nowrap; }
+.pf-note { margin: var(--s-12) 0 0; text-align: center; }
+/* A badge new since the last visit (the owner, 2026-11-22): its medal turns from grey to its metal with a flash and
+   rays, once, after `--pf-d` (profile.js `revealDelay`, negative when a redraw catches it midway); then «¡Nueva!»
+   pops and its card glows for a few beats */
+.pf-badge--reveal .pf-medal { position: relative; animation: pf-unlock 0.9s var(--pf-d, 0s) both; }
+.pf-badge--reveal .pf-medal::before, .pf-badge--reveal .pf-medal::after { content: ''; position: absolute; inset: calc(-1 * var(--s-12)); border-radius: 50%; pointer-events: none; opacity: 0; }
+.pf-badge--reveal .pf-medal::before { background: repeating-conic-gradient(rgb(var(--yellow-rgb) / 0.85) 0 10deg, transparent 10deg 30deg); mask: radial-gradient(circle, transparent 38%, var(--ink) 40%, transparent 70%); animation: pf-rays 1.1s calc(var(--pf-d, 0s) + 0.3s) backwards; }
+.pf-badge--reveal .pf-medal::after { background: radial-gradient(circle, var(--card) 0 30%, rgb(var(--yellow-rgb) / 0.7) 45%, transparent 70%); animation: pf-flash 0.7s calc(var(--pf-d, 0s) + 0.3s) backwards; }
+.pf-badge--reveal .pf-new { animation: pf-tag 0.4s calc(var(--pf-d, 0s) + 0.75s) both; }
+.pf-badge--reveal { animation: pf-glow 1.2s calc(var(--pf-d, 0s) + 0.9s) 3 ease-in-out; }
+@keyframes pf-unlock {
+  0%, 30% { filter: grayscale(1); opacity: 0.55; transform: scale(0.9); }
+  55% { filter: grayscale(0); opacity: 1; transform: scale(1.28); }
+  75% { transform: scale(0.94); }
+  100% { filter: none; opacity: 1; transform: scale(1); }
+}
+@keyframes pf-flash { 0% { opacity: 0; transform: scale(0.3); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.6); } }
+@keyframes pf-rays { 0% { opacity: 0; transform: scale(0.5) rotate(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.5) rotate(40deg); } }
+@keyframes pf-tag { 0% { opacity: 0; transform: translateX(-50%) scale(0.3); } 70% { transform: translateX(-50%) scale(1.2); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
+@keyframes pf-glow { 50% { box-shadow: 0 0 0 2px var(--lime) inset, 0 0 var(--s-16) rgb(var(--lime-rgb) / 0.6); } }
+@media (prefers-reduced-motion: reduce) { .pf-badge--reveal, .pf-badge--reveal .pf-medal, .pf-badge--reveal .pf-new, .pf-badge--reveal .pf-medal::before, .pf-badge--reveal .pf-medal::after { animation: none; } }
+
+/* The 🏅 tab: the player's places, their games */
+.pf-places { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-6); margin: var(--s-4) 0 var(--s-10); }
+.pf-place { border-radius: var(--r-12); padding: var(--s-8) var(--s-4); text-align: center; background: var(--well); border: 2px solid transparent; }
+.pf-place i { display: block; font-style: normal; font-size: var(--fs-140); line-height: 1.2; min-height: 1.2em; }
+.pf-place i:empty { display: none; }
+.pf-place b { display: block; font: 900 var(--fs-140) var(--font-num); font-variant-numeric: tabular-nums; }
+.pf-place span { font-size: var(--fs-75); color: var(--muted); font-weight: 800; }
+/* The place's metal (the owner, 2026-11-22): the badges' gold, silver and bronze, 🔥 for the top 10; it pops in when it arrives */
+.pf-place[class*='pf-place--'] i, .pf-place[class*='pf-place--'] b { animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4) both; }
+.pf-place--gold { background: linear-gradient(180deg, rgb(var(--yellow-rgb) / 0.28), rgb(var(--yellow-rgb) / 0.08)); border-color: var(--pf-oro); box-shadow: 0 6px 18px rgb(var(--yellow-rgb) / 0.3); }
+.pf-place--gold b { color: var(--pf-oro); }
+.pf-place--silver { background: linear-gradient(180deg, rgb(var(--ink-rgb) / 0.16), rgb(var(--ink-rgb) / 0.04)); border-color: var(--pf-plata); }
+.pf-place--silver b { color: var(--pf-plata); }
+.pf-place--bronze { background: linear-gradient(180deg, rgb(var(--orange-rgb) / 0.24), rgb(var(--orange-rgb) / 0.06)); border-color: var(--pf-bronce); }
+.pf-place--bronze b { color: var(--pf-bronce-aro); }
+.pf-place--top { border-color: rgb(var(--orange-rgb) / 0.6); }
+.pf-place--top b { color: var(--orange); }
+.pf-place--rest b { color: var(--yellow); }
+@media (prefers-reduced-motion: reduce) { .pf-place i, .pf-place b { animation: none; } }
+.pf-game-list { display: grid; gap: var(--s-6); }
+.pf-game {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'name place' 'sub place'; align-items: center; column-gap: var(--s-10);
+  width: 100%; min-height: 44px; padding: var(--s-10) var(--s-12); border: 0; border-radius: var(--r-12); background: var(--well);
+  color: var(--ink); font: inherit; text-align: left; cursor: pointer;
+}
+.pf-game[hidden] { display: none; }
+.pf-game[aria-expanded='true'] { box-shadow: 0 0 0 2px var(--yellow) inset; }
+.pf-game-name { grid-area: name; font-weight: 900; }
+.pf-game-sub { grid-area: sub; font-size: var(--fs-75); color: var(--muted); font-weight: 700; }
+.pf-game-place { grid-area: place; text-align: right; font: 900 var(--fs-110) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); }
+.pf-game-place small { display: block; font: 800 var(--fs-75) var(--font-body); color: var(--cyan); }
+.pf-game-table:empty { display: none; }
+.pf-game-table .panel { padding: var(--s-10) 0 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* The ⚙️ tab */
+.pf-settings { display: grid; gap: var(--s-8); }
+.pf-settings .rk-titulo { margin-bottom: var(--s-4); }
+/* A row still loading (its flag answers later): it takes its place without a gap until it is drawn */
+.pf-slot { display: none; }
+.pf-name-now { font-weight: 900; white-space: nowrap; }
+/* 👤 Your account: each row's value and its «Cambiar», its form under it; «Salir de tu cuenta» asks once */
+/* Each row is one card with its form inside it, so the form reads as that row's */
+.pf-account-item { display: grid; gap: var(--s-8); background: var(--well); border-radius: var(--r-14); padding: var(--s-10) var(--s-14); }
+.pf-account-row { display: flex; align-items: center; justify-content: space-between; gap: var(--s-12); }
+.pf-account-row .txt small { color: var(--muted); font-weight: 700; font-size: var(--fs-75); line-height: 1.25; display: block; }
+.pf-account-row .txt { min-width: 0; display: grid; gap: var(--s-2); }
+.pf-account-row .pf-account-label { text-transform: uppercase; letter-spacing: 0.08em; font-weight: 900; }
+.pf-account-row .pf-name-now, .pf-account-row .pf-pin-dots { display: block; font-size: var(--fs-110); white-space: normal; overflow-wrap: anywhere; }
+.pf-account-row .pf-change { flex: none; }
+.pf-pin-dots { letter-spacing: 0.15em; }
+.pf-form { display: grid; gap: var(--s-8); padding: var(--s-4) 0 var(--s-4); }
+.pf-form[hidden], .pf-logout-ask[hidden], .pf-logout[hidden] { display: none; }
+.pf-form .btn { justify-self: center; }
+.pf-logout { justify-self: center; margin-top: var(--s-6); }
+.pf-logout-ask { display: grid; gap: var(--s-8); text-align: center; }
+.pf-logout-ask p { margin: 0; }
+.pf-more { justify-self: center; margin-top: var(--s-10); }
+
+/* 🏆 Your cups: the place (a medal on the podium) on the left, the name, dates and who won, a › to the cup */
+.pf-cup-list { display: grid; gap: var(--s-6); }
+.pf-cup { display: grid; grid-template-columns: 3.2rem 1fr auto; align-items: center; column-gap: var(--s-10); min-height: 44px;
+  padding: var(--s-10) var(--s-12); border-radius: var(--r-12); background: var(--well); border: 2px solid transparent; color: var(--ink); text-decoration: none; }
+.pf-cup-place { text-align: center; line-height: 1.1; }
+.pf-cup-place b { display: block; font: 900 var(--fs-140) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); }
+.pf-cup-place small { display: block; font-size: var(--fs-75); color: var(--muted); font-weight: 800; }
+.pf-cup-txt { min-width: 0; display: grid; gap: var(--s-2); }
+.pf-cup-name { font-weight: 900; overflow-wrap: anywhere; }
+.pf-cup-txt small { font-size: var(--fs-75); color: var(--muted); font-weight: 700; }
+.pf-cup-txt .pf-cup-champ { color: var(--ink); font-weight: 800; }
+.pf-cup .go { color: var(--muted); font-size: var(--fs-120); }
+.pf-cup--gold { border-color: var(--pf-oro); background: linear-gradient(180deg, rgb(var(--yellow-rgb) / 0.2), rgb(var(--yellow-rgb) / 0.05)); }
+.pf-cup--silver { border-color: var(--pf-plata); }
+.pf-cup--bronze { border-color: var(--pf-bronce); }
+.pf-cup--live { border-color: rgb(var(--cyan-rgb) / 0.6); }
+.pf-cup-list .pf-more { margin-top: var(--s-4); }
+/* 👁️ Your public profile in ⚙️: the switch is 44 px tall to the finger; how others see you under it */
+.pf-public .switch::before { content: ''; position: absolute; inset: -7px -2px; }
+.pf-public .switch:disabled { opacity: 0.6; }
+.pf-public .pf-see-public { justify-self: center; }
+
+/* The welcome (the owner, 2026-11-22): open by itself on the first visit only; no ⓘ reopens it (2026-11-24) */
+.pf-intro[hidden] { display: none; }
+.pf-intro { display: grid; gap: var(--s-10); margin-bottom: var(--s-12); border: 2px solid rgb(var(--yellow-rgb) / 0.55); animation: pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+.pf-intro-head { display: flex; justify-content: space-between; align-items: center; gap: var(--s-8); }
+.pf-intro-x { flex: none; width: 44px; height: 44px; }
+.pf-intro-head h2 { margin: 0; font-size: var(--fs-120); font-weight: 900; }
+.pf-intro-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-8); }
+.pf-intro-list li { display: grid; gap: var(--s-2); background: var(--well); border-radius: var(--r-12); padding: var(--s-10) var(--s-12); }
+.pf-intro-list b { font-weight: 900; }
+.pf-intro-list span { color: var(--muted); font-weight: 700; font-size: var(--fs-90); line-height: 1.35; }
+.pf-intro-ok { justify-self: center; }
+@media (prefers-reduced-motion: reduce) { .pf-intro { animation: none; } }
+/* 🎮 Your games played (the owner, 2026-11-23, from /records/): one bar per game, as long as its share of the most
+   played one, the name over it and the number at its end; five show, the rest open below */
+.pf-plays { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-6); }
+.pf-play { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--s-10);
+  min-height: 40px; padding: 0 var(--s-12); border-radius: var(--r-12); background: var(--well); overflow: hidden; }
+.pf-play[hidden] { display: none; }
+.pf-play::before { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--yellow) 32%, transparent), color-mix(in srgb, var(--yellow) 12%, transparent));
+  transform-origin: left; animation: pf-play-grow 0.7s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.pf-play:nth-child(2)::before { animation-delay: 0.06s; }
+.pf-play:nth-child(3)::before { animation-delay: 0.12s; }
+.pf-play:nth-child(4)::before { animation-delay: 0.18s; }
+.pf-play:nth-child(5)::before { animation-delay: 0.24s; }
+@keyframes pf-play-grow { from { transform: scaleX(0); } }
+.pf-play { isolation: isolate; }
+.pf-play::before { z-index: -1; }
+.pf-play b { position: relative; }
+.pf-play-name { font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The link's overlay covers the whole row: anchored to the row, since the name clips its own box */
+.pf-play-name { color: inherit; text-decoration: none; }
+.pf-play-name::after { content: ''; position: absolute; inset: 0; }
+.pf-play b { pointer-events: none; font: 900 var(--fs-100) var(--font-num); font-variant-numeric: tabular-nums; color: var(--yellow); }
+.pf-plays-panel .pf-more { margin-top: var(--s-10); justify-self: center; }
+@media (prefers-reduced-motion: reduce) { .pf-play::before { animation: none; } }
+.pf-plays-panel { display: grid; }
+
+/* A badge's detail (lab flag badge-details): a tappable badge, and its sheet */
+button.pf-badge--tap { font: inherit; color: inherit; border: 0; cursor: pointer; width: 100%; }
+/* The ⓘ at the card's top-right, toned down (the owner, 2026-11-24, variant A) */
+.pf-badge--tap::after { content: 'ⓘ'; position: absolute; top: var(--s-4); right: var(--s-6); font-size: var(--fs-75); color: var(--muted); opacity: 0.55; }
+/* The ×N pill yields the top-right to the ⓘ on a tappable badge */
+.pf-badge--tap .pf-times { right: auto; left: var(--s-6); }
+/* The sheet's title in the games' display type: yellow with a purple drop, a step under a game's (the owner, 2026-11-24, variant A2) */
+.pf-dt .hoja-cabeza h3 { flex: 1; min-width: 0; font-family: var(--font-display); font-weight: 400; font-size: var(--fs-160); letter-spacing: 0.04em; line-height: 1; text-transform: uppercase; color: var(--yellow);
+  text-shadow: 0 3px 0 rgb(var(--purple-rgb) / 0.9), 0 0 18px rgb(var(--pink-rgb) / 0.35); }
+.pf-dt .pf-badge { padding: var(--s-12); }
+.pf-dt-x { width: 44px; min-height: 44px; padding: 0; }
+.pf-dt-lead, .pf-dt-when { margin: 0; }
+.pf-dt-when { color: var(--lime); font-weight: 900; text-align: center; }
+.pf-dt-note { margin: 0; font-size: var(--fs-85); }
+.pf-dt-rows { display: grid; gap: var(--s-8); }
+.pf-dt-row { display: flex; justify-content: space-between; align-items: center; gap: var(--s-10); min-height: 44px; box-sizing: border-box; padding: var(--s-8) var(--s-14); border-radius: var(--r-14); background: var(--glass); color: inherit; text-decoration: none; font-weight: 900; }
+.pf-dt-row b { color: var(--yellow); white-space: nowrap; }
+.pf-dt-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s-6); text-align: center; font-weight: 900; padding: var(--s-12); border-radius: var(--r-14); background: var(--glass); }
+.pf-dt-on { color: var(--lime); }
+.pf-dt-miss { color: var(--pink); text-decoration: line-through; }
+.pf-dt-today { color: var(--yellow); outline: 2px solid var(--yellow); border-radius: var(--r-pill); }
+.pf-dt-next { color: var(--muted); }
